@@ -5,8 +5,7 @@ This repo contains the Mediawiki files and extensions for the SHA2017 Public wik
 	- Clone the repo
 	- Run the installer for mediawiki, so that it creates the database
 	- run `php maintenance/update.php` to initialize the SMW tables
-	- copy the file `LocalSettings.php.dist` to `LocalSettings.php` and
-costumize the settings.
+	- copy the file `LocalSettings.php.dist` to `LocalSettings.php` and costumize the settings.
 	- profit!
 
 # Upgrade
