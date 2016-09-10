@@ -1,0 +1,16 @@
+{
+	"@metadata": {
+		"authors": [
+			"Borichèt",
+			"Dragonòt"
+		]
+	},
+	"semanticformsinputs-desc": "Sòrt d'imission adissionaj për [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Formolari Semàntich]",
+	"semanticformsinputs-timepicker-mintime": "Ël prim orari da smon-e. Formà: oo:mm",
+	"semanticformsinputs-timepicker-maxtime": "L'ùltim orari da smon-e. Formà: oo:mm",
+	"semanticformsinputs-timepicker-interval": "Antërval antra le minute. Nùmer tra 1 e 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "L'utent a dev podèj compilé ël camp d'anseriment diretament o mach con ël selessionator ëd dàite?",
+	"semanticformsinputs-timepicker-showresetbutton": "A venta smon-e un boton d'anulament? A l'é la sola manera për l'utent d'anulé ël camp d'anseriment se a l'é disabilità për l'anseriment diret.",
+	"semanticformsinputs-menuselect-structure": "La strutura dlë mnù sot forma ëd lista nen ordinà.",
+	"semanticformsinputs-menuselect-enableinputfield": "L'utent a dev podèj compilé ël camp d'anseriment diretament?"
+}

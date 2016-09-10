@@ -1,0 +1,17 @@
+{
+	"@metadata": {
+		"authors": [
+			"Andriykopanytsia",
+			"Base",
+			"Тест"
+		]
+	},
+	"semanticformsinputs-desc": "Додаткові типи вводу для [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Семантичних форм]",
+	"semanticformsinputs-timepicker-mintime": "Найновіший час для відображення. Формат: гг:хх",
+	"semanticformsinputs-timepicker-maxtime": "Найпізніший час для відображення. Формат: гг:хх",
+	"semanticformsinputs-timepicker-interval": "Інтервал між хвилинами. Число від 1 до 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Користувач зможе заповнити поле введення безпосередньо або тільки за допомогою елемента вибору дати?",
+	"semanticformsinputs-timepicker-showresetbutton": "Слід показувати кнопку Очистити? Це єдиний спосіб для користувачів, щоб стерти поле введення, якщо вимкнено пряме введення даних.",
+	"semanticformsinputs-menuselect-structure": "Структура меню у вигляді невпорядкованого списку.",
+	"semanticformsinputs-menuselect-enableinputfield": "Дозволити безпосереднє заповнення поля вводу користувачем?"
+}

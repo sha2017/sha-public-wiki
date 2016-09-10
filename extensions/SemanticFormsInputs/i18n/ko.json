@@ -1,0 +1,16 @@
+{
+	"@metadata": {
+		"authors": [
+			"Priviet",
+			"아라"
+		]
+	},
+	"semanticformsinputs-desc": "[https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Forms]에 대한 추가 입력 형태",
+	"semanticformsinputs-timepicker-mintime": "표시할 이전의 시간. 형식: hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "표시할 최근의 시간. 형식: hh:mm",
+	"semanticformsinputs-timepicker-interval": "분 간격. 1에서 60 사이의 숫자.",
+	"semanticformsinputs-timepicker-enableinputfield": "사용자가 입력 필드를 직접 채우거나 날짜 선택기를 사용할 수 있어야 합니까?",
+	"semanticformsinputs-timepicker-showresetbutton": "재설정 버튼이 보영 합니까? 직접 입력이 비활성화되어 있으면 사용자가 입력 필드를 지웁니다.",
+	"semanticformsinputs-menuselect-structure": "순서 없는 목록의 메뉴 구조",
+	"semanticformsinputs-menuselect-enableinputfield": "사용자가 입력 필드를 직접 채울 수 있어야 합니까?"
+}

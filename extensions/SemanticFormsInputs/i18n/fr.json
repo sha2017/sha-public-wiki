@@ -1,0 +1,18 @@
+{
+	"@metadata": {
+		"authors": [
+			"Crochet.david",
+			"F.trott",
+			"Gomoko",
+			"IAlex"
+		]
+	},
+	"semanticformsinputs-desc": "Types d'entrées additionnelles pour [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Formulaires sémantiques]",
+	"semanticformsinputs-timepicker-mintime": "Le premier horaire à afficher. Format: hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "Le dernier horaire à afficher. Format: hh:mm",
+	"semanticformsinputs-timepicker-interval": "Intervalle entre les minutes. Nombre entre 1 et 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "L'utilisateur doit-il pouvoir remplir le champ d'entrée directement ou seulement par l'intermédiaire du sélecteur de dates?",
+	"semanticformsinputs-timepicker-showresetbutton": "Faut-il afficher un bouton de réinitialisation? C'est la seule manière pour l'utilisateur d'effacer le champ d'entrée s'il est désactivé pour la saisie directe.",
+	"semanticformsinputs-menuselect-structure": "La structure du menu sous forme de liste non ordonnée.",
+	"semanticformsinputs-menuselect-enableinputfield": "L'utilisateur doit-il pouvoir remplir le champ d'entrée directement?"
+}

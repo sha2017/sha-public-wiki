@@ -1,0 +1,16 @@
+{
+	"@metadata": {
+		"authors": [
+			"Bjankuloski06",
+			"F.trott"
+		]
+	},
+	"semanticformsinputs-desc": "Дополнителни типови на внос за [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Семантички обрасци]",
+	"semanticformsinputs-timepicker-mintime": "Најрано време за приказ. Формат: чч:мм",
+	"semanticformsinputs-timepicker-maxtime": "Последно време за приказ. Формат: чч:мм",
+	"semanticformsinputs-timepicker-interval": "Интервал помеѓу минутите. Број помеѓу 1 и 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Дали корисникот да може да го пополни полето за внос непосредно или преку одбирачот на датуми?",
+	"semanticformsinputs-timepicker-showresetbutton": "Дали да се прикажува копчето „одново“? Ова е единствениот начин корисникот да го избрише внесеното во полето ако за тоа поле е оневозможен непосредниот внос.",
+	"semanticformsinputs-menuselect-structure": "Состав на менито како неподреден список.",
+	"semanticformsinputs-menuselect-enableinputfield": "Дали корисникот да може непосредно да го пополни полето за внос?"
+}

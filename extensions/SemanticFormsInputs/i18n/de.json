@@ -1,0 +1,17 @@
+{
+	"@metadata": {
+		"authors": [
+			"F.trott",
+			"Geitost",
+			"Kghbln"
+		]
+	},
+	"semanticformsinputs-desc": "Ermöglicht verschiedene zusätzliche Eingabearten für [https://www.mediawiki.org/wiki/Extension:Semantic_Forms Semantic Forms]",
+	"semanticformsinputs-timepicker-mintime": "Die früheste anzuzeigende Zeit (im Format hh:mm).",
+	"semanticformsinputs-timepicker-maxtime": "Die späteste anzuzeigende Zeit (im Format hh:mm).",
+	"semanticformsinputs-timepicker-interval": "Der Intervall zwischen den Minuten (Zahlen zwischen 1 und 60).",
+	"semanticformsinputs-timepicker-enableinputfield": "Sollen die Benutzer die Eingabefelder direkt bearbeiten können, oder nur über die Datumsauswahl?",
+	"semanticformsinputs-timepicker-showresetbutton": "Soll eine Schaltfläche zum Zurücksetzen angezeigt werden? Dies ist für die Benutzer die einzige Möglichkeit die Eingabe im Eingabefeld zu entfernen, sofern das direkte Bearbeiten deaktiviert wurde.",
+	"semanticformsinputs-menuselect-structure": "Die Menüstruktur als ungeordnete Liste.",
+	"semanticformsinputs-menuselect-enableinputfield": "Sollen die Benutzer die Eingabefelder direkt bearbeiten können?"
+}

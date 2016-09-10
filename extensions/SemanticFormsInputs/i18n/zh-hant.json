@@ -1,0 +1,17 @@
+{
+	"@metadata": {
+		"authors": [
+			"Mark85296341",
+			"LNDDYL",
+			"Cwlin0416"
+		]
+	},
+	"semanticformsinputs-desc": "用於[https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Forms]的附加輸入項類型",
+	"semanticformsinputs-timepicker-mintime": "要顯示的最早時間。格式：hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "要顯示的最晚時間。格式：hh:mm",
+	"semanticformsinputs-timepicker-interval": "分鐘之間的間隔。1 和 60 之間的數字。",
+	"semanticformsinputs-timepicker-enableinputfield": "用戶究竟應當能夠直接填寫輸入文本框，還是只能藉助於日期選取器？",
+	"semanticformsinputs-timepicker-showresetbutton": "是否應當顯示一個重置按鈕？如果禁止直接輸入，這將是用戶刪除輸入文本框的唯一方法。",
+	"semanticformsinputs-menuselect-structure": "作為無序列表的菜單結構。",
+	"semanticformsinputs-menuselect-enableinputfield": "用戶是否應該能夠直接填寫輸入文本框？"
+}

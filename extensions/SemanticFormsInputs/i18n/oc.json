@@ -1,0 +1,15 @@
+{
+	"@metadata": {
+		"authors": [
+			"Cedric31"
+		]
+	},
+	"semanticformsinputs-desc": "Tipes d'entradas adicionalas per [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Formularis semantics]",
+	"semanticformsinputs-timepicker-mintime": "Lo primièr orari d'afichar. Format : hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "Lo darrièr orari d'afichar. Format : hh:mm",
+	"semanticformsinputs-timepicker-interval": "Interval entre las minutas. Nombre entre 1 e 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "L'utilizaire deu poder emplenar lo camp d'entrada dirèctament o solament per l'intermediari del selector de datas ?",
+	"semanticformsinputs-timepicker-showresetbutton": "Cal afichar un boton de reïnicializacion ? Es lo sol biais per l'utilizaire d'escafar lo camp d'entrada s'es desactivat per la picada dirècta.",
+	"semanticformsinputs-menuselect-structure": "L'estructura del menú jos la forma de lista pas ordenada.",
+	"semanticformsinputs-menuselect-enableinputfield": "L'utilizaire deu poder emplenar lo camp d'entrada dirèctament?"
+}

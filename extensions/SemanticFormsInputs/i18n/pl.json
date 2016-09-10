@@ -1,0 +1,15 @@
+{
+	"@metadata": {
+		"authors": [
+			"BeginaFelicysym",
+			"Sp5uhe"
+		]
+	},
+	"semanticformsinputs-desc": "Dodatkowe typy wejściowe dla [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Formularzy Semantycznych]",
+	"semanticformsinputs-timepicker-mintime": "Najwcześniejszy czas do wyświetlenia. Format: gg:mm",
+	"semanticformsinputs-timepicker-maxtime": "Najpóźniejszy czas do wyświetlenia. Format: gg:mm",
+	"semanticformsinputs-timepicker-interval": "Interwał między minutami. Liczba między 1 i 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Czy użytkownik ma możliwość bezpośredniego wpisania daty, czy tylko przez kalendarzyk?",
+	"semanticformsinputs-menuselect-structure": "Struktura menu jako lista nieuporządkowana.",
+	"semanticformsinputs-menuselect-enableinputfield": "Czy użytkownik może bezpośrednio wprowadzać zawartość pola?"
+}

@@ -1,0 +1,16 @@
+{
+	"@metadata": {
+		"authors": [
+			"Armin1392",
+			"Mjbmr"
+		]
+	},
+	"semanticformsinputs-desc": "انواع ورودی اضافه برای [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Forms]",
+	"semanticformsinputs-timepicker-mintime": "اولین زمان برای نمایش. فرمت: اچ‌اچ:ام‌ام",
+	"semanticformsinputs-timepicker-maxtime": "آخرین زمان برای نمایش. فرمت: hh:mm",
+	"semanticformsinputs-timepicker-interval": "فاصله بین دقیقه‌ها. عدد بین ۱ و۶۰.",
+	"semanticformsinputs-timepicker-enableinputfield": "آیا کاربر قادر به پرکردن زمینه ورودی به طور مستقیم است یا تنها از طریق انتخاب کننده تاریخ قادر است؟",
+	"semanticformsinputs-timepicker-showresetbutton": "آیا باید دکمه تنظیم مجدد نشان داده شود؟ اگر برای ورودی مستقیم غیرفعال است،این تنها راه برای کاربر برای پاک کردن زمینه ورودی است .",
+	"semanticformsinputs-menuselect-structure": "ساختار منو به عنوان یک فهرست نا‌مرتب.",
+	"semanticformsinputs-menuselect-enableinputfield": "آیا کاربر باید قادر به پر کردن زمینه ورودی به طور مستقیم باشد؟"
+}

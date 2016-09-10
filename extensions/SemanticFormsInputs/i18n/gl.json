@@ -1,0 +1,15 @@
+{
+	"@metadata": {
+		"authors": [
+			"Toliño"
+		]
+	},
+	"semanticformsinputs-desc": "Tipos de entrada adicionais para os [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms formularios semánticos]",
+	"semanticformsinputs-timepicker-mintime": "A primeira hora a mostrar. Formato: hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "A última hora a mostrar. Formato: hh:mm",
+	"semanticformsinputs-timepicker-interval": "Intervalo entre os minutos. Número entre 1 e 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Debe o usuario ser capaz de encher o campo de entrada directamente ou unicamente a través do selector de datas?",
+	"semanticformsinputs-timepicker-showresetbutton": "Debe mostrarse un botón de restablecemento? Este é o único xeito que o usuario ten de limpar o campo de entrada se está desactivado para a entrada directa.",
+	"semanticformsinputs-menuselect-structure": "A estrutura do menú como lista non ordenada.",
+	"semanticformsinputs-menuselect-enableinputfield": "Debe o usuario ser capaz de encher o campo de entrada directamente?"
+}
