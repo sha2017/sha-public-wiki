@@ -1,0 +1,17 @@
+{
+	"@metadata": {
+		"authors": [
+			"SPQRobin",
+			"Saruman",
+			"Siebrand"
+		]
+	},
+	"semanticformsinputs-desc": "Extra invoertypen voor [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Forms]",
+	"semanticformsinputs-timepicker-mintime": "De vroegste tijd om weer te geven. Opmaak: uu:mm",
+	"semanticformsinputs-timepicker-maxtime": "De laatste tijd om weer te geven. Opmaak: uu:mm.",
+	"semanticformsinputs-timepicker-interval": "Interval tussen minuten. Getal tussen 1 en 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Kan de gebruiker het invoerveld rechtstreeks bewerken, of alleen via de datumkiezer?",
+	"semanticformsinputs-timepicker-showresetbutton": "Knop voor leegmaken weergeven? Dit is de enige manier voor de gebruiker om het invoerveld te wissen als directe invoer voor het veld is uitgeschakeld.",
+	"semanticformsinputs-menuselect-structure": "De menustructuur als een ongeordende lijst.",
+	"semanticformsinputs-menuselect-enableinputfield": "Moet de gebruiker het invoerveld rechtstreeks kunnen invullen?"
+}

@@ -1,0 +1,15 @@
+{
+	"@metadata": {
+		"authors": [
+			"Michawiki"
+		]
+	},
+	"semanticformsinputs-desc": "Přidatne zapodawanske typy za [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Forms]",
+	"semanticformsinputs-timepicker-mintime": "Najzažniši čas, kotryž ma so pokazać. Format: hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "Najpózdźiši čas, kotryž ma so pokazać. Format: hh:mm",
+	"semanticformsinputs-timepicker-interval": "Interwal mjez mjeńšinami. Ličba mjez 1 a 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Ma wužiwar móc zapodawanske polo direktnje wupjelnić abo jenož přez datumowy wuběr?",
+	"semanticformsinputs-timepicker-showresetbutton": "Ma so tłóčatko za wróćostajenje pokazać? To je jenička móžnosć za wužiwarja, zo by zapodawanske polo wuprózdnił, jeli je za direktne zapodaće zawrjene.",
+	"semanticformsinputs-menuselect-structure": "Menijowa struktura jako naličenje.",
+	"semanticformsinputs-menuselect-enableinputfield": "Ma wužiwar zapodawanske polo direktnje móc wupjelnić?"
+}

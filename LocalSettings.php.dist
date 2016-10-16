@@ -1,0 +1,182 @@
+<?php
+# This is a template for default config for the SHA2017 public wiki
+# 
+# Please add correct credentials at the places needed, and rename this file
+# LocalSettings.php
+#
+# Maintained by Piele.
+
+# Protect against web entry
+if ( !defined( 'MEDIAWIKI' ) ) {
+	exit;
+}
+##################### CUSTOMIZE THESE SETTINGS TO YOUR NEED ###################
+#Fix that ssl is always on
+$_SERVER['HTTPS'] = 'on';
+$_SERVER['SERVER_PORT'] = 443;
+
+# When doing database update, uncomment this to make DB read only.
+#$wgReadOnly = "Database Mehtenance";
+
+# Some site defaults
+$wgSitename = "SHA Public Wiki";
+$wgMetaNamespace = "SHA_Public_Wiki";
+$wgServer = "https://wiki.sha2017.org";
+#Logo:
+$wgLogo = "$wgResourceBasePath/resources/assets/wiki.png";
+
+## Database settings
+$wgDBtype = "mysql";
+$wgDBserver = "HOSTNAME";
+$wgDBname = "DBNAME";
+$wgDBuser = "USERNAME";
+$wgDBpassword = "PASSWORD";
+$wgDBprefix = "PREFIX_";
+
+$wgEmergencyContact = "wiki-noreply@sha2017.org";
+$wgPasswordSender = "wiki-noreply@sha2017.org";
+
+$wgMemCachedServers = ['localhost:11211'];
+
+# tr -c -d '0123456789abcdef' </dev/urandom | dd bs=64 count=1 2>/dev/null;echo
+$wgSecretKey = "PASTE_OUTPUT_HERE";
+
+# Site upgrade key. Must be set to a string (default provided) to turn on the
+# web installer while LocalSettings.php is in place
+# tr -c -d '0123456789abcdef' </dev/urandom | dd bs=16 count=1 2>/dev/null;echo
+$wgUpgradeKey = "PASTE_OUTPUT_HERE";
+
+$wgUsePrivateIPs = true;                                                        
+$wgUseSquid = true;                                                                                                    
+$wgSquidServersNoPurge = array( '10.209.60.0/24',  );                           
+
+## PART FOR DEBUGGING ##
+//$wgShowExceptionDetails = true;                                                 
+//$wgShowSQLErrors        = true;                                                 
+//$wgDebugComments        = true;                                                 
+//$wgLogQueries           = true;                                                 
+//$wgDebugDumpSql         = true;                                                 
+//$wgDevelopmentWarnings  = true;                                                 
+//$wgDebugProfiling       = true;                                                 
+//$wgDebugTimestamps      = true;                                                 
+//$wgResourceLoaderDebug  = true;                                                 
+//$wgDebugToolbar         = true;                                                 
+
+######################## END OF CUSTOMIZABLE AREA #############################
+
+################ THESE VALUES SHOULD NOT HAVE TO BE CHANGED ###################
+$wgScriptPath = "";
+$wgResourceBasePath = $wgScriptPath;
+
+$sfg24HourTime = true;                                                          
+
+## UPO means: this is also a user preference option
+$wgEnableEmail = true;
+$wgEnableUserEmail = true; # UPO
+$wgEnotifUserTalk = false; # UPO
+$wgEnotifWatchlist = false; # UPO
+$wgEmailAuthentication = true;
+
+# MySQL table options to use during installation or update
+$wgDBTableOptions = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
+
+# Experimental charset support for MySQL 5.0.
+$wgDBmysql5 = false;
+
+## Shared memory settings (we love caching)
+$wgMainCacheType = CACHE_MEMCACHED;
+
+$wgEnableUploads = true;
+#$wgUseImageMagick = true;
+#$wgImageMagickConvertCommand = "/usr/bin/convert";
+
+# InstantCommons allows wiki to use images from https://commons.wikimedia.org
+$wgUseInstantCommons = false;
+
+## If you use ImageMagick (or any other shell command) on a
+## Linux server, this will need to be set to the name of an
+## available UTF-8 locale
+$wgShellLocale = "en_US.utf8";
+
+## Set $wgCacheDirectory to a writable directory on the web server
+## to make your wiki go slightly faster. The directory should not
+## be publically accessible from the web.
+$wgCacheDirectory = "$IP/cache";
+
+# Site language code, should be one of the list in ./languages/data/Names.php
+$wgLanguageCode = "en";
+
+# Changing this will log out all existing sessions.
+$wgAuthenticationTokenVersion = "1";
+
+## For attaching licensing metadata to pages, and displaying an
+## appropriate copyright notice / icon. GNU Free Documentation
+## License and Creative Commons licenses are supported so far.
+$wgRightsPage = ""; # Set to the title of a wiki page that describes your license/copyright
+$wgRightsUrl = "";
+$wgRightsText = "";
+$wgRightsIcon = "";
+
+# Path to the GNU diff3 utility. Used for conflict resolution.
+$wgDiff3 = "/usr/bin/diff3";
+
+## Default skin: you can change the default skin. Use the internal symbolic
+## names, ie 'vector', 'monobook':
+$wgDefaultSkin = "vector";
+
+wfLoadSkin( 'Vector' );
+# End of automatically generated settings.
+# Add more configuration options below.
+
+
+########################## SETTINGS FOR EXTENSIONS ############################
+//require_once "$IP/extensions/SimpleSamlAuth/SimpleSamlAuth.php"; 
+//$wgSamlRequirement = SAML_OPTIONAL; 
+//$wgSamlCreateUser = true;
+//$wgSamlUsernameAttr = 'uid';
+//$wgSamlRealnameAttr = 'cn';
+//$wgSamlMailAttr = 'mail';
+//$wgSamlSspRoot = '/var/www/simplesaml';
+//$wgSamlAuthSource = 'default-sp';
+//$wgSamlPostLogoutRedirect = NULL;
+
+wfLoadExtension( 'ParserFunctions' );
+$wgPFEnableStringFunctions = true;
+$wgGroupPermissions['*']['edit'] = false;
+
+$wgEnableDnsBlacklist = true;
+$wgDnsBlacklistUrls = array( 'xbl.spamhaus.org', 'dnsbl.tornevall.org' );
+wfLoadExtension( 'Nuke' );
+wfLoadExtension( 'ConfirmEdit' );
+wfLoadExtension( 'ConfirmEdit/QuestyCaptcha' );
+
+$wgCaptchaClass = 'QuestyCaptcha';
+$wgCaptchaQuestions[] = array( 'question' => "What is the year the event is in?", 'answer' => "2017");
+
+$wgCaptchaTriggers['edit']          = false;
+$wgCaptchaTriggers['create']        = false;
+$wgCaptchaTriggers['addurl']        = false;
+$wgCaptchaTriggers['createaccount'] = true;
+$wgCaptchaTriggers['badlogin']      = true; 
+
+require_once "$IP/extensions/UserMerge/UserMerge.php";
+$wgGroupPermissions['bureaucrat']['usermerge'] = true;
+
+// optional: default is array( 'sysop' )
+//$wgUserMergeProtectedGroups = array( 'groupname' );
+                                                                                
+enableSemantics( 'sha2017.org' );                                                
+wfLoadExtension( 'SemanticForms' );                                             
+include_once "$IP/extensions/SemanticFormsInputs/SemanticFormsInputs.php";      
+
+require_once "$IP/extensions/TextExtracts/TextExtracts.php";                    
+require_once "$IP/extensions/PageImages/PageImages.php";                        
+require_once "$IP/extensions/Popups/Popups.php";                                
+$wgPopupsBetaFeature = true;                                                    
+                                                                                
+wfLoadExtension( 'WikiEditor' );                                                
+$wgDefaultUserOptions['usebetatoolbar'] = 1;                                    
+$wgDefaultUserOptions['usebetatoolbar-cgd'] = 1;                                
+$wgDefaultUserOptions['wikieditor-preview'] = 1;                                
+$wgDefaultUserOptions['wikieditor-publish'] = 1;                                
+

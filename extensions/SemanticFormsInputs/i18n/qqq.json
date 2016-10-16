@@ -1,0 +1,22 @@
+{
+	"@metadata": {
+		"authors": [
+			"EugeneZelenko",
+			"F.trott",
+			"Kghbln",
+			"Shirayuki",
+			"The Evil IP address",
+			"Umherirrender",
+			"Raymond",
+			"아라"
+		]
+	},
+	"semanticformsinputs-desc": "{{desc|name=Semantic Forms Inputs|url=https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms_Inputs}}",
+	"semanticformsinputs-timepicker-mintime": "This is a help text for the [[Special:CreateForm]] page.",
+	"semanticformsinputs-timepicker-maxtime": "This is a help text for the [[Special:CreateForm]] page.",
+	"semanticformsinputs-timepicker-interval": "This is a help text for the [[Special:CreateForm]] page.",
+	"semanticformsinputs-timepicker-enableinputfield": "This is a help text for the [[Special:CreateForm]] page.",
+	"semanticformsinputs-timepicker-showresetbutton": "This is a help text for the [[Special:CreateForm]] page.",
+	"semanticformsinputs-menuselect-structure": "This is a help text for the [[Special:CreateForm]] page.",
+	"semanticformsinputs-menuselect-enableinputfield": "This is a help text for the [[Special:CreateForm]] page."
+}

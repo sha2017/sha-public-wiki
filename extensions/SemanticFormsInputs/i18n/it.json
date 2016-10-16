@@ -1,0 +1,16 @@
+{
+	"@metadata": {
+		"authors": [
+			"Beta16",
+			"F. Cosoleto"
+		]
+	},
+	"semanticformsinputs-desc": "Ulteriori tipi di input per [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Forms]",
+	"semanticformsinputs-timepicker-mintime": "Il primo orario da mostrare. Formato hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "L'ultimo orario da mostrare. Formato hh:mm",
+	"semanticformsinputs-timepicker-interval": "Intervallo in minuti. Numero compreso tra 1 e 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "L'utente dovrebbe essere in grado di immettere manualmente la data o dovrebbe farlo solo attraverso la selezione?",
+	"semanticformsinputs-timepicker-showresetbutton": "Dovrebbe essere mostrato un pulsante di reset? Questo sarebbe il solo modo che avrebbe l'utente di cancellare il campo se l'immissione manuale è disabilitata.",
+	"semanticformsinputs-menuselect-structure": "La struttura del menu come una lista non ordinata.",
+	"semanticformsinputs-menuselect-enableinputfield": "L'utente dovrebbe essere in grado di immettere manualmente il valore?"
+}

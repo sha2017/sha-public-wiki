@@ -1,0 +1,14 @@
+{
+	"@metadata": {
+		"authors": [
+			"Robby",
+			"Soued031"
+		]
+	},
+	"semanticformsinputs-desc": "Zousätzlech Manéieren fir d'Eraginn fir [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Formulairen]",
+	"semanticformsinputs-timepicker-mintime": "Déi fréisten Zäit déi gewise gëtt. Format: hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "Déi spéitsten Zäit déi gewise gëtt: Format: hh:mm",
+	"semanticformsinputs-timepicker-interval": "Intervalle tëscht de Minutten. Zuel tëscht 1 a 60.",
+	"semanticformsinputs-menuselect-structure": "D'Struktur vum Menü als net zortéiert Lëscht.",
+	"semanticformsinputs-menuselect-enableinputfield": "Soll et dem Benotzer méiglech si fir d'Feld direkt auszefëllen?"
+}

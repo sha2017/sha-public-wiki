@@ -1,0 +1,20 @@
+{
+	"@metadata": {
+		"authors": [
+			"Eleferen",
+			"F.trott",
+			"MaxSem",
+			"Pastakhov",
+			"Александр Сигачёв",
+			"Сrower"
+		]
+	},
+	"semanticformsinputs-desc": "Дополнительные входящие типы для [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Семантических Форм]",
+	"semanticformsinputs-timepicker-mintime": "Самое раннее время, которое будет отображено. Формат: чч:мм",
+	"semanticformsinputs-timepicker-maxtime": "Самое позднее время, которое будет отображено. Формат: чч:мм",
+	"semanticformsinputs-timepicker-interval": "Интервал между минутами. Число от 1 до 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Пользователь может заполнить поле ввода напрямую или только через поле выбора даты?",
+	"semanticformsinputs-timepicker-showresetbutton": "Должна ли отображаться кнопка сброса? Для пользователя это единственная возможность очистить поле ввода, если отключен непосредственный ввод данных.",
+	"semanticformsinputs-menuselect-structure": "Структура меню в виде неупорядоченного списка.",
+	"semanticformsinputs-menuselect-enableinputfield": "Позволить непосредственное заполнение поля ввода пользователем?"
+}

@@ -1,0 +1,15 @@
+{
+	"@metadata": {
+		"authors": [
+			"Xuacu"
+		]
+	},
+	"semanticformsinputs-desc": "Más tribes d'entrada pa los [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Formularios Semánticos]",
+	"semanticformsinputs-timepicker-mintime": "La primera hora a amosar. Formatu: hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "La última hora a amosar. Formatu: hh:mm",
+	"semanticformsinputs-timepicker-interval": "Intervalu ente los minutos. Númberu ente 1 y 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "¿Tendría de poder l'usuariu rellenar el campu d'entrada direutamente o sólo col selector de datos?",
+	"semanticformsinputs-timepicker-showresetbutton": "¿Tien d'apaecer un botón de reestablecimientu? Esta ye la única manera que tien l'usuariu de llimpiar el campu d'entrada si tien la entrada direuta desactivada.",
+	"semanticformsinputs-menuselect-structure": "La estructura del menú como llista ensin ordenar.",
+	"semanticformsinputs-menuselect-enableinputfield": "¿Tendría de poder l'usuariu rellenar el campu d'entrada direutamente?"
+}

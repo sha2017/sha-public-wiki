@@ -1,0 +1,15 @@
+{
+	"@metadata": {
+		"authors": [
+			"AnakngAraw"
+		]
+	},
+	"semanticformsinputs-desc": "Karagdagang mga tipo ng pagpasok para sa [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Anyong Semantiko]",
+	"semanticformsinputs-timepicker-mintime": "Ang pinaka maagang oras na ipapakita. Anyo: oo:mm",
+	"semanticformsinputs-timepicker-maxtime": "Ang pinaka huling oras na ipapakita: Anyo: oo:mm",
+	"semanticformsinputs-timepicker-interval": "Agwat sa pagitan ng mga minuto. Bilang sa pagitan ng 1 at 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Dapat ba na ang tagagamit ay tuwirang makakagawa ng pagpupuno sa hanay ng pagpapasok o sa pamamagitan lamang ng pampili ng petsa?",
+	"semanticformsinputs-timepicker-showresetbutton": "Dapat bang ipakita ang isang pindutan ng muling pagtatakda? Ito lamang ang paraan para sa tagagamit upang mabura ang hanay ng pagpapasok kung hindi ito pinagagana para sa tuwirang pagpapasok.",
+	"semanticformsinputs-menuselect-structure": "Ang kayarian ng menu bilang isang listahang walang pagkakasunud-sunod.",
+	"semanticformsinputs-menuselect-enableinputfield": "Dapat ba na ang tagagamit ay tuwirang makakagawa ng pagpupuno sa hanay ng pagpapasok?"
+}

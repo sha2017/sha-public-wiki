@@ -1,0 +1,15 @@
+{
+	"@metadata": {
+		"authors": [
+			"McDutchie"
+		]
+	},
+	"semanticformsinputs-desc": "Additional typos de entrata pro [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Formularios Semantic]",
+	"semanticformsinputs-timepicker-mintime": "Le prime hora a monstrar. Formato: hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "Le ultime hora a monstrar. Formato: hh:mm",
+	"semanticformsinputs-timepicker-interval": "Intervallo inter minutas. Numero inter 1 e 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Debe le usator poter plenar le campo de entrata directemente o solmente via le selector de data?",
+	"semanticformsinputs-timepicker-showresetbutton": "Monstrar un button de reinitialisation? Isto es le sol maniera in que le usator pote rader le campo de entrata si illo es disactivate pro entrata directe.",
+	"semanticformsinputs-menuselect-structure": "Le structura de menu como un lista non ordinate.",
+	"semanticformsinputs-menuselect-enableinputfield": "Debe le usator poter plenar le campo de entrata directemente?"
+}

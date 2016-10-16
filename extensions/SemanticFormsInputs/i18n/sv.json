@@ -1,0 +1,15 @@
+{
+	"@metadata": {
+		"authors": [
+			"Martinwiss"
+		]
+	},
+	"semanticformsinputs-desc": "Ännu mer indata-typer för [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Forms]",
+	"semanticformsinputs-timepicker-mintime": "Den tidigaste tiden som visas. Formatet: tt:mm",
+	"semanticformsinputs-timepicker-maxtime": "Den senaste tiden som visas: Formatet: tt:mm",
+	"semanticformsinputs-timepicker-interval": "Intervall mellan minuter. Nummer mellan 1 och 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Ska användaren kunna fylla i indata-fältet direkt, eller enbart med hjälp av datumväljaren.",
+	"semanticformsinputs-timepicker-showresetbutton": "Ska en återställningsknapp visas? Det här är enda sättet att radera innehållet i indata-fältet om det inte är tillåtet att skriva i det.",
+	"semanticformsinputs-menuselect-structure": "Menystrukturen är en onumrerad lista.",
+	"semanticformsinputs-menuselect-enableinputfield": "Ska användaren kunna fylla i indata-fältet direkt?"
+}

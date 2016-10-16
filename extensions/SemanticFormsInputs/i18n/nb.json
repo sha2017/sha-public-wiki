@@ -1,0 +1,16 @@
+{
+	"@metadata": {
+		"authors": [
+			"Event",
+			"Nghtwlkr"
+		]
+	},
+	"semanticformsinputs-desc": "Ekstra inndatatyper for [https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Semantic_Forms Semantic Forms]",
+	"semanticformsinputs-timepicker-mintime": "Tidligste tidspunkt som vises. Format: hh:mm",
+	"semanticformsinputs-timepicker-maxtime": "Seneste tidspunkt som vises. Format: hh:mm",
+	"semanticformsinputs-timepicker-interval": "Intervall mellom minutter. Tall mellom 1 og 60.",
+	"semanticformsinputs-timepicker-enableinputfield": "Skal brukeren kunne fylle ut datofeltet direkte eller bare via datovelgeren?",
+	"semanticformsinputs-timepicker-showresetbutton": "Skal en tilbakestillingsknapp vises? Dette vil da være eneste muligheten for en bruker å kunne slette inndatafeltet hvis det er blokkert for direkte innskriving.",
+	"semanticformsinputs-menuselect-structure": "Menystrukturen som en unummerert liste.",
+	"semanticformsinputs-menuselect-enableinputfield": "Skal brukeren kunne fylle ut inndatafeltet direkte?"
+}
