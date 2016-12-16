@@ -118,13 +118,17 @@ class GlobeCoordinateFormatterTest extends ValueFormatterTestBase {
 		$formatter = new GlobeCoordinateFormatter( $options );
 
 		$formatted = $formatter->format( new GlobeCoordinateValue( new LatLongValue( 1.2, 3.4 ), null ) );
-		$this->assertEquals( '1.2, 3.4', $formatted );
+		$this->assertSame( '1.2, 3.4', $formatted );
 	}
 
 	/**
 	 * @dataProvider validProvider
 	 */
-	public function testFormatterRoundTrip( GlobeCoordinateValue $coord, $expectedValue, FormatterOptions $options )  {
+	public function testFormatterRoundTrip(
+		GlobeCoordinateValue $coord,
+		$expectedValue,
+		FormatterOptions $options
+	) {
 		$formatter = new GlobeCoordinateFormatter( $options );
 
 		$parser = new GlobeCoordinateParser(
@@ -137,7 +141,7 @@ class GlobeCoordinateFormatterTest extends ValueFormatterTestBase {
 		// NOTE: $parsed may be != $coord, because of rounding, so we can't compare directly.
 		$formattedParsed = $formatter->format( $parsed );
 
-		$this->assertEquals( $formatted, $formattedParsed );
+		$this->assertSame( $formatted, $formattedParsed );
 	}
 
 }

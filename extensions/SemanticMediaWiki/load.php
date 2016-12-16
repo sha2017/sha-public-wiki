@@ -20,9 +20,6 @@ $GLOBALS['wgExtensionFunctions'][] = function() {
 class SemanticMediaWiki {
 
 	/**
-	 * As soon as Composer is autoloading this file, start the init process for some
-	 * components.
-	 *
 	 * @since 2.4
 	 */
 	public static function initExtension() {
@@ -31,7 +28,7 @@ class SemanticMediaWiki {
 			include_once __DIR__ . '/vendor/autoload.php';
 		}
 
-		define( 'SMW_VERSION', '2.4.1' );
+		define( 'SMW_VERSION', '2.4.4' );
 
 		// Registration of the extension credits, see Special:Version.
 		$GLOBALS['wgExtensionCredits']['semantic'][] = array(
@@ -60,7 +57,7 @@ class SemanticMediaWiki {
 		require_once __DIR__ . '/src/Defines.php';
 
 		// Temporary measure to ease Composer/MW 1.22 migration
-		require_once __DIR__ . '/includes/NamespaceManager.php';
+		require_once __DIR__ . '/src/NamespaceManager.php';
 
 		// Load global functions
 		require_once __DIR__ . '/src/GlobalFunctions.php';
@@ -68,11 +65,29 @@ class SemanticMediaWiki {
 		// Load default settings
 		require_once __DIR__ . '/DefaultSettings.php';
 
-		// Because of MW 1.19 we need to register message files here
 		$GLOBALS['wgMessagesDirs']['SemanticMediaWiki'] = $GLOBALS['smwgIP'] . 'i18n';
 		$GLOBALS['wgExtensionMessagesFiles']['SemanticMediaWiki'] = $GLOBALS['smwgIP'] . 'languages/SMW_Messages.php';
 		$GLOBALS['wgExtensionMessagesFiles']['SemanticMediaWikiAlias'] = $GLOBALS['smwgIP'] . 'languages/SMW_Aliases.php';
 		$GLOBALS['wgExtensionMessagesFiles']['SemanticMediaWikiMagic'] = $GLOBALS['smwgIP'] . 'languages/SMW_Magic.php';
+
+		self::onCanonicalNamespaces();
+	}
+
+	/**
+	 * CanonicalNamespaces initialization
+	 *
+	 * @note According to T104954 registration via wgExtensionFunctions can be
+	 * too late and should happen before that in case RequestContext::getLanguage
+	 * invokes Language::getNamespaces before the `wgExtensionFunctions` execution.
+	 *
+	 * @see https://phabricator.wikimedia.org/T104954#2391291
+	 * @see https://www.mediawiki.org/wiki/Manual:Hooks/CanonicalNamespaces
+	 * @Bug 34383
+	 *
+	 * @since 2.5
+	 */
+	public static function onCanonicalNamespaces() {
+		$GLOBALS['wgHooks']['CanonicalNamespaces'][] = 'SMW\NamespaceManager::initCanonicalNamespaces';
 	}
 
 	/**
@@ -115,13 +130,17 @@ class SemanticMediaWiki {
 	 *
 	 * @return array
 	 */
-	public static function getStoreVersion() {
+	public static function getEnvironment() {
 
 		$store = '';
 
 		if ( isset( $GLOBALS['smwgDefaultStore'] ) ) {
-			$store = $GLOBALS['smwgDefaultStore'] . ( strpos( $GLOBALS['smwgDefaultStore'], 'SQL' ) ? '' : ' ['. $GLOBALS['smwgSparqlDatabaseConnector'] .']' );
+			$store = $GLOBALS['smwgDefaultStore'];
 		};
+
+		if ( strpos( strtolower( $store ), 'sparql' ) ) {
+			$store .= '::' . strtolower( $GLOBALS['smwgSparqlDatabaseConnector'] );
+		}
 
 		return array(
 			'store' => $store,

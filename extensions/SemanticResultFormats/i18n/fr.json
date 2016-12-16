@@ -18,7 +18,9 @@
 			"Urhixidur",
 			"Verdy p",
 			"SnowedEarth",
-			"Wladek92"
+			"Wladek92",
+			"Macofe",
+			"Yasten"
 		]
 	},
 	"srf-desc": "Formats  additionnels d'affichage de résultat pour les requêtes de Semantic MediaWiki",
@@ -58,7 +60,8 @@
 	"srf-ui-widgets-label-parameter-limit": "Limiter le paramètre",
 	"srf-error-option-mix": "L'option ($1) n'est pas disponible",
 	"srf-error-option-link-all": "L'option ($1) nécessite le paramètre \"link\" pour être mise à \"all\"",
-	"srf-error-missing-layout": "Mise en page manquante",
+	"srf-error-missing-layout": "Le diagramme ou le graphique ne peut être affiché car la mise en page manque.",
+	"srf-error-jqplot-stackseries-data-length": "Le diagramme ou le graphique ne peut être affiché car chaque barre ou ligne n’a pas le même nombre d’éléments.",
 	"srf-warn-empy-chart": "Le graphique est vide en raison de données manquantes",
 	"srfc_previousmonth": "Mois précédent",
 	"srfc_nextmonth": "Mois suivant",
@@ -245,6 +248,7 @@
 	"srf-paramdesc-filtered-calendar-title": "L'imprimé contenant le titre d'un événement. Ne peux pas être utilisé en même temps qu'un modèle de titre.",
 	"srf-paramdesc-filtered-calendar-title-template": "Un modèle utilisé pour mettre en forme le titre de l'événement dans le calendrier",
 	"srf-filtered-selectorlabel-list": "Liste",
+	"srf-filtered-selectorlabel-table": "Tableau",
 	"srf-filtered-selectorlabel-calendar": "Calendrier",
 	"srf-printername-d3chart": "Graphique D3",
 	"srf-printername-timeseries": "Graphique de séries chronologiques",
@@ -298,5 +302,7 @@
 	"srf-ui-mediaplayer-label-full-screen": "Plein écran",
 	"srf-ui-mediaplayer-label-restore-screen": "Rétablir l'écran",
 	"srf-excel-link": "Excel",
-	"srf-excel-missing-phpexcel": "Impossible d’xporter vers MS-Excel car l’extension [https://www.mediawiki.org/wiki/Extension:PHPExcel PHPExcel] n’est pas installée."
+	"srf-excel-missing-phpexcel": "Impossible d’xporter vers MS-Excel car l’extension [https://www.mediawiki.org/wiki/Extension:PHPExcel PHPExcel] n’est pas installée.",
+	"srf-paramdesc-excel-filename": "Nom cible du fichier téléchargé correspondant au fichier généré",
+	"srf-paramdesc-excel-templatefile": "Le nom d'un fichier Excel à partir de l'espace de noms \"File\" utilisé pour la mise en forme du fichier généré"
 }

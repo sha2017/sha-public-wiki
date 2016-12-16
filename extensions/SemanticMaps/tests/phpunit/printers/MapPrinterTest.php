@@ -2,6 +2,7 @@
 
 namespace SM\Test;
 
+use SMMapPrinter;
 use SMW\Test\QueryPrinterRegistryTestCase;
 
 /**
@@ -19,7 +20,7 @@ class MapPrinterTest extends QueryPrinterRegistryTestCase {
 	 * @return array
 	 */
 	public function getFormats() {
-		return array( 'map' );
+		return [ 'map' ];
 	}
 
 	/**
@@ -30,7 +31,7 @@ class MapPrinterTest extends QueryPrinterRegistryTestCase {
 	 * @return string
 	 */
 	public function getClass() {
-		return '\SMMapPrinter';
+		return SMMapPrinter::class;
 	}
 
 }

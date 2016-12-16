@@ -54,6 +54,7 @@
 	"srf-error-option-mix": "This is an error message. Parameters:\n* $1 is a fixed entity name (name of the option) that cannot and should not be translated.",
 	"srf-error-option-link-all": "{{doc-important|Do not translate the parameter \"link\" and its possible value \"all\".}}\nThis is an error message. Parameters:\n* $1 is a fixed entitity name that cannot and should not be translated.",
 	"srf-error-missing-layout": "This is an error message.",
+	"srf-error-jqplot-stackseries-data-length": "This is an error message.",
 	"srf-warn-empy-chart": "This is an informatory message.",
 	"srfc_previousmonth": "A label describing a navigation control component.",
 	"srfc_nextmonth": "A label describing a navigation control component.",
@@ -242,6 +243,7 @@
 	"srf-paramdesc-filtered-calendar-title": "{{doc-paramdesc|calendar view title}}",
 	"srf-paramdesc-filtered-calendar-title-template": "{{doc-paramdesc|calendar view title template}}",
 	"srf-filtered-selectorlabel-list": "The label for the tab that selects the \"list\" view\n{{Identical|List}}",
+	"srf-filtered-selectorlabel-table": "{{Identical|Table}}",
 	"srf-filtered-selectorlabel-calendar": "The label for the tab that selects the \"calendar\" view",
 	"srf-filtered-firstdayofweek": "{{optional}}\n0 - sunday, 1 - monday...",
 	"srf-printername-d3chart": "{{doc-smwformat|d3chart}}\nD3 is the name of the library used to generate the charts.",
@@ -305,5 +307,7 @@
 	"srf-ui-mediaplayer-label-full-screen": "{{Doc-smw-ui-label-media|full-screen}}\n{{Identical|Full screen}}",
 	"srf-ui-mediaplayer-label-restore-screen": "{{Doc-smw-ui-label-media|restore-screen}}",
 	"srf-excel-link": "{{doc-smw-link}}",
-	"srf-excel-missing-phpexcel": "This is an error message."
+	"srf-excel-missing-phpexcel": "This is an error message.",
+	"srf-paramdesc-excel-filename": "{{doc-paramdesc|filename}}",
+	"srf-paramdesc-excel-templatefile": "{{doc-paramdesc|templatefile}}"
 }

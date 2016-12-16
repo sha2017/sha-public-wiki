@@ -20,11 +20,11 @@ class SMQueryHandler {
 	 *
 	 * @var array
 	 */
-	protected $geoShapes = array(
-		'lines' => array(),
-		'locations' => array(),
-		'polygons' => array()
-	);
+	protected $geoShapes = [
+		'lines' => [],
+		'locations' => [],
+		'polygons' => []
+	];
 
 	/**
 	 * The template to use for the text, or false if there is none.
@@ -315,8 +315,8 @@ class SMQueryHandler {
 	 * @param SMWResultArray[] $row
 	 */
 	protected function handleResultRow( array $row ) {
-		$locations = array();
-		$properties = array();
+		$locations = [];
+		$properties = [];
 
 		$title = '';
 		$text = '';
@@ -338,11 +338,18 @@ class SMQueryHandler {
 					$dataItem = $dataValue->getDataItem();
 					$polyHandler = new PolygonHandler ( $dataItem->getString() );
 					$this->geoShapes[ $polyHandler->getGeoType() ][] = $polyHandler->shapeFromText();
+				} else if ( strpos( $dataValue->getTypeID(), '_rec' ) !== false ) {
+					foreach ( $dataValue->getDataItems() as $dataItem ) {
+						if ( $dataItem instanceof \SMWDIGeoCoord ) {
+							$location = Location::newFromLatLon( $dataItem->getLatitude(), $dataItem->getLongitude() );
+							$locations[] = $location;
+						}
+					}
 				}
 				else if ( $dataValue->getTypeID() != '_geo' && $i != 0 && !$this->isHeadersHide()) {
 					$properties[] = $this->handleResultProperty( $dataValue, $printRequest );
 				}
-				else if ( $printRequest->getMode() == SMWPrintRequest::PRINT_PROP && $printRequest->getTypeID() == '_geo' ) {
+				else if ( $printRequest->getMode() == SMWPrintRequest::PRINT_PROP && $printRequest->getTypeID() == '_geo' || $dataValue->getTypeID() == '_geo' ) {
 					$dataItem = $dataValue->getDataItem();
 
 					$location = Location::newFromLatLon( $dataItem->getLatitude(), $dataItem->getLongitude() );
@@ -390,7 +397,7 @@ class SMQueryHandler {
 			}else if ( !$this->titleLinkSeparate && $this->linkAbsolute ) {
 				$text = Html::element(
 					'a',
-					array( 'href' => $object->getTitle()->getFullUrl() ),
+					[ 'href' => $object->getTitle()->getFullUrl() ],
 					$this->hideNamespace ? $object->getText() : $object->getTitle()->getFullText()
 				);
 			}
@@ -414,13 +421,13 @@ class SMQueryHandler {
 				}
 				$text .= Html::element(
 					'a',
-					array( 'href' => $object->getTitle()->getFullUrl() ),
+					[ 'href' => $object->getTitle()->getFullUrl() ],
 					$txt
 				);
 			}
 		}
 
-		return array( $title, $text );
+		return [ $title, $text ];
 	}
 
 	protected function showArticleLink(){
@@ -457,7 +464,7 @@ class SMQueryHandler {
 			if ($this->isHeadersShow() && $t instanceof Title && $t->exists() ) {
 				$propertyName = $propertyName = Html::element(
 					'a',
-					array( 'href' => $t->getFullUrl() ),
+					[ 'href' => $t->getFullUrl() ],
 					$printRequest->getHTMLText( null )
 				);
 			}
@@ -484,7 +491,7 @@ class SMQueryHandler {
 			if ( $hasPage ) {
 				$propertyValue = Html::element(
 					'a',
-					array( 'href' => $t->getFullUrl() ),
+					[ 'href' => $t->getFullUrl() ],
 					$object->getLongText( $this->outputmode, null )
 				);
 			}
@@ -544,13 +551,13 @@ class SMQueryHandler {
 		foreach ( $locations as &$location ) {
 			if ( $this->template ) {
 				$segments = array_merge(
-					array(
+					[
 						$this->template,
 						'title=' . $titleOutput,
 						'latitude=' . $location->getCoordinates()->getLatitude(),
 						'longitude=' . $location->getCoordinates()->getLongitude(),
 						'userparam=' . $this->userParam
-					),
+					],
 					$properties
 				);
 
@@ -576,7 +583,7 @@ class SMQueryHandler {
 	 */
 	protected function getLocationIcon( array $row ) {
 		$icon = '';
-		$legend_labels = array();
+		$legend_labels = [];
 
 		//Check for activeicon parameter
 

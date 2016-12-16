@@ -7,7 +7,8 @@
 			"Rcdeboer",
 			"SPQRobin",
 			"Siebrand",
-			"Southparkfan"
+			"Southparkfan",
+			"Sjoerddebruin"
 		]
 	},
 	"srf-desc": "Extra resultaatopmaken voor zoekopdrachten van Semantic MediaWiki",
@@ -77,7 +78,7 @@
 	"srf-printername-jqplotchart": "jqPlotgrafiek",
 	"srf-printername-jqplotseries": "jqPlotserie",
 	"srf_paramdesc_chartheight": "Geef de hoogte op (in pixels) van een kaart of grafiek",
-	"srf_paramdesc_chartwidth": "Geef de breedte op (in pixels) van een kaart of grafiek",
+	"srf_paramdesc_chartwidth": "Geef de breedte op (in pixels of procent) van een kaart of grafiek",
 	"srf_paramdesc_charttitle": "Grafiektitel",
 	"srf_paramdesc_barcolor": "De kleur van de balken",
 	"srf_paramdesc_bardirection": "Geeft de richting van een grafiek aan",
@@ -168,7 +169,7 @@
 	"srf_printername_ultree": "Ongenummerde lijst",
 	"srf_printername_oltree": "Genummerde lijst",
 	"srf-noparentprop": "Er is geen bovenliggende eigenschap opgegeven. De boom kan niet opgebouwd worden zonder een bovenliggende eigenschap.",
-	"srf-rootinvalid": "$1 is geen geldige paginatitel.",
+	"srf-rootinvalid": "$1 is geen geldige paginanaam.",
 	"srf-paramdesc-parent": "De eigenschap die de bovenliggende pagina bevat",
 	"srf-printername-slideshow": "Diapresentatie",
 	"srf-paramdesc-delay": "De vertraging tussen dia's in seconden",
@@ -184,6 +185,7 @@
 	"srf-paramdesc-filtered-list-outrotemplate": "De naam van een sjabloon om na de resultaten van de zoekopdracht weer te geven, als er resultaten zijn.",
 	"srf-paramdesc-filtered-calendar-title-template": "Een sjabloon dat wordt gebruikt om de naam van een gebeurtenis in de kalender weer te geven",
 	"srf-filtered-selectorlabel-list": "Lijst",
+	"srf-filtered-selectorlabel-table": "Tabel",
 	"srf-filtered-selectorlabel-calendar": "Kalender",
 	"srf-printername-d3chart": "D3-grafiek",
 	"srf-printername-timeseries": "Tijdseriegrafiek",

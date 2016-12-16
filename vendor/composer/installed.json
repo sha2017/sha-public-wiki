@@ -207,12 +207,12 @@
         "version_normalized": "0.2.2.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/wmde/Assert.git",
+            "url": "https://github.com/wikimedia/Assert.git",
             "reference": "2da55927525975f8d52825fc3ee02e5e36f5036c"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/wmde/Assert/zipball/2da55927525975f8d52825fc3ee02e5e36f5036c",
+            "url": "https://api.github.com/repos/wikimedia/Assert/zipball/2da55927525975f8d52825fc3ee02e5e36f5036c",
             "reference": "2da55927525975f8d52825fc3ee02e5e36f5036c",
             "shasum": ""
         },
@@ -1346,139 +1346,6 @@
         ]
     },
     {
-        "name": "param-processor/param-processor",
-        "version": "1.3.0",
-        "version_normalized": "1.3.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/JeroenDeDauw/ParamProcessor.git",
-            "reference": "39700858d926a4d5ba61fee269c8f4160edd0dfe"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/JeroenDeDauw/ParamProcessor/zipball/39700858d926a4d5ba61fee269c8f4160edd0dfe",
-            "reference": "39700858d926a4d5ba61fee269c8f4160edd0dfe",
-            "shasum": ""
-        },
-        "require": {
-            "data-values/common": "~0.3.0|~0.2.2",
-            "data-values/data-values": "~1.0|~0.1.1",
-            "data-values/interfaces": "~0.2.0|~0.1.4",
-            "data-values/validators": "~0.1.1",
-            "php": ">=5.5.0"
-        },
-        "require-dev": {
-            "ockcyp/covers-validator": "~0.4",
-            "phpmd/phpmd": "~2.1",
-            "phpunit/phpunit": "~5.4",
-            "squizlabs/php_codesniffer": "~2.1"
-        },
-        "time": "2016-07-15 11:53:19",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.3.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "ParamProcessor\\": "src"
-            },
-            "classmap": [
-                "tests/phpunit/Definitions/ParamDefinitionTest.php",
-                "tests/phpunit/Definitions/NumericParamTest.php"
-            ],
-            "files": [
-                "DefaultConfig.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Developer"
-            }
-        ],
-        "description": "Parameter processing library",
-        "homepage": "https://github.com/JeroenDeDauw/ParamProcessor",
-        "keywords": [
-            "ParamProcessor",
-            "SMW",
-            "Semantic MediaWiki",
-            "mediawiki",
-            "validator"
-        ]
-    },
-    {
-        "name": "mediawiki/validator",
-        "version": "2.0.6",
-        "version_normalized": "2.0.6.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/JeroenDeDauw/Validator.git",
-            "reference": "860b673fccf25863bdedbe5ae733f7edc7711a3e"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/JeroenDeDauw/Validator/zipball/860b673fccf25863bdedbe5ae733f7edc7711a3e",
-            "reference": "860b673fccf25863bdedbe5ae733f7edc7711a3e",
-            "shasum": ""
-        },
-        "require": {
-            "param-processor/param-processor": "~1.1",
-            "php": ">=5.3.0"
-        },
-        "require-dev": {
-            "data-values/common": "~0.3.1"
-        },
-        "time": "2016-07-01 18:07:25",
-        "type": "mediawiki-extension",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "2.0.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "files": [
-                "Validator.php"
-            ],
-            "psr-4": {
-                "ParamProcessor\\": "src/ParamProcessor/"
-            },
-            "classmap": [
-                "src/legacy/"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Developer"
-            }
-        ],
-        "description": "MediaWiki wrapper for the ParamProcessor library",
-        "homepage": "https://github.com/JeroenDeDauw/Validator",
-        "keywords": [
-            "ParamProcessor",
-            "SMW",
-            "Semantic MediaWiki",
-            "mediawiki",
-            "validator"
-        ]
-    },
-    {
         "name": "onoi/callback-container",
         "version": "1.1.0",
         "version_normalized": "1.1.0.0",
@@ -1882,305 +1749,6 @@
         ]
     },
     {
-        "name": "mediawiki/semantic-media-wiki",
-        "version": "2.4.1",
-        "version_normalized": "2.4.1.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/SemanticMediaWiki/SemanticMediaWiki.git",
-            "reference": "af782574b907a42e42ef7645d639f16c0d44364a"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMediaWiki/zipball/af782574b907a42e42ef7645d639f16c0d44364a",
-            "reference": "af782574b907a42e42ef7645d639f16c0d44364a",
-            "shasum": ""
-        },
-        "require": {
-            "composer/installers": "1.*,>=1.0.1",
-            "ext-mbstring": "*",
-            "mediawiki/parser-hooks": "~1.4",
-            "onoi/blob-store": "~1.2",
-            "onoi/cache": "~1.2",
-            "onoi/callback-container": "~1.0",
-            "onoi/event-dispatcher": "~1.0",
-            "onoi/http-request": "~1.1",
-            "onoi/message-reporter": "~1.0",
-            "param-processor/param-processor": "~1.2",
-            "php": ">=5.3.0",
-            "serialization/serialization": "~3.2"
-        },
-        "replace": {
-            "mediawiki/semantic-mediawiki": "*"
-        },
-        "require-dev": {
-            "phpmd/phpmd": "~2.1",
-            "squizlabs/php_codesniffer": "~2.1"
-        },
-        "suggest": {
-            "mediawiki/semantic-forms": "Easy creation of forms to add semantic data",
-            "mediawiki/semantic-result-formats": "Additional result formats for SMW queries"
-        },
-        "time": "2016-07-12 10:28:58",
-        "type": "mediawiki-extension",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "2.4.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "SMW\\": "src/",
-                "SMW\\Maintenance\\": "maintenance/"
-            },
-            "files": [
-                "src/Aliases.php",
-                "src/Defines.php",
-                "src/GlobalFunctions.php",
-                "DefaultSettings.php",
-                "SemanticMediaWiki.php"
-            ],
-            "classmap": [
-                "includes/",
-                "languages/SMW_Language.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Markus Krötzsch",
-                "homepage": "http://korrekt.org",
-                "role": "Original author"
-            },
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Core developer"
-            },
-            {
-                "name": "James Hong Kong",
-                "homepage": "https://www.semantic-mediawiki.org/wiki/User:MWJames",
-                "role": "Core developer"
-            }
-        ],
-        "description": "MediaWiki extension that lets you store and query structured data within wiki pages",
-        "homepage": "https://www.semantic-mediawiki.org/wiki/",
-        "keywords": [
-            "SMW",
-            "Semantic MediaWiki",
-            "mediawiki",
-            "wiki"
-        ]
-    },
-    {
-        "name": "data-values/geo",
-        "version": "1.1.7",
-        "version_normalized": "1.1.7.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/DataValues/Geo.git",
-            "reference": "31bc304c5b525f59fa7db047adc583d6b86e3ad9"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/DataValues/Geo/zipball/31bc304c5b525f59fa7db047adc583d6b86e3ad9",
-            "reference": "31bc304c5b525f59fa7db047adc583d6b86e3ad9",
-            "shasum": ""
-        },
-        "require": {
-            "data-values/common": "~0.3.0|~0.2.0",
-            "data-values/data-values": "~1.0|~0.1",
-            "data-values/interfaces": "~0.2.0|~0.1.5",
-            "php": ">=5.3.0"
-        },
-        "time": "2016-05-27 15:02:09",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.1.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "files": [
-                "Geo.php"
-            ],
-            "psr-4": {
-                "DataValues\\Geo\\": "src"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Developer"
-            },
-            {
-                "name": "The Wikidata team",
-                "role": "Developer"
-            }
-        ],
-        "description": "Geographical value objects, parsers and formatters",
-        "homepage": "https://github.com/DataValues/Geo",
-        "keywords": [
-            "datavalues",
-            "formatters",
-            "geo",
-            "geographical",
-            "latlong",
-            "parsers",
-            "wikidata"
-        ]
-    },
-    {
-        "name": "mediawiki/maps",
-        "version": "3.8.1",
-        "version_normalized": "3.8.1.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/JeroenDeDauw/Maps.git",
-            "reference": "978b928b7279006f4a95a7f146127976d4dd930d"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/JeroenDeDauw/Maps/zipball/978b928b7279006f4a95a7f146127976d4dd930d",
-            "reference": "978b928b7279006f4a95a7f146127976d4dd930d",
-            "shasum": ""
-        },
-        "require": {
-            "composer/installers": "^1.0.1",
-            "data-values/geo": "~1.0",
-            "mediawiki/validator": "^2.0.2",
-            "php": ">=5.5"
-        },
-        "require-dev": {
-            "data-values/common": "~0.3.1"
-        },
-        "time": "2016-09-07 11:37:12",
-        "type": "mediawiki-extension",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "3.8.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "files": [
-                "Maps.php"
-            ],
-            "psr-4": {
-                "Maps\\": "src/"
-            },
-            "classmap": [
-                "includes/",
-                "Maps.hooks.php",
-                "tests/phpunit/elements/",
-                "tests/phpunit/parserhooks/ParserHookTest.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Creator and lead developer"
-            }
-        ],
-        "description": "Adds various mapping features to MediaWiki",
-        "homepage": "https://github.com/JeroenDeDauw/Maps",
-        "keywords": [
-            "OpenLayers",
-            "OpenStreetMap",
-            "Semantic MediaWiki",
-            "google maps",
-            "maps",
-            "mediawiki",
-            "osm"
-        ]
-    },
-    {
-        "name": "mediawiki/semantic-maps",
-        "version": "3.3.0",
-        "version_normalized": "3.3.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/SemanticMediaWiki/SemanticMaps.git",
-            "reference": "c8c74c23f8f615f869f8b7f60cdfbe13684b41a9"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMaps/zipball/c8c74c23f8f615f869f8b7f60cdfbe13684b41a9",
-            "reference": "c8c74c23f8f615f869f8b7f60cdfbe13684b41a9",
-            "shasum": ""
-        },
-        "require": {
-            "composer/installers": "^1.0.1",
-            "data-values/geo": "~1.1",
-            "mediawiki/maps": "~3.2",
-            "mediawiki/semantic-media-wiki": "~2.0",
-            "mediawiki/validator": "~2.0",
-            "php": ">=5.3.0"
-        },
-        "suggest": {
-            "mediawiki/semantic-forms": "Allows entering coordinates via a form map input"
-        },
-        "time": "2016-04-02 15:58:05",
-        "type": "mediawiki-extension",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "3.2.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "files": [
-                "SemanticMaps.php"
-            ],
-            "classmap": [
-                "src/",
-                "SemanticMaps.hooks.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Developer"
-            }
-        ],
-        "description": "Adds geographic capabilities to Semantic MediaWiki",
-        "homepage": "https://www.semantic-mediawiki.org/wiki/Semantic_Maps",
-        "keywords": [
-            "OpenLayers",
-            "SMW",
-            "Semantic Maps",
-            "Semantic MediaWiki",
-            "google maps",
-            "maps",
-            "mediawiki",
-            "wiki"
-        ]
-    },
-    {
         "name": "mediawiki/semantic-extra-special-properties",
         "version": "1.3.1",
         "version_normalized": "1.3.1.0",
@@ -2242,18 +1810,402 @@
         ]
     },
     {
-        "name": "mediawiki/semantic-result-formats",
-        "version": "2.3",
-        "version_normalized": "2.3.0.0",
+        "name": "param-processor/param-processor",
+        "version": "1.3.1",
+        "version_normalized": "1.3.1.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/SemanticMediaWiki/SemanticResultFormats.git",
-            "reference": "986366a3cbcff524a5317aa0c7c8c052b7cc94a1"
+            "url": "https://github.com/JeroenDeDauw/ParamProcessor.git",
+            "reference": "36979aa99b9010088998f1db891636ce98ad33f7"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticResultFormats/zipball/986366a3cbcff524a5317aa0c7c8c052b7cc94a1",
-            "reference": "986366a3cbcff524a5317aa0c7c8c052b7cc94a1",
+            "url": "https://api.github.com/repos/JeroenDeDauw/ParamProcessor/zipball/36979aa99b9010088998f1db891636ce98ad33f7",
+            "reference": "36979aa99b9010088998f1db891636ce98ad33f7",
+            "shasum": ""
+        },
+        "require": {
+            "data-values/common": "~0.3.0|~0.2.2",
+            "data-values/data-values": "~1.0|~0.1.1",
+            "data-values/interfaces": "~0.2.0|~0.1.4",
+            "data-values/validators": "~0.1.1",
+            "php": ">=5.5.0"
+        },
+        "require-dev": {
+            "ockcyp/covers-validator": "~0.4",
+            "phpmd/phpmd": "~2.1",
+            "phpunit/phpunit": "~5.4",
+            "squizlabs/php_codesniffer": "~2.1"
+        },
+        "time": "2016-09-21 02:42:06",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.3.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "ParamProcessor\\": "src"
+            },
+            "classmap": [
+                "tests/phpunit/Definitions/ParamDefinitionTest.php",
+                "tests/phpunit/Definitions/NumericParamTest.php"
+            ],
+            "files": [
+                "DefaultConfig.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            }
+        ],
+        "description": "Parameter processing library",
+        "homepage": "https://github.com/JeroenDeDauw/ParamProcessor",
+        "keywords": [
+            "ParamProcessor",
+            "SMW",
+            "Semantic MediaWiki",
+            "mediawiki",
+            "validator"
+        ]
+    },
+    {
+        "name": "mediawiki/validator",
+        "version": "2.2.1",
+        "version_normalized": "2.2.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/JeroenDeDauw/Validator.git",
+            "reference": "04ad7a2f6c982b291dcbaa166f2ce90505da6401"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/JeroenDeDauw/Validator/zipball/04ad7a2f6c982b291dcbaa166f2ce90505da6401",
+            "reference": "04ad7a2f6c982b291dcbaa166f2ce90505da6401",
+            "shasum": ""
+        },
+        "require": {
+            "param-processor/param-processor": "~1.1",
+            "php": ">=5.5.0"
+        },
+        "require-dev": {
+            "data-values/common": "~0.3.1"
+        },
+        "time": "2016-10-10 08:33:58",
+        "type": "mediawiki-extension",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.2.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "Validator.php"
+            ],
+            "psr-4": {
+                "ParamProcessor\\": "src/ParamProcessor/"
+            },
+            "classmap": [
+                "src/legacy/"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            }
+        ],
+        "description": "MediaWiki wrapper for the ParamProcessor library",
+        "homepage": "https://github.com/JeroenDeDauw/Validator",
+        "keywords": [
+            "ParamProcessor",
+            "SMW",
+            "Semantic MediaWiki",
+            "mediawiki",
+            "validator"
+        ]
+    },
+    {
+        "name": "data-values/geo",
+        "version": "1.2.0",
+        "version_normalized": "1.2.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/DataValues/Geo.git",
+            "reference": "b0c635635cf3e25aed8d1d1000e50f893bd3d91c"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/DataValues/Geo/zipball/b0c635635cf3e25aed8d1d1000e50f893bd3d91c",
+            "reference": "b0c635635cf3e25aed8d1d1000e50f893bd3d91c",
+            "shasum": ""
+        },
+        "require": {
+            "data-values/common": "~0.3.0|~0.2.0",
+            "data-values/data-values": "~1.0|~0.1",
+            "data-values/interfaces": "~0.2.0|~0.1.5",
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "mediawiki/mediawiki-codesniffer": "~0.5"
+        },
+        "time": "2016-11-11 19:17:21",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.1.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "Geo.php"
+            ],
+            "psr-4": {
+                "DataValues\\Geo\\": "src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            },
+            {
+                "name": "The Wikidata team",
+                "role": "Developer"
+            }
+        ],
+        "description": "Geographical value objects, parsers and formatters",
+        "homepage": "https://github.com/DataValues/Geo",
+        "keywords": [
+            "datavalues",
+            "formatters",
+            "geo",
+            "geographical",
+            "latlong",
+            "parsers",
+            "wikidata"
+        ]
+    },
+    {
+        "name": "jeroen/simple-cache",
+        "version": "2.0.0",
+        "version_normalized": "2.0.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/JeroenDeDauw/SimpleCache.git",
+            "reference": "159a72cf2ba7b7506495914d294d9e423700bd54"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/JeroenDeDauw/SimpleCache/zipball/159a72cf2ba7b7506495914d294d9e423700bd54",
+            "reference": "159a72cf2ba7b7506495914d294d9e423700bd54",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.0"
+        },
+        "replace": {
+            "jeroen-de-dauw/simple-cache": "*"
+        },
+        "time": "2014-08-19 00:36:41",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.0.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "SimpleCache\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            }
+        ],
+        "description": "Small library defining a minimalistic caching interface and provides some basic implementations",
+        "homepage": "https://github.com/JeroenDeDauw/SimpleCache",
+        "keywords": [
+            "cache",
+            "simplecache"
+        ]
+    },
+    {
+        "name": "jeroen/file-fetcher",
+        "version": "3.1.0",
+        "version_normalized": "3.1.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/JeroenDeDauw/FileFetcher.git",
+            "reference": "818da8261c256aac137f000cabbe59bd4c348a44"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/JeroenDeDauw/FileFetcher/zipball/818da8261c256aac137f000cabbe59bd4c348a44",
+            "reference": "818da8261c256aac137f000cabbe59bd4c348a44",
+            "shasum": ""
+        },
+        "require": {
+            "jeroen/simple-cache": "~2.0",
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "ockcyp/covers-validator": "~0.4",
+            "phpmd/phpmd": "~2.1",
+            "phpunit/phpunit": "~4.0",
+            "squizlabs/php_codesniffer": "~2.1"
+        },
+        "time": "2016-01-07 21:17:42",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "3.1.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "FileFetcher\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            }
+        ],
+        "description": "Simple file fetching interface",
+        "homepage": "https://github.com/JeroenDeDauw/FileFetcher",
+        "keywords": [
+            "cache",
+            "curl",
+            "file fetcher",
+            "file_get_contents",
+            "wget"
+        ]
+    },
+    {
+        "name": "mediawiki/maps",
+        "version": "3.8.2",
+        "version_normalized": "3.8.2.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/JeroenDeDauw/Maps.git",
+            "reference": "a5a1d771f56c43f463c3503f89454f77d4d48477"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/JeroenDeDauw/Maps/zipball/a5a1d771f56c43f463c3503f89454f77d4d48477",
+            "reference": "a5a1d771f56c43f463c3503f89454f77d4d48477",
+            "shasum": ""
+        },
+        "require": {
+            "composer/installers": "^1.0.1",
+            "data-values/geo": "~1.0",
+            "jeroen/file-fetcher": "~3.1",
+            "jeroen/simple-cache": "~2.0",
+            "mediawiki/validator": "^2.0.2",
+            "php": ">=5.5"
+        },
+        "require-dev": {
+            "data-values/common": "~0.3.1"
+        },
+        "time": "2016-09-22 03:18:29",
+        "type": "mediawiki-extension",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "3.8.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "Maps.php"
+            ],
+            "psr-4": {
+                "Maps\\": "src/"
+            },
+            "classmap": [
+                "includes/",
+                "Maps.hooks.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Creator and lead developer"
+            }
+        ],
+        "description": "Adds various mapping features to MediaWiki",
+        "homepage": "https://github.com/JeroenDeDauw/Maps",
+        "keywords": [
+            "OpenLayers",
+            "OpenStreetMap",
+            "Semantic MediaWiki",
+            "google maps",
+            "maps",
+            "mediawiki",
+            "osm"
+        ]
+    },
+    {
+        "name": "mediawiki/semantic-result-formats",
+        "version": "2.4.0",
+        "version_normalized": "2.4.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/SemanticMediaWiki/SemanticResultFormats.git",
+            "reference": "c7fbe14fd1ec6437fa5bf8daed32611aad0a9cdd"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticResultFormats/zipball/c7fbe14fd1ec6437fa5bf8daed32611aad0a9cdd",
+            "reference": "c7fbe14fd1ec6437fa5bf8daed32611aad0a9cdd",
             "shasum": ""
         },
         "require": {
@@ -2268,7 +2220,7 @@
             "mediawiki/graph-viz": "Required for 'format=graph'",
             "phpoffice/phpexcel": "Used when exporting to excel format using 'format=excel'"
         },
-        "time": "2015-09-24 21:27:44",
+        "time": "2016-10-15 02:15:16",
         "type": "mediawiki-extension",
         "extra": {
             "branch-alias": {
@@ -2320,6 +2272,170 @@
             "SRF",
             "Semantic MediaWiki",
             "Semantic Result Formats",
+            "mediawiki",
+            "wiki"
+        ]
+    },
+    {
+        "name": "mediawiki/semantic-media-wiki",
+        "version": "2.4.4",
+        "version_normalized": "2.4.4.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/SemanticMediaWiki/SemanticMediaWiki.git",
+            "reference": "f31fdbe430e47b144dff46620af86ca5e942ea16"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMediaWiki/zipball/f31fdbe430e47b144dff46620af86ca5e942ea16",
+            "reference": "f31fdbe430e47b144dff46620af86ca5e942ea16",
+            "shasum": ""
+        },
+        "require": {
+            "composer/installers": "1.*,>=1.0.1",
+            "ext-mbstring": "*",
+            "mediawiki/parser-hooks": "~1.4",
+            "onoi/blob-store": "~1.2",
+            "onoi/cache": "~1.2",
+            "onoi/callback-container": "~1.0",
+            "onoi/event-dispatcher": "~1.0",
+            "onoi/http-request": "~1.1",
+            "onoi/message-reporter": "~1.0",
+            "param-processor/param-processor": "~1.2",
+            "php": ">=5.3.0",
+            "serialization/serialization": "~3.2"
+        },
+        "replace": {
+            "mediawiki/semantic-mediawiki": "*"
+        },
+        "require-dev": {
+            "phpmd/phpmd": "~2.1",
+            "squizlabs/php_codesniffer": "~2.1"
+        },
+        "suggest": {
+            "mediawiki/semantic-forms": "Easy creation of forms to add semantic data",
+            "mediawiki/semantic-result-formats": "Additional result formats for SMW queries"
+        },
+        "time": "2016-12-13 16:10:45",
+        "type": "mediawiki-extension",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.4.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "SMW\\": "src/",
+                "SMW\\Maintenance\\": "maintenance/"
+            },
+            "files": [
+                "src/Aliases.php",
+                "src/Defines.php",
+                "src/GlobalFunctions.php",
+                "DefaultSettings.php",
+                "SemanticMediaWiki.php"
+            ],
+            "classmap": [
+                "includes/",
+                "languages/SMW_Language.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Markus Krötzsch",
+                "homepage": "http://korrekt.org",
+                "role": "Original author"
+            },
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Core developer"
+            },
+            {
+                "name": "James Hong Kong",
+                "homepage": "https://www.semantic-mediawiki.org/wiki/User:MWJames",
+                "role": "Core developer"
+            }
+        ],
+        "description": "MediaWiki extension that lets you store and query structured data within wiki pages",
+        "homepage": "https://www.semantic-mediawiki.org/wiki/",
+        "keywords": [
+            "SMW",
+            "Semantic MediaWiki",
+            "mediawiki",
+            "wiki"
+        ]
+    },
+    {
+        "name": "mediawiki/semantic-maps",
+        "version": "3.4.2",
+        "version_normalized": "3.4.2.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/SemanticMediaWiki/SemanticMaps.git",
+            "reference": "67a9b86a2b30caabd37397a49c95ea634b99948e"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMaps/zipball/67a9b86a2b30caabd37397a49c95ea634b99948e",
+            "reference": "67a9b86a2b30caabd37397a49c95ea634b99948e",
+            "shasum": ""
+        },
+        "require": {
+            "composer/installers": "^1.0.1",
+            "data-values/geo": "~1.1",
+            "mediawiki/maps": "~3.8",
+            "mediawiki/semantic-media-wiki": "~2.0",
+            "mediawiki/validator": "~2.0",
+            "php": ">=5.5.0"
+        },
+        "suggest": {
+            "mediawiki/semantic-forms": "Allows entering coordinates via a form map input"
+        },
+        "time": "2016-11-23 20:00:34",
+        "type": "mediawiki-extension",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "3.4.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "SemanticMaps.php"
+            ],
+            "classmap": [
+                "src/",
+                "SemanticMaps.hooks.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            }
+        ],
+        "description": "Adds geographic capabilities to Semantic MediaWiki",
+        "homepage": "https://www.semantic-mediawiki.org/wiki/Semantic_Maps",
+        "keywords": [
+            "OpenLayers",
+            "SMW",
+            "Semantic Maps",
+            "Semantic MediaWiki",
+            "google maps",
+            "maps",
             "mediawiki",
             "wiki"
         ]

@@ -93,6 +93,16 @@ It is based upon and contains a lot of code written by [Jeroen De Dauw]
 
 ## Release notes
 
+### 1.2.0 (2016-11-11)
+
+* Added missing inline documentation to public methods and constants.
+* Added a basic PHPCS rule set, can be run with `composer phpcs`.
+
+### 1.1.8 (2016-10-12)
+
+* Fixed an IEEE issue in `GeoCoordinateFormatter`
+* Fixed a PHP 7.1 compatibility issue in a test
+
 ### 1.1.7 (2016-05-25)
 
 * Made minor documentation improvements

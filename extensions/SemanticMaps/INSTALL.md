@@ -6,6 +6,10 @@ These are the installation and configuration instructions for the [SemanticMaps]
 
 ## Versions
 
+Note that Semantic Maps 3.4.2 is the last release of Semantic Maps as a dedicated extension. It has been
+merged into the [Maps](https://github.com/JeroenDeDauw/Maps) extension, where development continues. All features
+available in Semantic Maps 3.4.2 are now available in Maps 4.0 and later!
+
 <table>
 	<tr>
 		<th></th>
@@ -14,38 +18,44 @@ These are the installation and configuration instructions for the [SemanticMaps]
 		<th>Git branch</th>
 	</tr>
 	<tr>
+		<th><a href="RELEASE-NOTES.md">Semantic Maps 3.4.2</a></th>
+		<td>Obsolete release</td>
+		<td>2016-11-23</td>
+		<td><a href="https://github.com/SemanticMediaWiki/SemanticMaps/tree/3.4.0">3.4.x</a></td>
+	</tr>
+	<tr>
 		<th><a href="RELEASE-NOTES.md">Semantic Maps 3.3.0</a></th>
-		<td>Stable release</td>
+		<td>Obsolete release</td>
 		<td>2016-04-02</td>
 		<td><a href="https://github.com/SemanticMediaWiki/SemanticMaps/tree/3.3.0">3.3.0</a></td>
 	</tr>
 	<tr>
 		<th><a href="RELEASE-NOTES.md">Semantic Maps 3.2.0</a></th>
-		<td>Legacy release</td>
+		<td>Obsolete release</td>
 		<td>2015-07-02</td>
 		<td><a href="https://github.com/SemanticMediaWiki/SemanticMaps/tree/3.2.0">3.2.0</a></td>
 	</tr>
 	<tr>
 		<th><a href="RELEASE-NOTES.md">Semantic Maps 3.1.x</a></th>
-		<td>Legacy release</td>
+		<td>Obsolete release</td>
 		<td>2014-11-11</td>
 		<td><a href="https://github.com/SemanticMediaWiki/SemanticMaps/tree/3.1.2">3.1.2</a></td>
 	</tr>
 	<tr>
 		<th><a href="RELEASE-NOTES.md">Semantic Maps 3.0.x</a></th>
-		<td>Legacy release</td>
+		<td>Obsolete release</td>
 		<td>2014-01-18</td>
 		<td><a href="https://github.com/SemanticMediaWiki/SemanticMaps/tree/3.0">3.0</a></td>
 	</tr>
 	<tr>
 		<th><a href="https://github.com/SemanticMediaWiki/SemanticMaps/blob/2.0.x/RELEASE-NOTES">Semantic Maps 2.0.x</a></th>
-		<td>Legacy release</td>
+		<td>Obsolete release</td>
 		<td>2012-12-13</td>
 		<td><a href="https://github.com/SemanticMediaWiki/SemanticMaps/tree/2.0.x">2.0.x</a></td>
 	</tr>
 	<tr>
 		<th><a href="https://github.com/SemanticMediaWiki/SemanticMaps/blob/2.0.x/RELEASE-NOTES">Semantic Maps 1.0.5</a></th>
-		<td>Legacy release</td>
+		<td>Obsolete release</td>
 		<td>2011-11-30</td>
 		<td>-/-</td>
 	</tr>
@@ -62,6 +72,15 @@ These are the installation and configuration instructions for the [SemanticMaps]
 		<th>Maps</th>
 		<th>Composer</th>
 		<th>Validator</th>
+	</tr>
+	<tr>
+		<th>S. Maps 3.4.x</th>
+		<td><strong>5.5</strong> - 7.x</td>
+		<td><strong>1.23</strong> - 1.27</td>
+		<td>2.x >= 2.1</td>
+		<td>3.x</td>
+		<td>Required</td>
+		<td>2.x (handled by Composer)</td>
 	</tr>
 	<tr>
 		<th>S. Maps 3.3.x</th>
@@ -84,7 +103,7 @@ These are the installation and configuration instructions for the [SemanticMaps]
 	<tr>
 		<th>S. Maps 3.1.x</th>
 		<td>5.3.2 - 5.6.x</td>
-		<td>1.19 - 1.23</td>
+		<td><strong>1.19</strong> - 1.23</td>
 		<td>2.x</td>
 		<td>3.x</td>
 		<td>Required</td>
@@ -101,8 +120,8 @@ These are the installation and configuration instructions for the [SemanticMaps]
 	</tr>
 	<tr>
 		<th>S. Maps 2.0.x</th>
-		<td>5.3.2 - 5.5.x</td>
-		<td>1.18 - 1.23</td>
+		<td><strong>5.3.2</strong> - 5.5.x</td>
+		<td><strong>1.18</strong> - 1.23</td>
 		<td>1.8.x</td>
 		<td>2.0.x</td>
 		<td>Not supported</td>
@@ -130,10 +149,7 @@ All current versions of Semantic Maps have full support for all databases that c
 ## Download and installation
 
 The recommended way to download and install Semantic Maps is with [Composer](http://getcomposer.org) using
-[MediaWiki 1.22 built-in support for Composer](https://www.mediawiki.org/wiki/Composer). MediaWiki
-versions prior to 1.22 can use Composer via the
-[Extension Installer](https://github.com/JeroenDeDauw/ExtensionInstaller/blob/master/README.md)
-extension.
+[MediaWiki 1.22 built-in support for Composer](https://www.mediawiki.org/wiki/Composer).
 
 Note that the [Semantic MediaWiki](https://www.semantic-mediawiki.org/wiki/Help:Installation) extension as
 well as the  [Maps](https://github.com/JeroenDeDauw/Maps/blob/master/docs/INSTALL.md) extension need
@@ -141,26 +157,15 @@ to be installed first for this extension to work.
 
 #### Step 1
 
-If you use MediaWiki 1.22 or later, go to the root directory of your MediaWiki installation,
-and skip to step 2. You do not need to install any extensions to support Composer.
+Go to the root directory of your MediaWiki installation.
 
-For MediaWiki 1.21.x and earlier you need to install the
-[Extension Installer](https://github.com/JeroenDeDauw/ExtensionInstaller/blob/master/README.md) extension first.
-
-Once you are done installing the Extension Installer extension, go to its directory so the "composer.phar" file
-is installed in the right place.
-
-    cd extensions/ExtensionInstaller
-
-#### Step 2
-
-If you have previously installed Composer skip to step 3.
+If you have previously installed Composer skip to step 2.
 
 To install Composer run:
 
     wget http://getcomposer.org/composer.phar
 
-#### Step 3
+#### Step 2
 
 Now using Composer, install Semantic Maps by running
 
