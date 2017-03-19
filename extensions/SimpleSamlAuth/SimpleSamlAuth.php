@@ -30,7 +30,7 @@ $GLOBALS['wgAutoloadClasses']['SimpleSamlAuth'] =
 $GLOBALS['wgExtensionCredits']['other'][] = array(
 	'path' => __FILE__,
 	'name' => 'SimpleSamlAuth',
-	'version' => '0.6',
+	'version' => 'GIT-master',
 	'author' => 'Jørn Åne',
 	'url' => 'https://www.mediawiki.org/wiki/Extension:SimpleSamlAuth',
 	'license-name' => 'LGPL-3.0+',
@@ -44,6 +44,7 @@ $GLOBALS['wgHooks']['UserLoginForm'][]          = 'SimpleSamlAuth::hookLoginForm
 $GLOBALS['wgHooks']['UserLogoutComplete'][]     = 'SimpleSamlAuth::hookUserLogout';
 $GLOBALS['wgHooks']['PersonalUrls'][]           = 'SimpleSamlAuth::hookPersonalUrls';
 $GLOBALS['wgHooks']['MediaWikiPerformAction'][] = 'SimpleSamlAuth::hookMediaWikiPerformAction';
+$GLOBALS['wgHooks']['ArticleFromTitle'][]       = 'SimpleSamlAuth::hookArticleFromTitle';
 
 define( 'SAML_OPTIONAL', 0 );
 define( 'SAML_LOGIN_ONLY', 1 );

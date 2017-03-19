@@ -9,6 +9,10 @@
 * [SimpleSamlPhp](//simplesamlphp.org) (tested on 1.11 and newer)
 * [MediaWiki](//mediawiki.org) (tested on 1.15, 1.16 or newer required for some features)
 
+**IMPORTANT** If you run MediaWiki 1.27 or newer, SimpleSamlPhp **MUST** be configured to use an alternative session handler.
+If this is not done, SAML authentication succeeds, but MediaWiki still shows that nobody is logged in.
+Please refer to [the SimpleSamlPhp website](//simplesamlphp.org/docs/stable/simplesamlphp-maintenance) on how to configure SimpleSamlPhp for session storage.
+
 ## Preparation
 * Install SimpleSamlPhp on the same domain as your MediaWiki installation.
 * In SimpleSamlPhp, use the *Authentication* -> *Test configured authentication sources* feature to ensure that authentication works.
@@ -103,6 +107,12 @@ $wgSamlGroupMap = array(
 ```
 An array as illustrated here will add users to the `sysop` MediaWiki group, if they have a SAML attribute named `groups` with at least a value `admin`.
 If you want more fine-grained control, look at the [SimpleSamlPhp role module](https://github.com/jornane/sspmod_role).
+
+### [$wgSessionName](https://www.mediawiki.org/wiki/Manual:$wgSessionName)
+The name of the cookie containing the session ID. When using PHP's built-in session management in both PHP and SimpleSamlPhp, this *must* match the session name used by PHP. It should not be necessary to set this.
+
+### [$wgWhitelistRead](https://www.mediawiki.org/wiki/Manual:$wgWhitelistRead)
+Array of page names that can be read without being redirected to the IdP. This may be useful on sites where SAML login is required, but some pages are publicly readable. Has no effect in the behaviour of this extension unless `$wgSamlRequirement` is `SAML_REQUIRED`.
 
 ## Known Issues
 ### Weird things happen with sessions / I must click Save twice before the page saves

@@ -84,3 +84,24 @@ $messages['et'] = array(
 	'simplesamlauth-login' => 'Logi sisse SAMLi kaudu',
 );
 
+/** Russian
+ * @author Anton Kheystver
+ */
+$messages['ru'] = array(
+	'simplesamlauth-desc' => 'Активирует SAML аутентификацию с помощью '
+		. '[//simplesamlphp.org/ SimpleSAMLphp].',
+	'simplesamlauth-login' => 'Войти с помощью SAML',
+	'simplesamlauth-pagedisabled' => 'Эта страница была отключена модулем '
+		. '[//github.com/jornane/mwSimpleSamlAuth SimpleSamlAuth].',
+);
+
+/** Chinese
+ * @author Liang Zhu
+ */
+$messages['zh'] = array(
+	'simplesamlauth-desc' => '使用 '
+		. '[//simplesamlphp.org/ SimpleSAMLphp] 启动SAML认证。',
+	'simplesamlauth-login' => '使用SAML登录',
+	'simplesamlauth-pagedisabled' => '此页面已被 '
+		. '[//github.com/jornane/mwSimpleSamlAuth SimpleSamlAuth] 扩展禁用。',
+);
