@@ -44,6 +44,7 @@ class PFFormPrinter {
 		$this->registerInputType( 'PFTextAreaWithAutocompleteInput' );
 		$this->registerInputType( 'PFDateInput' );
 		$this->registerInputType( 'PFDatePickerInput' );
+		$this->registerInputType( 'PFDateTimePicker' );
 		$this->registerInputType( 'PFDateTimeInput' );
 		$this->registerInputType( 'PFYearInput' );
 		$this->registerInputType( 'PFCheckboxInput' );
@@ -55,6 +56,7 @@ class PFFormPrinter {
 		$this->registerInputType( 'PFTreeInput' );
 		$this->registerInputType( 'PFTokensInput' );
 		$this->registerInputType( 'PFRegExpInput' );
+		$this->registerInputType( 'PFRatingInput' );
 		// Add this if the Semantic Maps extension is not
 		// included, or if it's SM (really Maps) v4.0 or higher.
 		if ( !defined( 'SM_VERSION' ) || version_compare( SM_VERSION, '4.0', '>=' ) ) {
@@ -807,6 +809,7 @@ END;
 		// existing article as well, finding template and field
 		// declarations and replacing them with form elements, either
 		// blank or pre-populated, as appropriate.
+		$template_name = null;
 		$template = null;
 		$tif = null;
 		// This array will keep track of all the replaced @<name>@ strings
@@ -942,7 +945,7 @@ END;
 							// the fields that weren't
 							// handled by the form.
 							$cur_value = $tif->getAndRemoveValueFromPageForField( $field_name );
- 
+
 							// If the field is a placeholder, the contents of this template
 							// parameter should be treated as elements parsed by an another
 							// multiple template form.
@@ -1050,7 +1053,8 @@ END;
 								( $form_field->hasFieldArg( 'mapping template' ) ||
 								$form_field->hasFieldArg( 'mapping property' ) ||
 								( $form_field->hasFieldArg( 'mapping cargo table' ) &&
-								$form_field->hasFieldArg( 'mapping cargo field' ) ) ) ) {
+								$form_field->hasFieldArg( 'mapping cargo field' ) ) ) ||
+								$form_field->getUseDisplayTitle() ) {
 								// If the input type is "tokens', the value is not
 								// an array, but the delimiter still needs to be set.
 								if ( !is_array( $cur_value ) ) {

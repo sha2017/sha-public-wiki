@@ -84,8 +84,17 @@ class PFTemplate {
 		// they're part of an "#if" statement), so they're only
 		// recorded the first time they're found.
 
-		// First, look for "arraymap" parser function calls
-		// that map a property onto a list.
+		// Replace all calls to #set within #arraymap with standard
+		// SMW tags. This is done so that they will later get
+		// parsed correctly.
+		// This is "cheating", since it modifies the template text
+		// (the rest of the function doesn't do that), but trying to
+		// get the #arraymap check regexp to find both kinds of SMW
+		// property tags seemed too hard to do.
+		$this->mTemplateText = preg_replace( '/#arraymap.*{{\s*#set:\s*([^=]*)=([^}]*)}}/', '[[$1:$2]]', $this->mTemplateText );
+
+		// Look for "arraymap" parser function calls that map a
+		// property onto a list.
 		if ( $ret = preg_match_all( '/{{#arraymap:{{{([^|}]*:?[^|}]*)[^\[]*\[\[([^:]*:?[^:]*)::/mis', $this->mTemplateText, $matches ) ) {
 			foreach ( $matches[1] as $i => $field_name ) {
 				if ( ! in_array( $field_name, $fieldNamesArray ) ) {
@@ -102,7 +111,7 @@ class PFTemplate {
 			}
 		}
 
-		// Second, look for normal property calls.
+		// Look for normal property calls.
 		if ( preg_match_all( '/\[\[([^:|\[\]]*:*?[^:|\[\]]*)::{{{([^\]\|}]*).*?\]\]/mis', $this->mTemplateText, $matches ) ) {
 			foreach ( $matches[1] as $i => $propertyName ) {
 				$field_name = trim( $matches[2][$i] );
@@ -186,10 +195,18 @@ class PFTemplate {
 		// See if there even is DB storage for this template - if not,
 		// exit.
 		if ( is_null( $tableSchemaString ) ) {
-			return null;
+			// There's no declared table - but see if there's an
+			// attached table.
+			list( $tableName, $isDeclared ) = CargoUtils::getTableNameForTemplate( $templateTitle );
+			if ( $tableName == null ) {
+				return null;
+			}
+			$mainTemplatePageID = CargoUtils::getTemplateIDForDBTable( $tableName );
+			$tableSchemaString = CargoUtils::getPageProp( $mainTemplatePageID, 'CargoFields' );
+		} else {
+			$tableName = CargoUtils::getPageProp( $templatePageID, 'CargoTableName' );
 		}
 		$tableSchema = CargoTableSchema::newFromDBString( $tableSchemaString );
-		$tableName = CargoUtils::getPageProp( $templatePageID, 'CargoTableName' );
 
 		// Then, match template params to Cargo table fields, by
 		// parsing call(s) to #cargo_store.
@@ -344,7 +361,9 @@ class PFTemplate {
 	 * extension.
 	 */
 	public function createText() {
-		Hooks::run( 'PageForms::CreateTemplateText', array( &$this ) );
+		// Avoid PHP 7.1 warning from passing $this by reference
+		$template = $this;
+		Hooks::run( 'PageForms::CreateTemplateText', array( &$template ) );
 		$templateHeader = wfMessage( 'pf_template_docu', $this->mTemplateName )->inContentLanguage()->text();
 		$text = <<<END
 <noinclude>

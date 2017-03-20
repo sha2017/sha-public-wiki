@@ -26,6 +26,9 @@ function setupMapFormInput( inputDiv, mapService ) {
 				map: map,
 				draggable: true
 			} );
+			google.maps.event.addListener( marker, 'dragend', function( event ) {
+				googleMapsSetMarker( event.latLng );
+			});
 		} else {
 			marker.setPosition(location);
 		}
@@ -41,10 +44,10 @@ function setupMapFormInput( inputDiv, mapService ) {
 		marker = new OpenLayers.Marker( location );
 		markers.addMarker( marker );
 
-		// Tranpform the coordinates back, in order to display them.
+		// Transform the coordinates back, in order to display them.
 		var realLonLat = location.clone();
-		realLonLat.tranpform(
-			map.getProjectionObject(), // tranpform from Spherical Mercator Projection
+		realLonLat.transform(
+			map.getProjectionObject(), // transform from Spherical Mercator Projection
 			new OpenLayers.Projection("EPSG:4326") // to WGS 1984
 		);
 		var stringVal = pfRoundOffDecimal( realLonLat.lat ) + ', ' + pfRoundOffDecimal( realLonLat.lon );
@@ -59,10 +62,19 @@ function setupMapFormInput( inputDiv, mapService ) {
 		};
 		map = new google.maps.Map( mapCanvas, mapOptions );
 		var geocoder = new google.maps.Geocoder();
+		var update_timeout;
 
+		// Let a click set the marker, while keeping the default
+		// behavior (zoom and center) for double clicks.
+		// Code copied from http://stackoverflow.com/a/8417447
 		google.maps.event.addListener( map, 'click', function( event ) {
-			googleMapsSetMarker( event.latLng );
-		} );
+			update_timeout = setTimeout( function(){
+				googleMapsSetMarker( event.latLng );
+			}, 200 );
+		});
+		google.maps.event.addListener( map, 'dblclick', function( event ) {
+			clearTimeout( update_timeout );
+		});
 	} else { // if ( mapService == "OpenLayers" ) {
 		var mapCanvasID = inputDiv.find( '.pfMapCanvas' ).attr( 'id' );
 		map = new OpenLayers.Map( mapCanvasID );
@@ -79,8 +91,8 @@ function setupMapFormInput( inputDiv, mapService ) {
 	}
 
 	function toOpenLayersLonLat( map, lat, lon ) {
-		return new OpenLayers.LonLat( lon, lat ).tranpform(
-			new OpenLayers.Projection( "EPSG:4326" ), // tranpform from WGS 1984
+		return new OpenLayers.LonLat( lon, lat ).transform(
+			new OpenLayers.Projection( "EPSG:4326" ), // transform from WGS 1984
 			map.getProjectionObject() // to Spherical Mercator Projection
 		);
 	}
@@ -137,7 +149,7 @@ function setupMapFormInput( inputDiv, mapService ) {
 					googleMapsSetMarker( results[0].geometry.location );
 					map.setZoom(14);
 				} else {
-					alert("Geocode was not succespful for the following reason: " + status);
+					alert("Geocode was not successful for the following reason: " + status);
 				}
 			});
 		} // else { if ( mapService == "OpenLayers" ) {

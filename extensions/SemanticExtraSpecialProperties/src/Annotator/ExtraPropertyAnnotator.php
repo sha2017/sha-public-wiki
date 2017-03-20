@@ -64,8 +64,16 @@ class ExtraPropertyAnnotator {
 	 *
 	 * @return boolean
 	 * @throws RuntimeException
+	 *
+	 * @return boolean
 	 */
 	public function addAnnotation() {
+
+		$subject = $this->semanticData->getSubject();
+
+		if ( $subject === null || $subject->getTitle() === null || $subject->getTitle()->isSpecialPage() ) {
+			return false;
+		}
 
 		if ( isset( $this->configuration['sespSpecialProperties'] ) &&
 			is_array( $this->configuration['sespSpecialProperties'] ) ) {
@@ -204,9 +212,29 @@ class ExtraPropertyAnnotator {
 	}
 
 	private function makeNumberOfPageViewsDataItem() {
-		if ( !$this->configuration['wgDisableCounters'] && $this->getWikiPage()->getCount() ) {
-			return new DINumber( $this->getWikiPage()->getCount() );
+		if ( $this->configuration['wgDisableCounters'] ) {
+			return null;
 		}
+
+		$count = $this->getPageViewCount();
+
+		if ( !is_numeric( $count ) ) {
+			return null;
+		}
+
+		return new DINumber( $count );
+	}
+
+	private function getPageViewCount() {
+		if ( class_exists( '\HitCounters\HitCounters' ) ) {
+			return \HitCounters\HitCounters::getCount( $this->getWikiPage()->getTitle() );
+		}
+
+		if ( method_exists( $this->getWikiPage(), 'getCount' ) ) {
+			return $this->getWikiPage()->getCount();
+		}
+
+		return null;
 	}
 
 	private function addPropertyValuesForPageContributors( DIProperty $property ) {
@@ -231,18 +259,18 @@ class ExtraPropertyAnnotator {
 	}
 
 	private function makePageIdDataItem() {
-		$revId = $this->getWikiPage()->getId();
+		$pageID = $this->getWikiPage()->getId();
 
-		if ( is_integer( $revId ) ) {
-			return new DINumber( $revId );
+		if ( is_integer( $pageID ) && $pageID > 0 ) {
+			return new DINumber( $pageID );
 		}
 	}
 
 	private function makeRevisionIdDataItem() {
-		$revId = $this->getWikiPage()->getLatest();
+		$revID = $this->getWikiPage()->getLatest();
 
-		if ( is_integer( $revId ) ) {
-			return new DINumber( $revId );
+		if ( is_integer( $revID ) && $revID > 0 ) {
+			return new DINumber( $revID );
 		}
 	}
 
@@ -260,18 +288,22 @@ class ExtraPropertyAnnotator {
 	}
 
 	private function makeNumberOfRevisionsDataItem() {
-		return new DINumber( $this->getPageRevisionsForId(
+		$numberOfPageRevisions = $this->getPageRevisionsForId(
 			$this->getWikiPage()->getTitle()->getArticleID()
-		) );
+		);
+
+		if ( $this->getWikiPage()->getTitle()->exists() && $numberOfPageRevisions > 0 ) {
+			return new DINumber( $numberOfPageRevisions );
+		}
 	}
 
 	private function makeNumberOfTalkPageRevisionsDataItem() {
-		$numberOfPageRevisions = $this->getPageRevisionsForId(
+		$numberOfTalkPageRevisions = $this->getPageRevisionsForId(
 			$this->getWikiPage()->getTitle()->getTalkPage()->getArticleID()
 		);
 
-		if ( $this->getWikiPage()->getTitle()->getTalkPage()->exists() && $numberOfPageRevisions > 0 ) {
-			return new DINumber( $numberOfPageRevisions );
+		if ( $this->getWikiPage()->getTitle()->getTalkPage()->exists() && $numberOfTalkPageRevisions > 0 ) {
+			return new DINumber( $numberOfTalkPageRevisions );
 		}
 	}
 
@@ -348,17 +380,17 @@ class ExtraPropertyAnnotator {
 			);
 		}
 	}
-	
+
 	private function makeUserEditCountDataItem() {
-	
+
 		if ( !$this->isUserPage() ) {
 			return;
 		}
 
 		$user = $this->appFactory->newUserFromTitle( $this->getWikiPage()->getTitle() );
-		
+
 		$count = $user instanceof User ? $user->getEditCount() : false;
-		
+
 		if ( $count ) {
 			return new DINumber( $count );
 		}

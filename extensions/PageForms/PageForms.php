@@ -69,7 +69,7 @@ if ( defined( 'PF_VERSION' ) ) {
 	return 1;
 }
 
-define( 'PF_VERSION', '4.0.2' );
+define( 'PF_VERSION', '4.1' );
 
 $GLOBALS['wgExtensionCredits']['specialpage'][] = array(
 	'path' => __FILE__,
@@ -210,6 +210,8 @@ $GLOBALS['wgAutoloadClasses']['PFListBoxInput'] = __DIR__ . '/includes/forminput
 $GLOBALS['wgAutoloadClasses']['PFComboBoxInput'] = __DIR__ . '/includes/forminputs/PF_ComboBoxInput.php';
 $GLOBALS['wgAutoloadClasses']['PFDateInput'] = __DIR__ . '/includes/forminputs/PF_DateInput.php';
 $GLOBALS['wgAutoloadClasses']['PFDatePickerInput'] = __DIR__ . '/includes/forminputs/PF_DatePickerInput.php';
+$GLOBALS['wgAutoloadClasses']['PFTimePickerInput'] = __DIR__ . '/includes/forminputs/PF_TimePickerInput.php';
+$GLOBALS['wgAutoloadClasses']['PFDateTimePicker'] = __DIR__ . '/includes/forminputs/PF_DateTimePicker.php';
 $GLOBALS['wgAutoloadClasses']['PFDateTimeInput'] = __DIR__ . '/includes/forminputs/PF_DateTimeInput.php';
 $GLOBALS['wgAutoloadClasses']['PFYearInput'] = __DIR__ . '/includes/forminputs/PF_YearInput.php';
 $GLOBALS['wgAutoloadClasses']['PFTreeInput'] = __DIR__ . '/includes/forminputs/PF_TreeInput.php';
@@ -218,6 +220,7 @@ $GLOBALS['wgAutoloadClasses']['PFTokensInput'] = __DIR__ . '/includes/forminputs
 $GLOBALS['wgAutoloadClasses']['PFGoogleMapsInput'] = __DIR__ . '/includes/forminputs/PF_GoogleMapsInput.php';
 $GLOBALS['wgAutoloadClasses']['PFOpenLayersInput'] = __DIR__ . '/includes/forminputs/PF_OpenLayersInput.php';
 $GLOBALS['wgAutoloadClasses']['PFRegExpInput'] = __DIR__ . '/includes/forminputs/PF_RegExpInput.php';
+$GLOBALS['wgAutoloadClasses']['PFRatingInput'] = __DIR__ . '/includes/forminputs/PF_RatingInput.php';
 
 $GLOBALS['wgAutoloadClasses']['PFWikiPage'] = __DIR__ . '/includes/wikipage/PF_WikiPage.php';
 $GLOBALS['wgAutoloadClasses']['PFWikiPageTemplate'] = __DIR__ . '/includes/wikipage/PF_WikiPageTemplate.php';
@@ -339,10 +342,43 @@ $GLOBALS['wgResourceModules'] += array(
 		),
 		'position' => 'bottom', // MW 1.26
 	),
+	'ext.pageforms.timepicker' => $wgPageFormsResourceTemplate + array(
+		'scripts' => array(
+			'libs/PF_timepicker.js',
+		),
+		'styles' => 'skins/PF_Timepicker.css',
+		'position' => 'bottom', // MW 1.26
+	),
+	'ext.pageforms.datetimepicker' => $wgPageFormsResourceTemplate + array(
+		'scripts' => array(
+			'libs/PF_datetimepicker.js',
+		),
+		'dependencies' => array(
+			'ext.pageforms.datepicker',
+			'ext.pageforms.timepicker'
+		),
+		'position' => 'bottom', // MW 1.26
+	),
 	'ext.pageforms.regexp' => $wgPageFormsResourceTemplate + array(
 		'scripts' => 'libs/PF_regexp.js',
 		'dependencies' => array(
 			'ext.pageforms.main'
+		),
+	),
+	'ext.pageforms.rating' => $wgPageFormsResourceTemplate + array(
+		'scripts' => array(
+			'libs/jquery.rateyo.js',
+			'libs/PF_rating.js'
+		),
+		'styles' => 'skins/jquery.rateyo.css',
+	),
+	'ext.pageforms.simpleupload' => $wgPageFormsResourceTemplate + array(
+		'scripts' => array(
+			'libs/PF_simpleupload.js'
+		),
+        'messages' => array(
+			'pf_forminputs_change_file',
+			'upload-dialog-button-upload'
 		),
 	),
 	'ext.pageforms.select2' => $wgPageFormsResourceTemplate + array(
@@ -521,13 +557,6 @@ $GLOBALS['wgPageFormsFormCacheType'] = null;
 $GLOBALS['wgPageFormsLinkAllRedLinksToForms'] = false;
 
 # ##
-# When modifying red links to potentially point to a form to edit that page,
-# check only the properties pointing to that missing page from the page the
-# user is currently on, instead of from all pages in the wiki.
-# ##
-$GLOBALS['wgPageFormsRedLinksCheckOnlyLocalProps'] = false;
-
-# ##
 # Show the "create with form" tab for uncreated templates and categories.
 # ##
 $GLOBALS['wgPageFormsShowTabPForAllHelperForms'] = true;
@@ -543,6 +572,11 @@ $GLOBALS['wgPageFormsGoogleMapsKey'] = null;
 
 // Include default settings for form inputs
 require_once 'includes/PF_DatePickerSettings.php';
+
+# ##
+# Display displaytitle page property instead of page title for Page type fields
+# ##
+$GLOBALS['wgPageFormsUseDisplayTitle'] = false;
 
 # ##
 # Global variables for Javascript

@@ -93,6 +93,14 @@ It is based upon and contains a lot of code written by [Jeroen De Dauw]
 
 ## Release notes
 
+### 1.2.2 (2017-03-14)
+
+* Fixed multiple rounding issues in `GeoCoordinateFormatter`.
+
+### 1.2.1 (2016-12-16)
+
+* Fixed another IEEE issue in `GeoCoordinateFormatter`.
+
 ### 1.2.0 (2016-11-11)
 
 * Added missing inline documentation to public methods and constants.

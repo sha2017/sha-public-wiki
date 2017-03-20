@@ -36,9 +36,15 @@ class PFAutocompleteAPI extends ApiBase {
 		//$limit = $params['limit'];
 
 		if ( is_null( $baseprop ) && is_null( $base_cargo_table ) && strlen( $substr ) == 0 ) {
-			$this->dieUsage( 'The substring must be specified', 'param_substr' );
+			if ( is_callable( array( $this, 'dieWithError' ) ) ) {
+				$this->dieWithError( array( 'apierror-missingparam', 'substr' ), 'param_substr' );
+			} else {
+				$this->dieUsage( 'The substring must be specified', 'param_substr' );
+			}
 		}
 
+		global $wgPageFormsUseDisplayTitle;
+		$map = false;
 		if ( !is_null( $baseprop ) ) {
 			if ( !is_null( $property ) ) {
 				$data = self::getAllValuesForProperty( $property, null, $baseprop, $basevalue );
@@ -47,12 +53,15 @@ class PFAutocompleteAPI extends ApiBase {
 			$data = self::getAllValuesForProperty( $property, $substr );
 		} elseif ( !is_null( $category ) ) {
 			$data = PFValuesUtils::getAllPagesForCategory( $category, 3, $substr );
+			$map = $wgPageFormsUseDisplayTitle;
 		} elseif ( !is_null( $concept ) ) {
 			$data = PFValuesUtils::getAllPagesForConcept( $concept, $substr );
+			$map = $wgPageFormsUseDisplayTitle;
 		} elseif ( !is_null( $cargo_table ) && !is_null( $cargo_field ) ) {
 			$data = self::getAllValuesForCargoField( $cargo_table, $cargo_field, $field_is_array, $substr, $base_cargo_table, $base_cargo_field, $basevalue );
 		} elseif ( !is_null( $namespace ) ) {
 			$data = PFValuesUtils::getAllPagesForNamespace( $namespace, $substr );
+			$map = $wgPageFormsUseDisplayTitle;
 		} elseif ( !is_null( $external_url ) ) {
 			$data = PFValuesUtils::getValuesFromExternalURL( $external_url, $substr );
 		} else {
@@ -61,7 +70,19 @@ class PFAutocompleteAPI extends ApiBase {
 
 		// If we got back an error message, exit with that message.
 		if ( !is_array( $data ) ) {
-			$this->dieUsage( $data );
+			if ( is_callable( array( $this, 'dieWithError' ) ) ) {
+				if ( !$data instanceof Message ) {
+					$data = ApiMessage::create( new RawMessage( '$1', [ $data ] ), 'unknownerror' );
+				}
+				$this->dieWithError( $data );
+			} else {
+				$code = 'unknownerror';
+				if ( $data instanceof Message ) {
+					$code = $data instanceof IApiMessage ? $data->getApiCode() : $data->getKey();
+					$data = $data->inLanguage( 'en' )->useDatabase( false )->text();
+				}
+				$this->dieUsage( $data, $code );
+			}
 		}
 
 		// to prevent JS parsing problems, display should be the same
@@ -77,8 +98,12 @@ class PFAutocompleteAPI extends ApiBase {
 		// correctly.
 		if ( is_null( $external_url ) ) {
 			$formattedData = array();
-			foreach ( $data as $value ) {
-				$formattedData[] = array( 'title' => $value );
+			foreach ( $data as $index => $value ) {
+				if ( $map ) {
+					$formattedData[] = array( 'title' => $index, 'displaytitle' => $value );
+				} else {
+					$formattedData[] = array( 'title' => $value );
+				}
 			}
 		} else {
 			$formattedData = $data;
@@ -130,7 +155,7 @@ class PFAutocompleteAPI extends ApiBase {
 	}
 
 	protected function getDescription() {
-		return 'Autocompletion call used by the Page Forms extension (http://www.mediawiki.org/Extension:Page_F)';
+		return 'Autocompletion call used by the Page Forms extension (https://www.mediawiki.org/Extension:Page_Forms)';
 	}
 
 	protected function getExamples() {
@@ -317,7 +342,7 @@ class PFAutocompleteAPI extends ApiBase {
 		$queryResults = $sqlQuery->run();
 
 		foreach ( $queryResults as $row ) {
-			// @TODO - this check should not be neceaary.
+			// @TODO - this check should not be necessary.
 			if ( ( $value = $row[$cargoFieldAlias] ) != '' ) {
 				$values[] = $value;
 			}

@@ -19,6 +19,7 @@ class PFFormField {
 	private $mIsHidden;
 	private $mIsRestricted;
 	private $mPossibleValues;
+	private $mUseDisplayTitle;
 	private $mIsList;
 	// The following fields are not set by the form-creation page
 	// (though they could be).
@@ -46,6 +47,7 @@ class PFFormField {
 		$f->mIsRestricted = false;
 		$f->mIsUploadable = false;
 		$f->mPossibleValues = null;
+		$f->mUseDisplayTitle = false;
 		$f->mFieldArgs = array();
 		$f->mDescriptionArgs = array();
 		return $f;
@@ -125,6 +127,10 @@ class PFFormField {
 		} else {
 			return $this->template_field->getPossibleValues();
 		}
+	}
+
+	public function getUseDisplayTitle() {
+		return $this->mUseDisplayTitle;
 	}
 
 	public function getInputName() {
@@ -261,10 +267,16 @@ class PFFormField {
 						$category_name = ucfirst( $category_name );
 					}
 					$f->mPossibleValues = PFValuesUtils::getAllPagesForCategory( $category_name, 10 );
+					global $wgPageFormsUseDisplayTitle;
+					$f->mUseDisplayTitle = $wgPageFormsUseDisplayTitle;
 				} elseif ( $sub_components[0] == 'values from concept' ) {
 					$f->mPossibleValues = PFValuesUtils::getAllPagesForConcept( $sub_components[1] );
+					global $wgPageFormsUseDisplayTitle;
+					$f->mUseDisplayTitle = $wgPageFormsUseDisplayTitle;
 				} elseif ( $sub_components[0] == 'values from namespace' ) {
 					$f->mPossibleValues = PFValuesUtils::getAllPagesForNamespace( $sub_components[1] );
+					global $wgPageFormsUseDisplayTitle;
+					$f->mUseDisplayTitle = $wgPageFormsUseDisplayTitle;
 				} elseif ( $sub_components[0] == 'values dependent on' ) {
 					global $wgPageFormsDependentFields;
 					$wgPageFormsDependentFields[] = array( $sub_components[1], $fullFieldName );
@@ -348,6 +360,8 @@ class PFFormField {
 			} elseif ( array_key_exists( 'mapping cargo table', $f->mFieldArgs ) &&
 				array_key_exists( 'mapping cargo field', $f->mFieldArgs ) ) {
 				$f->setValuesWithMappingCargoField();
+			} elseif ( $f->mUseDisplayTitle ) {
+				$f->mPossibleValues = $f->disambiguateLabels( $f->mPossibleValues );
 			}
 		}
 		if ( $template_in_form->allowsMultiple() ) {
@@ -514,7 +528,10 @@ class PFFormField {
 		$templateName = $this->mFieldArgs['mapping template'];
 		$title = Title::makeTitleSafe( NS_TEMPLATE, $templateName );
 		$templateExists = $title->exists();
-		foreach ( $this->mPossibleValues as $value ) {
+		foreach ( $this->mPossibleValues as $index => $value ) {
+			if ( $this->mUseDisplayTitle ) {
+				$value = $index;
+			}
 			if ( $templateExists ) {
 				$label = trim( $wgParser->recursiveTagParse( '{{' . $templateName .
 					'|' . $value . '}}' ) );
@@ -548,7 +565,10 @@ class PFFormField {
 
 		$propertyName = $this->mFieldArgs['mapping property'];
 		$labels = array();
-		foreach ( $this->mPossibleValues as $value ) {
+		foreach ( $this->mPossibleValues as $index => $value ) {
+			if ( $this->mUseDisplayTitle ) {
+				$value = $index;
+			}
 			$labels[$value] = $value;
 			$subject = Title::newFromText( $value );
 			if ( $subject != null ) {
@@ -567,7 +587,10 @@ class PFFormField {
 	 */
 	function setValuesWithMappingCargoField() {
 		$labels = array();
-		foreach ( $this->mPossibleValues as $value ) {
+		foreach ( $this->mPossibleValues as $index => $value ) {
+			if ( $this->mUseDisplayTitle ) {
+				$value = $index;
+			}
 			$labels[$value] = $value;
 			$vals = PFValuesUtils::getValuesForCargoField(
 				$this->mFieldArgs['mapping cargo table'],
@@ -625,6 +648,10 @@ class PFFormField {
 	 * Map a template field value into labels.
 	 */
 	public function valueStringToLabels( $valueString, $delimiter ) {
+		if ( strlen( trim( $valueString ) ) === 0 ||
+			is_null( $this->mPossibleValues ) ) {
+			return $valueString;
+		}
 		if ( !is_null( $delimiter ) ) {
 			$values = array_map( 'trim', explode( $delimiter, $valueString ) );
 		} else {
@@ -676,7 +703,8 @@ class PFFormField {
 		if ( $this->hasFieldArg( 'mapping template' ) ||
 			$this->hasFieldArg( 'mapping property' ) ||
 			( $this->hasFieldArg( 'mapping cargo table' ) &&
-			$this->hasFieldArg( 'mapping cargo field' ) ) ) {
+			$this->hasFieldArg( 'mapping cargo field' ) ) ||
+			$this->mUseDisplayTitle ) {
 			if ( $this->hasFieldArg( 'part_of_multiple' ) ) {
 				$text .= Html::hidden( $template_name . '[num][map_field][' . $field_name . ']', 'true' );
 			} else {

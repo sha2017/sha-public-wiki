@@ -36,6 +36,7 @@
 	"pf_forminputs_restricted": "Nëmmen Administrateure kënnen dëst Feld änneren",
 	"pf_forminputs_size": "D'Gréisst vum Textfeld (an Zeechen)",
 	"pf_forminputs_maxlength": "Déi maximal erlaabt Längt vum Text an dësem Feld",
+	"pf_forminputs_change_file": "Fichier änneren",
 	"pf_forminputs_defaultfilename": "De Standard Numm fir de eropgeluede Fichieren",
 	"pf_forminputs_existingvaluesonly": "Nëmme Wäerter zouloossen déi schonn an der Lëscht sinn",
 	"pf_forminputs_depth": "D'Zuel vun den Niveaue vu Kategorien déi am Ufank gewise ginn",
@@ -43,6 +44,7 @@
 	"pf_forminputs_width": "D'Breet vun dësem Input, a Pixel",
 	"pf_forminputs_checkboxes_select_all": "Alles uwielen",
 	"pf_forminputs_checkboxes_select_none": "Keen eraussichen",
+	"pf_forminputs_numstars": "D'Zuel vun de Stären déi gewise solle ginn",
 	"createform": "E Formulaire uleeën",
 	"pf-createform-with-name": "Formulaire uleeën: $1",
 	"pf_createform_nameinput": "Numm vum Formulaire",
@@ -84,6 +86,8 @@
 	"pf_formstart_createoredit": "Uleeën oder änneren",
 	"formedit": "Formulaire änneren",
 	"pf-formedit-selectform": "Sicht e Formulaire eraus fir dës Säit unzeleeën:",
+	"pf-formedit-mainforms": "Haaptformulaire:",
+	"pf-formedit-otherforms": "Aner Formulairen:",
 	"pf_formedit_createtitle": "$1: $2 uleeën",
 	"pf_formedit_createtitlenotarget": "$1 uleeën",
 	"pf_formedit_altforms": "Dir kënnt dës Säit och mat engem vun dëse Formulairen derbäisetzen:",
@@ -153,5 +157,8 @@
 	"pf-datepicker-firstdate": "Den éischten Datum deen erausgesicht ka ginn (am Format JJJJ/MM/DD)",
 	"pf-datepicker-lastdate": "De leschten Datum deen erausgesicht ka ginn (am Format JJJJ/MM/DD)",
 	"pf-datepicker-disabledaysofweek": "Eng Lëscht vun Deeg déi net erausgesicht kënne ginn (z. Bsp. Weekend:6, 0).",
-	"pf-regexp-wrongformat": "Falsche Format."
+	"pf-regexp-wrongformat": "Falsche Format.",
+	"pf-missingconcept": "D'Konzept konnt net fonnt ginn: $1",
+	"pf-missingnamespace": "Den Nummraum konnt net fonnt ginn: $1",
+	"pf-externalpageempty": "Déi extern Säit huet keen Inhalt."
 }

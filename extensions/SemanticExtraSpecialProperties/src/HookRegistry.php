@@ -76,16 +76,46 @@ class HookRegistry {
 		return Hooks::getHandlers( $name );
 	}
 
+	/**
+	 * @since  1.4
+	 *
+	 * @param array &$config
+	 */
+	public static function onBeforeConfigCompletion( &$config ) {
+
+		// Exclude listed properties from indexing
+		if ( isset( $config['smwgFulltextSearchPropertyExemptionList'] ) ) {
+			$config['smwgFulltextSearchPropertyExemptionList'] = array_merge(
+				$config['smwgFulltextSearchPropertyExemptionList'],
+				array(
+					'___EUSER', '___CUSER', '___SUBP', '___REVID', '___VIEWS',
+					'___NREV', '___NTREV', '___USEREDITCNT', '___EXIFDATA'
+				)
+			);
+		}
+
+		// Exclude listed properties from dependency detection as each of the
+		// selected object would trigger an automatic change without the necessary
+		// human intervention and can therefore produce unwanted query updates
+		if ( isset( $config['smwgQueryDependencyPropertyExemptionlist'] ) ) {
+			$config['smwgQueryDependencyPropertyExemptionlist'] = array_merge(
+				$config['smwgQueryDependencyPropertyExemptionlist'],
+				array(
+					'___REVID', '___VIEWS', '___NREV', '___NTREV',
+					'___USEREDITCNT', '___EXIFDATA'
+				)
+			);
+		}
+	}
+
 	private function registerCallbackHandlers( $configuration ) {
 
-		$propertyRegistry = PropertyRegistry::getInstance();
-
-		$this->handlers['smwInitProperties'] = function () use( $propertyRegistry ) {
-			return $propertyRegistry->registerPropertiesAndAliases();
+		$this->handlers['smwInitProperties'] = function () {
+			return PropertyRegistry::getInstance()->registerPropertiesAndAliases();
 		};
 
-		$this->handlers['SMW::SQLStore::updatePropertyTableDefinitions'] = function ( &$propertyTableDefinitions ) use( $propertyRegistry, $configuration ) {
-			return $propertyRegistry->registerAsFixedTables( $propertyTableDefinitions, $configuration );
+		$this->handlers['SMW::SQLStore::updatePropertyTableDefinitions'] = function ( &$propertyTableDefinitions ) use( $configuration ) {
+			return PropertyRegistry::getInstance()->registerAsFixedTables( $propertyTableDefinitions, $configuration );
 		};
 
 		$this->handlers['SMWStore::updateDataBefore'] = function ( $store, $semanticData ) use ( $configuration ) {

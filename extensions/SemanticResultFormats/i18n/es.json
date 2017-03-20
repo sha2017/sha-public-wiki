@@ -16,7 +16,8 @@
 			"Fitoschido",
 			"Macofe",
 			"Indiralena",
-			"Lemondoge"
+			"Lemondoge",
+			"Dgstranz"
 		]
 	},
 	"srf-desc": "Formatos de resultados adicionales para consultas de Semantic MediaWiki",
@@ -187,6 +188,8 @@
 	"srf-ui-datatables-label-parameters": "Parámetros",
 	"srf-ui-datatables-label-filters": "Filtros de columnas y búsqueda",
 	"srf-ui-datatables-label-information": "Información",
+	"srf-ui-datatables-panel-disclaimer": "Los parámetros y condiciones se pueden alterar, pero cualquier cambio es temporal y se abandonará tras actualizar la página.",
+	"srf-ui-datatables-label-update-success": "La actualización de la tabla se realizó correctamente",
 	"srf-ui-datatables-label-update-error": "Falló la actualización de la tabla.",
 	"srf-ui-datatables-label-placeholder-column-search": "Buscar…",
 	"srf-ui-datatables-label-content-cache": "El contenido se deriva de la caché local.",
@@ -198,6 +201,7 @@
 	"srf-ui-datatables-label-sInfo": "Se muestran _START_ a _END_ de _TOTAL_ entradas",
 	"srf-ui-datatables-label-sInfoEmpty": "Muestra: 0 a 0 de 0 entradas",
 	"srf-ui-datatables-label-sInfoFiltered": "(filtradas de _MAX_ entradas en total)",
+	"srf-ui-datatables-label-sInfoThousands": "&nbsp;",
 	"srf-ui-datatables-label-sLengthMenu": "Mostrar _MENU_ entradas",
 	"srf-ui-datatables-label-sLoadingRecords": "Cargando…",
 	"srf-ui-datatables-label-sProcessing": "Procesando…",
@@ -214,6 +218,7 @@
 	"srf-noparentprop": "No se ha especificado ninguna propiedad padre. No se puede construir el árbol sin especificar una propiedad padre.",
 	"srf-rootinvalid": "El título de la página «$1» no es válido.",
 	"srf-paramdesc-parent": "La propiedad que contiene la página padre",
+	"srf-paramdesc-root": "Página raíz del árbol",
 	"srf-paramdesc-startlevel": "El nivel de inicio del árbol, por ejemplo, para integrarlo en otro árbol",
 	"srf-printername-slideshow": "Presentación de diapositivas",
 	"srf-paramdesc-delay": "Tiempo entre diapositivas, en segundos",
@@ -256,6 +261,7 @@
 	"srf-ui-eventcalendar-label-week": "Semana",
 	"srf-ui-eventcalendar-label-day": "Día",
 	"srf-ui-eventcalendar-label-allday": "Todo el día",
+	"srf-ui-eventcalendar-label-update-success": "El calendario de eventos se actualizó correctamente.",
 	"srf-ui-eventcalendar-label-update-error": "El calendario de eventos de error de actualización.",
 	"srf-printername-dygraphs": "Gráfico Dygraphs",
 	"srf-paramdesc-datasource": "La fuente en la que están accesibles los datos. Valores permitidos: \"file\", \"raw\" y \"url\". Predeterminado: \"file\"",
@@ -284,5 +290,7 @@
 	"srf-ui-mediaplayer-label-repeat-off": "Desactivar repetición",
 	"srf-ui-mediaplayer-label-full-screen": "Pantalla completa",
 	"srf-ui-mediaplayer-label-restore-screen": "Restaurar la pantalla",
-	"srf-excel-link": "Excel"
+	"srf-excel-link": "Excel",
+	"srf-excel-missing-phpexcel": "No se ha podido exportar a MS-Excel porque la extensión [https://www.mediawiki.org/wiki/Extension:PHPExcel PHPExcel] no está instalada.",
+	"srf-paramdesc-excel-templatefile": "El nombre de un archivo de Excel del espacio de nombres «Archivo» utilizado para dar formato al archivo generado"
 }
