@@ -27,7 +27,7 @@ class LinksUpdateConstructedTest extends \PHPUnit_Framework_TestCase {
 		$this->testEnvironment = new TestEnvironment();
 
 		$idTable = $this->getMockBuilder( '\stdClass' )
-			->setMethods( array( 'hasIDFor' ) )
+			->setMethods( array( 'exists' ) )
 			->getMock();
 
 		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
@@ -49,20 +49,9 @@ class LinksUpdateConstructedTest extends \PHPUnit_Framework_TestCase {
 
 	public function testCanConstruct() {
 
-		$title = Title::newFromText( __METHOD__ );
-		$title->resetArticleID( 10001 );
-
-		$linksUpdate = $this->getMockBuilder( '\LinksUpdate' )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$linksUpdate->expects( $this->any() )
-			->method( 'getTitle' )
-			->will( $this->returnValue( $title ) );
-
 		$this->assertInstanceOf(
 			'\SMW\MediaWiki\Hooks\LinksUpdateConstructed',
-			new LinksUpdateConstructed( $linksUpdate )
+			new LinksUpdateConstructed()
 		);
 	}
 
@@ -96,11 +85,11 @@ class LinksUpdateConstructedTest extends \PHPUnit_Framework_TestCase {
 		$parserOutput->setTitleText( $title->getPrefixedText() );
 
 		$idTable = $this->getMockBuilder( '\stdClass' )
-			->setMethods( array( 'hasIDFor' ) )
+			->setMethods( array( 'exists' ) )
 			->getMock();
 
 		$idTable->expects( $this->atLeastOnce() )
-			->method( 'hasIDFor' )
+			->method( 'exists' )
 			->will( $this->returnValue( true ) );
 
 		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
@@ -117,14 +106,11 @@ class LinksUpdateConstructedTest extends \PHPUnit_Framework_TestCase {
 
 		$this->testEnvironment->registerObject( 'Store', $store );
 
-		$instance = new LinksUpdateConstructed(
-			new LinksUpdate( $title, $parserOutput )
-		);
-
+		$instance = new LinksUpdateConstructed();
 		$instance->disableDeferredUpdate();
 
 		$this->assertTrue(
-			$instance->process()
+			$instance->process( new LinksUpdate( $title, $parserOutput ) )
 		);
 	}
 
@@ -162,10 +148,10 @@ class LinksUpdateConstructedTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getParserOutput' )
 			->will( $this->returnValue( $parserOutput ) );
 
-		$instance = new LinksUpdateConstructed( $linksUpdate );
+		$instance = new LinksUpdateConstructed();
 
 		$this->assertTrue(
-			$instance->process()
+			$instance->process( $linksUpdate )
 		);
 	}
 

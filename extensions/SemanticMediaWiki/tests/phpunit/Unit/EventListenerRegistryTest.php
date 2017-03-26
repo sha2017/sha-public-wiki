@@ -64,12 +64,11 @@ class EventListenerRegistryTest extends \PHPUnit_Framework_TestCase {
 			EventDispatcherFactory::getInstance()->newGenericEventListenerCollection()
 		);
 
-		$this->verifyPropertyTypeChangeEvent( $instance );
+		$this->verifyPropertySpecificationeChangeEvent( $instance );
 		$this->verifyExporterResetEvent( $instance );
 		$this->verifyFactboxCacheDeleteEvent( $instance );
 		$this->verifyCachedPropertyValuesPrefetcherResetEvent( $instance );
-		$this->verifyOnBeforeSemanticDataUpdateCompleteEvent( $instance );
-		$this->verifyOnAfterSemanticDataUpdateCompleteEvent( $instance );
+		$this->verifyCachedPrefetcherResetEvent( $instance );
 	}
 
 	public function verifyExporterResetEvent( EventListenerCollection $instance ) {
@@ -80,7 +79,7 @@ class EventListenerRegistryTest extends \PHPUnit_Framework_TestCase {
 		$this->assertListenerExecuteFor( 'query.comparator.reset', $instance, null );
 	}
 
-	public function verifyPropertyTypeChangeEvent( EventListenerCollection $instance ) {
+	public function verifyPropertySpecificationeChangeEvent( EventListenerCollection $instance ) {
 
 		$store = $this->getMockBuilder( '\SMW\Store' )
 			->disableOriginalConstructor()
@@ -99,7 +98,7 @@ class EventListenerRegistryTest extends \PHPUnit_Framework_TestCase {
 		$dispatchContext = EventDispatcherFactory::getInstance()->newDispatchContext();
 		$dispatchContext->set( 'subject', new DIWikiPage( 'Foo', NS_MAIN ) );
 
-		$this->assertListenerExecuteFor( 'property.spec.change', $instance, $dispatchContext );
+		$this->assertListenerExecuteFor( 'property.specification.change', $instance, $dispatchContext );
 	}
 
 	public function verifyFactboxCacheDeleteEvent( EventListenerCollection $instance ) {
@@ -156,33 +155,25 @@ class EventListenerRegistryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function verifyOnBeforeSemanticDataUpdateCompleteEvent( EventListenerCollection $instance ) {
+	public function verifyCachedPrefetcherResetEvent( EventListenerCollection $instance ) {
 
 		$dispatchContext = EventDispatcherFactory::getInstance()->newDispatchContext();
 
+		$title = $this->getMockBuilder( '\Title' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$title->expects( $this->atLeastOnce() )
+			->method( 'getNamespace' )
+			->will( $this->returnValue( NS_MAIN ) );
+
 		$dispatchContext->set(
-			'subject',
-			new DIWikiPage( 'Foo', NS_MAIN )
+			'title',
+			$title
 		);
 
 		$this->assertListenerExecuteFor(
-			'on.before.semanticdata.update.complete',
-			$instance,
-			$dispatchContext
-		);
-	}
-
-	public function verifyOnAfterSemanticDataUpdateCompleteEvent( EventListenerCollection $instance ) {
-
-		$dispatchContext = EventDispatcherFactory::getInstance()->newDispatchContext();
-
-		$dispatchContext->set(
-			'subject',
-			new DIWikiPage( 'Foo', NS_MAIN )
-		);
-
-		$this->assertListenerExecuteFor(
-			'on.after.semanticdata.update.complete',
+			'cached.prefetcher.reset',
 			$instance,
 			$dispatchContext
 		);

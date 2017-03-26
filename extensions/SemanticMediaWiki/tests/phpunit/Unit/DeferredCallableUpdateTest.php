@@ -16,13 +16,16 @@ use SMW\DeferredCallableUpdate;
 class DeferredCallableUpdateTest extends \PHPUnit_Framework_TestCase {
 
 	private $testEnvironment;
+	private $spyLogger;
 
 	protected function setUp() {
 		parent::setUp();
 		$this->testEnvironment = new TestEnvironment();
+		$this->spyLogger = $this->testEnvironment->getUtilityFactory()->newSpyLogger();
 	}
 
 	protected function tearDown() {
+		$this->testEnvironment->clearPendingDeferredUpdates();
 		$this->testEnvironment->tearDown();
 		parent::tearDown();
 	}
@@ -41,8 +44,6 @@ class DeferredCallableUpdateTest extends \PHPUnit_Framework_TestCase {
 
 	public function testUpdate() {
 
-		$this->testEnvironment->clearPendingDeferredUpdates();
-
 		$test = $this->getMockBuilder( '\stdClass' )
 			->disableOriginalConstructor()
 			->setMethods( array( 'doTest' ) )
@@ -59,14 +60,13 @@ class DeferredCallableUpdateTest extends \PHPUnit_Framework_TestCase {
 			$callback
 		);
 
-		$instance->pushToDeferredUpdateList();
+		$instance->setLogger( $this->spyLogger );
+		$instance->pushUpdate();
 
 		$this->testEnvironment->executePendingDeferredUpdates();
 	}
 
 	public function testWaitableUpdate() {
-
-		$this->testEnvironment->clearPendingDeferredUpdates();
 
 		$test = $this->getMockBuilder( '\stdClass' )
 			->disableOriginalConstructor()
@@ -85,7 +85,7 @@ class DeferredCallableUpdateTest extends \PHPUnit_Framework_TestCase {
 		);
 
 		$instance->markAsPending( true );
-		$instance->pushToDeferredUpdateList();
+		$instance->pushUpdate();
 
 		$instance->releasePendingUpdates();
 
@@ -111,7 +111,121 @@ class DeferredCallableUpdateTest extends \PHPUnit_Framework_TestCase {
 		);
 
 		$instance->enabledDeferredUpdate( false );
-		$instance->pushToDeferredUpdateList();
+		$instance->pushUpdate();
+	}
+
+	public function testOrigin() {
+
+		$callback = function() {
+		};
+
+		$instance = new DeferredCallableUpdate(
+			$callback
+		);
+
+		$instance->setOrigin( 'Foo' );
+
+		$this->assertEquals(
+			'Foo',
+			$instance->getOrigin()
+		);
+	}
+
+	public function testFilterDuplicateQueueEntryByFingerprint() {
+
+		$test = $this->getMockBuilder( '\stdClass' )
+			->disableOriginalConstructor()
+			->setMethods( array( 'doTest' ) )
+			->getMock();
+
+		$test->expects( $this->once() )
+			->method( 'doTest' );
+
+		$callback = function() use ( $test ) {
+			$test->doTest();
+		};
+
+		$instance = new DeferredCallableUpdate(
+			$callback
+		);
+
+		$instance->setFingerprint( __METHOD__ );
+		$instance->markAsPending( true );
+		$instance->pushUpdate();
+
+		$instance = new DeferredCallableUpdate(
+			$callback
+		);
+
+		$instance->setFingerprint( __METHOD__ );
+		$instance->markAsPending( true );
+		$instance->pushUpdate();
+
+		$this->testEnvironment->executePendingDeferredUpdates();
+	}
+
+	public function testUpdateOnTransactionIdle() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$connection->expects( $this->once() )
+			->method( 'onTransactionIdle' )
+			->will( $this->returnCallback( function( $callback ) {
+				return call_user_func( $callback );
+			}
+			) );
+
+		$this->testEnvironment->clearPendingDeferredUpdates();
+
+		$test = $this->getMockBuilder( '\stdClass' )
+			->disableOriginalConstructor()
+			->setMethods( array( 'doTest' ) )
+			->getMock();
+
+		$test->expects( $this->once() )
+			->method( 'doTest' );
+
+		$callback = function() use ( $test ) {
+			$test->doTest();
+		};
+
+		$instance = new DeferredCallableUpdate(
+			$callback,
+			$connection
+		);
+
+		$instance->waitOnTransactionIdle();
+		$instance->pushUpdate();
+
+		$this->testEnvironment->executePendingDeferredUpdates();
+	}
+
+	public function testUpdateOnTransactionIdleWithMissingConnection() {
+
+		$this->testEnvironment->clearPendingDeferredUpdates();
+
+		$test = $this->getMockBuilder( '\stdClass' )
+			->disableOriginalConstructor()
+			->setMethods( array( 'doTest' ) )
+			->getMock();
+
+		$test->expects( $this->once() )
+			->method( 'doTest' );
+
+		$callback = function() use ( $test ) {
+			$test->doTest();
+		};
+
+		$instance = new DeferredCallableUpdate(
+			$callback
+		);
+
+		$instance->waitOnTransactionIdle();
+		$instance->pushUpdate();
+
+		$this->testEnvironment->executePendingDeferredUpdates();
 	}
 
 }

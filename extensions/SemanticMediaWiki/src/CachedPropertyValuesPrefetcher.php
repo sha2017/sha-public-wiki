@@ -28,7 +28,12 @@ class CachedPropertyValuesPrefetcher {
 	/**
 	 * @var string
 	 */
-	const VERSION = '0.3';
+	const VERSION = '0.4.1';
+
+	/**
+	 * Namespace occupied by the BlobStore
+	 */
+	const CACHE_NAMESPACE = 'smw:pvp:store';
 
 	/**
 	 * @var Store
@@ -54,8 +59,8 @@ class CachedPropertyValuesPrefetcher {
 	/**
 	 * @since 2.4
 	 */
-	public function resetCacheFor( DIWikiPage $subject ) {
-		$this->blobStore->delete( $this->getRootHashFor( $subject ) );
+	public function resetCacheBy( DIWikiPage $subject ) {
+		$this->blobStore->delete( $this->getRootHashFrom( $subject ) );
 	}
 
 	/**
@@ -69,12 +74,20 @@ class CachedPropertyValuesPrefetcher {
 	 */
 	public function getPropertyValues( DIWikiPage $subject, DIProperty $property, RequestOptions $requestOptions = null ) {
 
-		$key = $property->getKey() . ':' . $subject->getSubobjectName() . ':' . (
-			$requestOptions !== null ? $requestOptions->getHash() : null
-		);
+		// Items are collected as part of the subject hash so that any request is
+		// stored with that entity identifier allowing it to be evicted entirely
+		// when the subject is changed.
+		//
+		// The key on the other hand represent an individual request identifier
+		// that is stored as part of the overall cache item but making distinct
+		// requests possible, yet is fetched as part of the overall subject to
+		// minimize cache fragmentation and a better eviction strategy.
+		$key = $property->getKey() .
+			':' . $subject->getSubobjectName() .
+			':' . ( $requestOptions !== null ? md5( $requestOptions->getHash() ) : null );
 
 		$container = $this->blobStore->read(
-			$this->getRootHashFor( $subject )
+			$this->getRootHashFrom( $subject )
 		);
 
 		if ( $container->has( $key ) ) {
@@ -132,7 +145,7 @@ class CachedPropertyValuesPrefetcher {
 	 *
 	 * @return string
 	 */
-	public function getRootHashFor( DIWikiPage $subject ) {
+	public function getRootHashFrom( DIWikiPage $subject ) {
 		return md5( $subject->asBase()->getHash() . self::VERSION );
 	}
 
@@ -143,7 +156,7 @@ class CachedPropertyValuesPrefetcher {
 	 *
 	 * @return string
 	 */
-	public function getHashFor( $hash ) {
+	public function createHashFromString( $hash ) {
 		return md5( $hash . self::VERSION );
 	}
 

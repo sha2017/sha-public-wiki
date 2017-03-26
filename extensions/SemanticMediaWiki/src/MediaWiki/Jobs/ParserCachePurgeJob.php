@@ -6,6 +6,8 @@ use Hooks;
 use SMW\ApplicationFactory;
 use SMW\HashBuilder;
 use SMW\SQLStore\QueryDependencyLinksStoreFactory;
+use SMW\RequestOptions;
+use SMWQuery as Query;
 use Title;
 
 /**
@@ -21,6 +23,11 @@ class ParserCachePurgeJob extends JobBase {
 	 * negative impact when running the initial update in online mode.
 	 */
 	const CHUNK_SIZE = 300;
+
+	/**
+	 * @var ApplicationFactory
+	 */
+	protected $applicationFactory;
 
 	/**
 	 * @var integer
@@ -45,6 +52,7 @@ class ParserCachePurgeJob extends JobBase {
 	 */
 	public function __construct( Title $title, $params = array() ) {
 		parent::__construct( 'SMW\ParserCachePurgeJob', $title, $params );
+		$this->applicationFactory = ApplicationFactory::getInstance();
 	}
 
 	/**
@@ -54,8 +62,8 @@ class ParserCachePurgeJob extends JobBase {
 	 */
 	public function run() {
 
-		$this->pageUpdater = ApplicationFactory::getInstance()->newMwCollaboratorFactory()->newPageUpdater();
-		$this->store = ApplicationFactory::getInstance()->getStore();
+		$this->pageUpdater = $this->applicationFactory->newPageUpdater();
+		$this->store = $this->applicationFactory->getStore();
 
 		if ( $this->hasParameter( 'limit' ) ) {
 			$this->limit = $this->getParameter( 'limit' );
@@ -66,10 +74,14 @@ class ParserCachePurgeJob extends JobBase {
 		}
 
 		if ( $this->hasParameter( 'idlist' ) ) {
-			$this->findEmbeddedQueryTargetLinksBatches( $this->getParameter( 'idlist' ) );
+			$this->findEmbeddedQueryTargetLinksBatches(
+				$this->getParameter( 'idlist' ),
+				$this->applicationFactory->getMediaWikiLogger()
+			);
 		}
 
 		$this->pageUpdater->addPage( $this->getTitle() );
+		$this->pageUpdater->waitOnTransactionIdle();
 		$this->pageUpdater->doPurgeParserCache();
 
 		Hooks::run( 'SMW::Job::AfterParserCachePurgeComplete', array( $this ) );
@@ -87,7 +99,7 @@ class ParserCachePurgeJob extends JobBase {
 	 *
 	 * @param array|string $idList
 	 */
-	private function findEmbeddedQueryTargetLinksBatches( $idList ) {
+	private function findEmbeddedQueryTargetLinksBatches( $idList, $logger ) {
 
 		if ( is_string( $idList ) && strpos( $idList, '|') !== false ) {
 			$idList = explode( '|', $idList );
@@ -103,11 +115,15 @@ class ParserCachePurgeJob extends JobBase {
 			$this->store
 		);
 
+		$requestOptions = new RequestOptions();
+
 		// +1 to look ahead
-		$hashList = $queryDependencyLinksStore->findPartialEmbeddedQueryTargetLinksHashListFor(
+		$requestOptions->setLimit( $this->limit + 1 );
+		$requestOptions->setOffset( $this->offset );
+
+		$hashList = $queryDependencyLinksStore->findEmbeddedQueryTargetLinksHashListFrom(
 			$idList,
-			$this->limit + 1,
-			$this->offset
+			$requestOptions
 		);
 
 		if ( $hashList === array() ) {
@@ -129,22 +145,33 @@ class ParserCachePurgeJob extends JobBase {
 			$job->run();
 		}
 
-		wfDebugLog( 'smw', __METHOD__  . " counted: {$countedHashListEntries} | offset: {$this->offset}  for " . $this->getTitle()->getPrefixedDBKey() . "\n" );
+		$logger->info( __METHOD__  . " counted: {$countedHashListEntries} | offset: {$this->offset}  for " . $this->getTitle()->getPrefixedDBKey() );
 
-		$hashList = $this->doBuildUniqueTargetLinksHashList(
+		list( $hashList, $queryList ) = $this->doBuildUniqueTargetLinksHashList(
 			$hashList
+		);
+
+		$this->applicationFactory->singleton( 'CachedQueryResultPrefetcher' )->resetCacheBy(
+			$queryList,
+			'ParserCachePurgeJob'
 		);
 
 		$this->addPagesToUpdater( $hashList );
 	}
 
-	private function doBuildUniqueTargetLinksHashList( array $targetLinksHashList ) {
+	private function doBuildUniqueTargetLinksHashList( $targetLinksHashList ) {
 
 		$uniqueTargetLinksHashList = array();
+		$uniqueQueryList = array();
 
 		foreach ( $targetLinksHashList as $targetLinkHash ) {
 
-			list( $title, $namespace, $iw ) = explode( '#', $targetLinkHash, 4 );
+			list( $title, $namespace, $iw, $subobjectname ) = explode( '#', $targetLinkHash, 4 );
+
+			// QueryResultCache stores queries with they queryID = $subobjectname
+			if ( strpos( $subobjectname, Query::ID_PREFIX ) !== false ) {
+				$uniqueQueryList[$subobjectname] = true;
+			}
 
 			// We make an assumption (as we avoid to query the DB) about that a
 			// query is bind to its subject by simply removing the subobject
@@ -153,7 +180,7 @@ class ParserCachePurgeJob extends JobBase {
 			$uniqueTargetLinksHashList[HashBuilder::createHashIdFromSegments( $title, $namespace, $iw )] = true;
 		}
 
-		return array_keys( $uniqueTargetLinksHashList );
+		return array( array_keys( $uniqueTargetLinksHashList ), array_keys( $uniqueQueryList ) );
 	}
 
 	private function addPagesToUpdater( array $hashList ) {

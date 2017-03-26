@@ -42,7 +42,7 @@ class QueryResultSerializer implements DispatchableSerializer {
 			throw new OutOfBoundsException( 'Object was not identified as a QueryResult instance' );
 		}
 
-		return $this->getSerializedQueryResult( $queryResult ) + array( 'serializer' => __CLASS__, 'version' => 0.11 );
+		return $this->getSerializedQueryResult( $queryResult ) + array( 'serializer' => __CLASS__, 'version' => 2 );
 	}
 
 	/**
@@ -210,11 +210,16 @@ class QueryResultSerializer implements DispatchableSerializer {
 			'format' => $printRequest->getOutputFormat()
 		);
 
-		if ( $printRequest->getMode() !== PrintRequest::PRINT_PROP ) {
-			return $serialized;
+		$data = $printRequest->getData();
+
+		if ( $printRequest->isMode( PrintRequest::PRINT_CHAIN ) ) {
+			$serialized['chain'] = $data->getDataItem()->getString();
+			$serialized['key'] = $data->getLastPropertyChainValue()->getDataItem()->getKey();
 		}
 
-		$data = $printRequest->getData();
+		if ( !$printRequest->isMode( PrintRequest::PRINT_PROP ) ) {
+			return $serialized;
+		}
 
 		if ( $data === null ) {
 			return $serialized;

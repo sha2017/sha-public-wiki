@@ -4,14 +4,18 @@ namespace SMW;
 
 use Onoi\HttpRequest\HttpRequest;
 use SMW\MediaWiki\Specials\SpecialDeferredRequestDispatcher;
+use SMW\MediaWiki\Jobs\JobFactory;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
 use Title;
 
 /**
- * During the storage of a page, sometimes it is necessary the create extra
+ * During the storage of a page, sometimes it is necessary to create extra
  * processing requests that should be executed asynchronously (due to large DB
- * processing time) but without delay of the current transaction. This class
- * initiates and creates a separate request to be handled by the receiving
- * `SpecialDeferredRequestDispatcher` endpoint (if it can connect).
+ * processing time or is a secondary update) but without delay of the current
+ * transaction. This class initiates and creates a separate request to be handled
+ * by the receiving `SpecialDeferredRequestDispatcher` endpoint (if it can
+ * connect).
  *
  * `DeferredRequestDispatchManager` allows to invoke jobs independent from the job
  * scheduler with the objective to be run timely to the current transaction
@@ -23,12 +27,17 @@ use Title;
  *
  * @author mwjames
  */
-class DeferredRequestDispatchManager {
+class DeferredRequestDispatchManager implements LoggerAwareInterface {
 
 	/**
 	 * @var HttpRequest
 	 */
 	private $httpRequest;
+
+	/**
+	 * @var JobFactory
+	 */
+	private $jobFactory;
 
 	/**
 	 * Is kept static in order for the cli process to only make the check once
@@ -39,20 +48,39 @@ class DeferredRequestDispatchManager {
 	private static $canConnectToUrl = null;
 
 	/**
-	 * During unit tests, this parameter is set false to ensure that test execution
-	 * does match expected results.
-	 *
 	 * @var boolean
 	 */
-	private $enabledHttpDeferredJobRequestState = true;
+	private $isEnabledHttpDeferredRequest = true;
+
+	/**
+	 * @var boolean
+	 */
+	private $isPreferredWithJobQueue = false;
+
+	/**
+	 * @var boolean
+	 */
+	private $isCommandLineMode = false;
+
+	/**
+	 * @var boolean
+	 */
+	private $isEnabledJobQueue = true;
+
+	/**
+	 * LoggerInterface
+	 */
+	private $logger;
 
 	/**
 	 * @since 2.3
 	 *
 	 * @param HttpRequest $httpRequest
+	 * @param JobFactory $jobFactory
 	 */
-	public function __construct( HttpRequest $httpRequest ) {
+	public function __construct( HttpRequest $httpRequest, JobFactory $jobFactory ) {
 		$this->httpRequest = $httpRequest;
+		$this->jobFactory = $jobFactory;
 	}
 
 	/**
@@ -60,38 +88,125 @@ class DeferredRequestDispatchManager {
 	 */
 	public function reset() {
 		self::$canConnectToUrl = null;
-		$this->enabledHttpDeferredJobRequestState = true;
+		$this->isEnabledHttpDeferredRequest = true;
+		$this->isPreferredWithJobQueue = false;
+		$this->isCommandLineMode = false;
+		$this->isEnabledJobQueue = true;
+	}
+
+	/**
+	 * @see LoggerAwareInterface::setLogger
+	 *
+	 * @since 2.5
+	 *
+	 * @param LoggerInterface $logger
+	 */
+	public function setLogger( LoggerInterface $logger ) {
+		$this->logger = $logger;
 	}
 
 	/**
 	 * @since 2.3
 	 *
-	 * @param boolean $enabledHttpDeferredJobRequestState
+	 * @param boolean $isEnabledHttpDeferredRequest
 	 */
-	public function setEnabledHttpDeferredJobRequestState( $enabledHttpDeferredJobRequestState ) {
-		$this->enabledHttpDeferredJobRequestState = (bool)$enabledHttpDeferredJobRequestState;
+	public function isEnabledHttpDeferredRequest( $isEnabledHttpDeferredRequest ) {
+		$this->isEnabledHttpDeferredRequest = $isEnabledHttpDeferredRequest;
+	}
+
+	/**
+	 * Certain types of jobs or tasks may prefer to be executed using the job
+	 * queue therefore indicate whether the dispatcher should try opening a
+	 * http request or not.
+	 *
+	 * @since 2.5
+	 *
+	 * @param boolean $isPreferredWithJobQueue
+	 */
+	public function isPreferredWithJobQueue( $isPreferredWithJobQueue ) {
+		$this->isPreferredWithJobQueue = (bool)$isPreferredWithJobQueue;
+	}
+
+	/**
+	 * @see https://www.mediawiki.org/wiki/Manual:$wgCommandLineMode
+	 * Indicates whether MW is running in command-line mode.
+	 *
+	 * @since 2.5
+	 *
+	 * @param boolean $isCommandLineMode
+	 */
+	public function isCommandLineMode( $isCommandLineMode ) {
+		$this->isCommandLineMode = $isCommandLineMode;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param boolean $isEnabledJobQueue
+	 */
+	public function isEnabledJobQueue( $isEnabledJobQueue ) {
+		$this->isEnabledJobQueue = $isEnabledJobQueue;
 	}
 
 	/**
 	 * @since 2.4
 	 *
-	 * @param Title $title
+	 * @param Title|null $title
 	 * @param array $parameters
 	 */
-	public function dispatchParserCachePurgeJobFor( Title $title, $parameters = array() ) {
-		return $this->dispatchJobRequestFor( 'SMW\ParserCachePurgeJob', $title, $parameters );
+	public function dispatchParserCachePurgeJobWith( Title $title = null , $parameters = array() ) {
+
+		if ( $title === null || $parameters === array() || !isset( $parameters['idlist'] ) ) {
+			return;
+		}
+
+		return $this->dispatchJobRequestWith( 'SMW\ParserCachePurgeJob', $title, $parameters );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param Title|null $title
+	 * @param array $parameters
+	 */
+	public function dispatchFulltextSearchTableUpdateJobWith( Title $title = null, $parameters = array() ) {
+
+		if ( $title === null ) {
+			return;
+		}
+
+		return $this->dispatchJobRequestWith( 'SMW\FulltextSearchTableUpdateJob', $title, $parameters );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param Title|null $title
+	 * @param array $parameters
+	 */
+	public function dispatchTempChangeOpPurgeJobWith( Title $title = null, $parameters = array() ) {
+
+		if ( $title === null || $parameters === array() ) {
+			return;
+		}
+
+		if ( !isset( $parameters['slot:id'] ) || $parameters['slot:id'] === null ) {
+			return;
+		}
+
+		return $this->dispatchJobRequestWith( 'SMW\TempChangeOpPurgeJob', $title, $parameters );
 	}
 
 	/**
 	 * @since 2.3
 	 *
 	 * @param string $type
-	 * @param Title $title
+	 * @param Title|null $title
 	 * @param array $parameters
 	 */
-	public function dispatchJobRequestFor( $type, Title $title, $parameters = array() ) {
+	public function dispatchJobRequestWith( $type, Title $title = null, $parameters = array() ) {
 
-		if ( !$this->doPreliminaryCheckForType( $type, $parameters ) ) {
+		if ( $title === null || !$this->isAllowedJobType( $type ) ) {
 			return null;
 		}
 
@@ -100,13 +215,12 @@ class DeferredRequestDispatchManager {
 			SpecialDeferredRequestDispatcher::getTargetURL()
 		);
 
-		$dispatchableCallbackJob = $this->getDispatchableCallbackJobFor( $type );
+		$dispatchableCallbackJob = $this->createDispatchableCallbackJob(
+			$type,
+			$this->isEnabledJobQueue
+		);
 
-		// Build requestToken as source verification during the POST request
-		$parameters['timestamp'] = time();
-		$parameters['requestToken'] = SpecialDeferredRequestDispatcher::getRequestToken( $parameters['timestamp'] );
-
-		if ( $this->enabledHttpDeferredJobRequestState && $this->canConnectToUrl() ) {
+		if ( $this->canUseDeferredRequest() ) {
 			return $this->doPostJobWith( $type, $title, $parameters, $dispatchableCallbackJob );
 		}
 
@@ -118,47 +232,43 @@ class DeferredRequestDispatchManager {
 		return true;
 	}
 
-	private function getDispatchableCallbackJobFor( $type ) {
+	private function canUseDeferredRequest() {
+		return !$this->isCommandLineMode && !$this->isPreferredWithJobQueue && $this->isEnabledHttpDeferredRequest === SMW_HTTP_DEFERRED_ASYNC && $this->canConnectToUrl();
+	}
 
-		$jobFactory = ApplicationFactory::getInstance()->newJobFactory();
+	private function createDispatchableCallbackJob( $type, $isEnabledJobQueue ) {
 
-		if ( $type === 'SMW\ParserCachePurgeJob' ) {
-			$callback = function ( $title, $parameters ) use ( $jobFactory ) {
+		$callback = function ( $title, $parameters ) use ( $type, $isEnabledJobQueue ) {
 
-				$purgeParserCacheJob = $jobFactory->newParserCachePurgeJob(
-					$title,
-					$parameters
-				);
+			$job = $this->jobFactory->newByType(
+				$type,
+				$title,
+				$parameters
+			);
 
-				$purgeParserCacheJob->insert();
-			};
-		}
+			// Only relevant when jobs are executed during a test (PHPUnit)
+			$job->isEnabledJobQueue( $isEnabledJobQueue );
 
-		if ( $type === 'SMW\UpdateJob' ) {
-			$callback = function ( $title, $parameters ) use ( $jobFactory ) {
-				$updateJob = $jobFactory->newUpdateJob(
-					$title,
-					$parameters
-				);
-
-				$updateJob->run();
-			};
-		}
+			// A `run` action would executed the job with the current transaction
+			// defying the idea of a deferred process therefore only directly
+			// have the job run when initiate from the commandLine as transactions
+			// are expected without delay and are separated
+			$this->isCommandLineMode || $this->isEnabledHttpDeferredRequest === SMW_HTTP_DEFERRED_SYNC_JOB ? $job->run() : $job->insert();
+		};
 
 		return $callback;
 	}
 
-	private function doPreliminaryCheckForType( $type, array $parameters ) {
+	private function isAllowedJobType( $type ) {
 
-		if ( $type !== 'SMW\ParserCachePurgeJob' && $type !== 'SMW\UpdateJob' ) {
-			return false;
-		}
+		$allowedJobs = array(
+			'SMW\ParserCachePurgeJob',
+			'SMW\UpdateJob',
+			'SMW\FulltextSearchTableUpdateJob',
+			'SMW\TempChangeOpPurgeJob'
+		);
 
-		if ( $type === 'SMW\ParserCachePurgeJob' && ( !isset( $parameters['idlist'] ) || $parameters['idlist'] === array() ) ) {
-			return false;
-		}
-
-		return true;
+		return in_array( $type, $allowedJobs );
 	}
 
 	private function canConnectToUrl() {
@@ -174,6 +284,10 @@ class DeferredRequestDispatchManager {
 
 	private function doPostJobWith( $type, $title, $parameters, $dispatchableCallbackJob ) {
 
+		// Build requestToken as source verification during the POST request
+		$parameters['timestamp'] = time();
+		$parameters['requestToken'] = SpecialDeferredRequestDispatcher::getRequestToken( $parameters['timestamp'] );
+
 		$parameters['async-job'] = array(
 			'type'  => $type,
 			'title' => $title->getPrefixedDBkey()
@@ -184,18 +298,32 @@ class DeferredRequestDispatchManager {
 		$this->httpRequest->setOption( ONOI_HTTP_REQUEST_CONTENT, 'parameters=' . json_encode( $parameters ) );
 		$this->httpRequest->setOption( ONOI_HTTP_REQUEST_CONNECTION_FAILURE_REPEAT, 2 );
 
-		$this->httpRequest->setOption( ONOI_HTTP_REQUEST_ON_COMPLETED_CALLBACK, function( $requestResponse ) {
-			wfDebugLog( 'smw', 'SMW\DeferredRequestDispatchManager: ' . json_encode( $requestResponse->getList() ) . "\n" );
+		$this->httpRequest->setOption( ONOI_HTTP_REQUEST_ON_COMPLETED_CALLBACK, function( $requestResponse ) use ( $parameters ) {
+			$requestResponse->set( 'type', $parameters['async-job']['type'] );
+			$requestResponse->set( 'title', $parameters['async-job']['title'] );
+			$this->log( 'SMW\DeferredRequestDispatchManager: ' . json_encode( $requestResponse->getList(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) );
 		} );
 
 		$this->httpRequest->setOption( ONOI_HTTP_REQUEST_ON_FAILED_CALLBACK, function( $requestResponse ) use ( $dispatchableCallbackJob, $title, $type, $parameters ) {
-			wfDebugLog( 'smw', "SMW\DeferredRequestDispatchManager: Connection to SpecialDeferredRequestDispatcher failed therefore adding {$type} for " . $title->getPrefixedDBkey() . "\n" );
+			$requestResponse->set( 'type', $parameters['async-job']['type'] );
+			$requestResponse->set( 'title', $parameters['async-job']['title'] );
+
+			$this->log( "SMW\DeferredRequestDispatchManager: Connection to SpecialDeferredRequestDispatcher failed, schedule a {$type}" );
 			call_user_func_array( $dispatchableCallbackJob, array( $title, $parameters ) );
 		} );
 
 		$this->httpRequest->execute();
 
 		return true;
+	}
+
+	private function log( $message, $context = array() ) {
+
+		if ( $this->logger === null ) {
+			return;
+		}
+
+		$this->logger->info( $message, $context );
 	}
 
 }

@@ -75,8 +75,8 @@ final class FeedResultPrinter extends FileExportPrinter {
 		if ( $outputMode == SMW_OUTPUT_FILE ) {
 			if ( $res->getCount() == 0 ){
 				$res->addErrors( array( $this->getContext()->msg( 'smw_result_noresults' )->inContentLanguage()->text() ) );
-				return '';
 			}
+
 			$result = $this->getFeed( $res, $this->params['type'] );
 		} else {
 			// Points to the Feed link
@@ -341,4 +341,14 @@ final class FeedResultPrinter extends FileExportPrinter {
 
 		return $params;
 	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getDefaultSort() {
+		return 'DESC';
+	}
+
 }

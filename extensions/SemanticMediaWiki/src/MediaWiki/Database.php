@@ -3,6 +3,7 @@
 namespace SMW\MediaWiki;
 
 use DBError;
+use Exception;
 use ResultWrapper;
 use RuntimeException;
 use SMW\DBConnectionProvider;
@@ -31,6 +32,16 @@ class Database {
 	private $writeConnectionProvider = null;
 
 	/**
+	 * @var Database
+	 */
+	private $readConnection;
+
+	/**
+	 * @var Database
+	 */
+	private $writeConnection;
+
+	/**
 	 * @var array
 	 */
 	private $transactionQueue = array();
@@ -44,6 +55,11 @@ class Database {
 	 * @var string
 	 */
 	private $disabledTransactions = false;
+
+	/**
+	 * @var boolean
+	 */
+	private $resetTransactionProfiler = false;
 
 	/**
 	 * @since 1.9
@@ -219,29 +235,34 @@ class Database {
 	/**
 	 * @see DatabaseBase::query
 	 *
+	 * @note WithAutoCommit (#1605
+	 * "... creating temporary tables in a transaction is not replication-safe
+	 * and causes errors in MySQL 5.6. ...")
+	 *
 	 * @since 1.9.1
 	 *
 	 * @param string $sql
-	 * @param $fname
-	 * @param $ignoreException
+	 * @param string $fname
+	 * @param boolean $ignoreException
+	 * @param boolean $withAutoCommit
 	 *
 	 * @return ResultWrapper
 	 * @throws RuntimeException
 	 */
-	public function query( $sql, $fname = __METHOD__, $ignoreException = false ) {
+	public function query( $sql, $fname = __METHOD__, $ignoreException = false, $withAutoCommit = false ) {
 
-		if ( $this->getType() !== 'postgres' ) {
+		if ( !$this->isType( 'postgres' ) ) {
 			$sql = str_replace( '@INT', '', $sql );
 		}
 
-		if ( $this->getType() == 'postgres' ) {
+		if ( $this->isType( 'postgres' ) ) {
 			$sql = str_replace( '@INT', '::integer', $sql );
 			$sql = str_replace( 'IGNORE', '', $sql );
 			$sql = str_replace( 'DROP TEMPORARY TABLE', 'DROP TABLE IF EXISTS', $sql );
 			$sql = str_replace( 'RAND()', ( strpos( $sql, 'DISTINCT' ) !== false ? '' : 'RANDOM()' ), $sql );
 		}
 
-		if ( $this->getType() == 'sqlite' ) {
+		if ( $this->isType( 'sqlite' ) ) {
 			$sql = str_replace( 'IGNORE', '', $sql );
 			$sql = str_replace( 'TEMPORARY', 'TEMP', $sql );
 			$sql = str_replace( 'ENGINE=MEMORY', '', $sql );
@@ -250,17 +271,35 @@ class Database {
 			$sql = str_replace( 'RAND', 'RANDOM', $sql );
 		}
 
+		$writeConnection = $this->writeConnection();
+
+		// https://github.com/wikimedia/mediawiki/blob/42d5e6f43a00eb8bedc3532876125f74e3188343/includes/deferred/AutoCommitUpdate.php
+		// https://github.com/wikimedia/mediawiki/blob/f7dad57c64db3eb1296894c2d3ae97b9f7f27c4c/includes/installer/DatabaseInstaller.php#L157
+		if ( $withAutoCommit ) {
+			$autoTrx = $writeConnection->getFlag( DBO_TRX );
+			$writeConnection->clearFlag( DBO_TRX );
+
+			if ( $autoTrx && $writeConnection->trxLevel() ) {
+				$writeConnection->commit( __METHOD__ );
+			}
+		}
+
 		try {
-			$results = $this->writeConnection()->query(
+			$exception = null;
+			$results = $writeConnection->query(
 				$sql,
 				$fname,
 				$ignoreException
 			);
-		} catch ( DBError $e ) {
-			throw new RuntimeException (
-				$e->getMessage() . "\n" .
-				$e->getTraceAsString()
-			);
+		} catch ( Exception $exception ) {
+		}
+
+		if ( $withAutoCommit && $autoTrx ) {
+			$writeConnection->setFlag( DBO_TRX );
+		}
+
+		if ( $exception ) {
+			throw $exception;
 		}
 
 		return $results;
@@ -271,9 +310,7 @@ class Database {
 	 *
 	 * @since 1.9.1
 	 */
-	public function selectRow( $table, $vars, $conds, $fname = __METHOD__,
-		$options = array(), $joinConditions = array() ) {
-
+	public function selectRow( $table, $vars, $conds, $fname = __METHOD__, $options = array(), $joinConditions = array() ) {
 		return $this->readConnection()->selectRow(
 			$table,
 			$vars,
@@ -296,6 +333,9 @@ class Database {
 	}
 
 	/**
+	 * @note Method was made protected in 1.28, hence the need
+	 * for the DatabaseHelper that copies the functionality.
+	 *
 	 * @see DatabaseBase::makeSelectOptions
 	 *
 	 * @since 1.9.1
@@ -305,7 +345,7 @@ class Database {
 	 * @return array
 	 */
 	public function makeSelectOptions( $options ) {
-		return DatabaseHelper::makeSelectOptions( $options );
+		return DatabaseHelper::makeSelectOptions( $this, $options );
 	}
 
 	/**
@@ -337,11 +377,8 @@ class Database {
 	 *
 	 * @since 2.4
 	 */
-	function resetTransactionProfiler() {
-		// MW 1.27
-		if ( method_exists( $this->writeConnection(), 'setTransactionProfiler' ) ) {
-			$this->writeConnection()->setTransactionProfiler( new \TransactionProfiler() );
-		}
+	function resetTransactionProfiler( $resetTransactionProfiler ) {
+		$this->resetTransactionProfiler = $resetTransactionProfiler;
 	}
 
 	/**
@@ -372,28 +409,6 @@ class Database {
 	}
 
 	/**
-	 * @since 2.4
-	 */
-	public function queryWithAutoCommit( $sql, $fname = __METHOD__, $ignoreException = false ) {
-
-		$writeConnection = $this->writeConnection();
-
-		$autoTrx = $writeConnection->getFlag( DBO_TRX );
-		$writeConnection->clearFlag( DBO_TRX );
-
-		// https://github.com/wikimedia/mediawiki/blob/f7dad57c64db3eb1296894c2d3ae97b9f7f27c4c/includes/installer/DatabaseInstaller.php#L157
-		if ( $autoTrx && $writeConnection->trxLevel() ) {
-			$writeConnection->commit( __METHOD__ );
-		}
-
-		$this->query( $sql, $fname, $ignoreException );
-
-		if ( $autoTrx ) {
-			$writeConnection->setFlag( DBO_TRX );
-		}
-	}
-
-	/**
 	 * @see DatabaseBase::insert
 	 *
 	 * @since 1.9.1
@@ -418,6 +433,15 @@ class Database {
 	 */
 	public function delete( $table, $conds, $fname = __METHOD__ ) {
 		return $this->writeConnection()->delete( $table, $conds, $fname );
+	}
+
+	/**
+	 * @see DatabaseBase::replace
+	 *
+	 * @since 2.5
+	 */
+	public function replace( $table, $uniqueIndexes, $rows, $fname = __METHOD__ ) {
+		return $this->writeConnection()->replace( $table, $uniqueIndexes, $rows, $fname );
 	}
 
 	/**
@@ -554,20 +578,36 @@ class Database {
 			return call_user_func( $callback );
 		}
 
-		$this->readConnection()->onTransactionIdle( $callback );
+		$this->writeConnection()->onTransactionIdle( $callback );
 	}
 
 	private function readConnection() {
-		return $this->readConnectionProvider->getConnection();
+
+		if ( $this->readConnection !== null ) {
+			return $this->readConnection;
+		}
+
+		return $this->readConnection = $this->readConnectionProvider->getConnection();
 	}
 
 	private function writeConnection() {
 
-		if ( $this->writeConnectionProvider instanceof DBConnectionProvider ) {
-			return $this->writeConnectionProvider->getConnection();
+		if ( $this->writeConnection !== null ) {
+			return $this->writeConnection;
 		}
 
-		throw new RuntimeException( 'Expected a DBConnectionProvider instance' );
+		if ( !$this->writeConnectionProvider instanceof DBConnectionProvider ) {
+			throw new RuntimeException( 'Expected a DBConnectionProvider instance' );
+		}
+
+		$this->writeConnection = $this->writeConnectionProvider->getConnection();
+
+		// MW 1.27 (only)
+		if ( $this->resetTransactionProfiler && method_exists( $this->writeConnection, 'setTransactionProfiler' ) ) {
+			$this->writeConnection->setTransactionProfiler( new \TransactionProfiler() );
+		}
+
+		return $this->writeConnection;
 	}
 
 }

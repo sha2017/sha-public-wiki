@@ -2,7 +2,10 @@
 
 use SMW\DataTypeRegistry;
 use SMW\DIWikiPage;
+use SMW\DIProperty;
 use SMW\SQLStore\TableDefinition;
+use SMW\SQLStore\EntityStore\Exception\DataItemHandlerException;
+use SMW\SQLStore\TableBuilder\FieldType;
 
 /**
  * Class to provide all basic read methods for SMWSQLStore3.
@@ -25,6 +28,11 @@ class SMWSQLStore3Readers {
 	private $store;
 
 	/**
+	 * @var SQLStoreFactory
+	 */
+	private $factory;
+
+	/**
 	 *  >0 while getSemanticData runs, used to prevent nested calls from clearing the cache
 	 * while another call runs and is about to fill it with data
 	 *
@@ -32,8 +40,9 @@ class SMWSQLStore3Readers {
 	 */
 	private static $in_getSemanticData = 0;
 
-	public function __construct( SMWSQLStore3 $parentStore ) {
+	public function __construct( SMWSQLStore3 $parentStore, $factory ) {
 		$this->store = $parentStore;
+		$this->factory = $factory;
 	}
 
 	/**
@@ -101,7 +110,12 @@ class SMWSQLStore3Readers {
 		// hence no entry in $this->store->m_sdstate[$sid] is made.
 		self::$in_getSemanticData++;
 		$this->initSemanticDataCache( $sid, $subject );
-		$this->store->m_semdata[$sid]->addPropertyStubValue( '_SKEY', array( '', $sortKey ) );
+
+		// Avoid adding a sortkey for an already extended stub
+		if ( !$this->store->m_semdata[$sid]->hasProperty( new DIProperty( '_SKEY' ) ) ) {
+			$this->store->m_semdata[$sid]->addPropertyStubValue( '_SKEY', array( '', $sortKey ) );
+		}
+
 		self::$in_getSemanticData--;
 
 		return $this->store->m_semdata[$sid];
@@ -325,8 +339,8 @@ class SMWSQLStore3Readers {
 		$valueField = $diHandler->getIndexField();
 		$labelField = $diHandler->getLabelField();
 		$fields = $diHandler->getFetchFields();
-		foreach ( $fields as $fieldname => $typeid ) { // select object column(s)
-			if ( $typeid == 'p' ) { // get data from ID table
+		foreach ( $fields as $fieldname => $fieldType ) { // select object column(s)
+			if ( $fieldType === FieldType::FIELD_ID ) { // get data from ID table
 				$from .= ' INNER JOIN ' . $db->tableName( SMWSql3SmwIds::TABLE_NAME ) . " AS o$valuecount ON $fieldname=o$valuecount.smw_id";
 				$select .= ( ( $select !== '' ) ? ',' : '' ) .
 					"$fieldname AS id$valuecount" .
@@ -350,6 +364,13 @@ class SMWSQLStore3Readers {
 			}
 
 			$valuecount += 1;
+		}
+
+		// Postgres
+		// Function: SMWSQLStore3Readers::fetchSemanticData
+		// Error: 42P10 ERROR: for SELECT DISTINCT, ORDER BY expressions must appear in select list
+		if ( strpos( $select, $valueField ) === false ) {
+			$select .= ", $valueField AS v" . ( $valuecount + 1 );
 		}
 
 		if ( !$isSubject ) { // Apply sorting/string matching; only with given property
@@ -395,11 +416,13 @@ class SMWSQLStore3Readers {
 			$valueHash = $valuecount > 1 ? md5( $valueHash . implode( '#', $valuekeys ) ) : md5( $valueHash . $valuekeys );
 
 			// Filter out any accidentally retrieved internal things (interwiki starts with ":"):
-			if ( $valuecount < 3 || implode( '', $fields ) != 'p' ||
-			     $valuekeys[2] === '' || $valuekeys[2]{0} != ':' ) {
+			if ( $valuecount < 3 ||
+				implode( '', $fields ) !== FieldType::FIELD_ID ||
+				$valuekeys[2] === '' ||
+				$valuekeys[2]{0} != ':' ) {
 
 				if ( isset( $result[$valueHash] ) ) {
-					wfDebugLog( 'smw', __METHOD__ . " Duplicate entry for {$propertykey} with " . ( is_array( $valuekeys ) ? implode( ',', $valuekeys ) : $valuekeys ) . "\n" );
+					$this->factory->getLogger()->info( __METHOD__ . " Duplicate entry for {$propertykey} with " . ( is_array( $valuekeys ) ? implode( ',', $valuekeys ) : $valuekeys ) . "\n" );
 				}
 
 				$result[$valueHash] = $isSubject ? array( $propertykey, $valuekeys ) : $valuekeys;
@@ -487,7 +510,7 @@ class SMWSQLStore3Readers {
 				if ( $row->smw_iw === '' || $row->smw_iw{0} != ':' ) { // filter special objects
 					$result[] = $diHandler->dataItemFromDBKeys( array_values( (array)$row ) );
 				}
-			} catch ( SMWDataItemException $e ) {
+			} catch ( DataItemHandlerException $e ) {
 				// silently drop data, should be extremely rare and will usually fix itself at next edit
 			}
 		}

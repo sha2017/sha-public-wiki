@@ -34,7 +34,7 @@ class DataItemToExpResourceEncoderTest extends \PHPUnit_Framework_TestCase {
 
 		$subject = new DIWikiPage( 'Foo', NS_MAIN );
 
-		$poolCache = $this->inMemoryPoolCache->getPoolCacheFor( 'exporter.dataitem.resource.encoder' );
+		$poolCache = $this->inMemoryPoolCache->getPoolCacheById( 'exporter.dataitem.resource.encoder' );
 
 		$poolCache->save(
 			$subject->getHash(),
@@ -54,7 +54,7 @@ class DataItemToExpResourceEncoderTest extends \PHPUnit_Framework_TestCase {
 			$store
 		);
 
-		$instance->resetCacheFor(
+		$instance->resetCacheBy(
 			$subject
 		);
 
@@ -123,7 +123,7 @@ class DataItemToExpResourceEncoderTest extends \PHPUnit_Framework_TestCase {
 		);
 
 		$this->assertTrue(
-			$resource->wasMatchedToImportVocab
+			$resource->isImported()
 		);
 
 		$this->assertSame(

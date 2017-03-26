@@ -56,6 +56,24 @@ class ConceptDescriptionTest extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals( 4, $instance->getQueryFeatures() );
 	}
 
+	public function testGetFingerprint() {
+
+		$instance = new ConceptDescription(
+			new DIWikiPage( 'Foo', SMW_NS_CONCEPT )
+		);
+
+		$expected = $instance->getFingerprint();
+
+		$instance = new ConceptDescription(
+			new DIWikiPage( 'Bar', SMW_NS_CONCEPT )
+		);
+
+		$this->assertNotSame(
+			$expected,
+			$instance->getFingerprint()
+		);
+	}
+
 	public function testPrune() {
 
 		$instance = new ConceptDescription( new DIWikiPage( 'Foo', SMW_NS_CONCEPT ) );

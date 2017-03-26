@@ -3,11 +3,13 @@
 namespace SMW\Tests\DataValues;
 
 use SMW\DataItemFactory;
+use SMW\DataValueFactory;
 use SMW\DataValues\InfoLinksProvider;
 use SMW\Message;
 use SMW\Tests\TestEnvironment;
 use SMWNumberValue as NumberValue;
 use SMWStringValue as StringValue;
+use SMWTimeValue as TimeValue;
 
 /**
  * @covers \SMW\DataValues\InfoLinksProvider
@@ -22,11 +24,28 @@ class InfoLinksProviderTest extends \PHPUnit_Framework_TestCase {
 
 	private $testEnvironment;
 	private $dataItemFactory;
+	private $dataValueServiceFactory;
 	private $cachedPropertyValuesPrefetcher;
+	private $dataValueFactory;
 
 	protected function setUp() {
+		parent::setUp();
+
 		$this->testEnvironment = new TestEnvironment();
 		$this->dataItemFactory = new DataItemFactory();
+		$this->dataValueFactory = DataValueFactory::getInstance();
+
+		$constraintValueValidator = $this->getMockBuilder( '\SMW\DataValues\ValueValidators\ConstraintValueValidator' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->dataValueServiceFactory = $this->getMockBuilder( '\SMW\Services\DataValueServiceFactory' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->dataValueServiceFactory->expects( $this->any() )
+			->method( 'getConstraintValueValidator' )
+			->will( $this->returnValue( $constraintValueValidator ) );
 
 		$this->cachedPropertyValuesPrefetcher = $this->getMockBuilder( '\SMW\CachedPropertyValuesPrefetcher' )
 			->disableOriginalConstructor()
@@ -37,6 +56,7 @@ class InfoLinksProviderTest extends \PHPUnit_Framework_TestCase {
 
 	protected function tearDown() {
 		$this->testEnvironment->tearDown();
+		parent::tearDown();
 	}
 
 	public function testCanConstruct() {
@@ -57,7 +77,7 @@ class InfoLinksProviderTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getPropertyValues' )
 			->will( $this->returnValue( array() ) );
 
-		$numberValue = new NumberValue();
+		$numberValue = $this->dataValueFactory->newDataValueByType( NumberValue::TYPE_ID );
 
 		$numberValue->setOption( 'user.language', 'en' );
 		$numberValue->setOption( 'content.language', 'en' );
@@ -70,13 +90,17 @@ class InfoLinksProviderTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new InfoLinksProvider( $numberValue );
 
+		$this->dataValueServiceFactory->expects( $this->any() )
+			->method( 'newInfoLinksProvider' )
+			->will( $this->returnValue( $instance ) );
+
 		$this->assertContains(
-			'/Foo/1000.42|+]]</span>',
+			'/:Foo/1000.42|+]]</span>',
 			$instance->getInfolinkText( SMW_OUTPUT_WIKI )
 		);
 
 		$this->assertContains(
-			'/Foo/1000.42">+</a></span>',
+			'/:Foo/1000.42">+</a></span>',
 			$instance->getInfolinkText( SMW_OUTPUT_HTML )
 		);
 	}
@@ -87,7 +111,7 @@ class InfoLinksProviderTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getPropertyValues' )
 			->will( $this->returnValue( array() ) );
 
-		$stringValue = new StringValue( '_txt' );
+		$stringValue = $this->dataValueFactory->newDataValueByType( StringValue::TYPE_ID );
 
 		$stringValue->setOption( 'user.language', 'en' );
 		$stringValue->setOption( 'content.language', 'en' );
@@ -100,13 +124,55 @@ class InfoLinksProviderTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new InfoLinksProvider( $stringValue );
 
+		$this->dataValueServiceFactory->expects( $this->any() )
+			->method( 'newInfoLinksProvider' )
+			->will( $this->returnValue( $instance ) );
+
 		$this->assertContains(
-			'/Foo/Text-20with-20-2D3A-2D3A-20content|+]]</span>',
+			'/:Foo/Text-20with-20-2D3A-2D3A-20content|+]]</span>',
 			$instance->getInfolinkText( SMW_OUTPUT_WIKI )
 		);
 
 		$this->assertContains(
-			'/Foo/Text-20with-20-2D3A-2D3A-20content">+</a></span>',
+			'/:Foo/Text-20with-20-2D3A-2D3A-20content">+</a></span>',
+			$instance->getInfolinkText( SMW_OUTPUT_HTML )
+		);
+	}
+
+	public function testGetInfolinkTextOnTimeValueWithoutLocalizedOutput() {
+
+		$timeValue = $this->dataValueFactory->newDataValueByType( '_dat' );
+
+		$timeValue->setOption( $timeValue::OPT_USER_LANGUAGE, 'fr' );
+		$timeValue->setOption( $timeValue::OPT_CONTENT_LANGUAGE, 'en' );
+
+		// Forcibly set an output
+		$timeValue->setOutputFormat( 'LOCL' );
+
+		$property = $this->dataItemFactory->newDIProperty( 'Foo' );
+		$property->setPropertyTypeId( '_dat' );
+
+		$timeValue->setProperty(
+			$property
+		);
+
+		$timeValue->setDataItem(
+			$this->dataItemFactory->newDITime( 1, 1970, 12, 12 )
+		);
+
+		$instance = new InfoLinksProvider( $timeValue );
+
+		$this->dataValueServiceFactory->expects( $this->any() )
+			->method( 'newInfoLinksProvider' )
+			->will( $this->returnValue( $instance ) );
+
+		$this->assertContains(
+			'/:Foo/12-20December-201970|+]]</span>',
+			$instance->getInfolinkText( SMW_OUTPUT_WIKI )
+		);
+
+		$this->assertContains(
+			'/:Foo/12-20December-201970">+</a></span>',
 			$instance->getInfolinkText( SMW_OUTPUT_HTML )
 		);
 	}
@@ -131,10 +197,10 @@ class InfoLinksProviderTest extends \PHPUnit_Framework_TestCase {
 			'SERVICELINK-A|SERVICELINK-B'
 		);
 
-		$stringValue = new StringValue( '_txt' );
+		$stringValue = $this->dataValueFactory->newDataValueByType( StringValue::TYPE_ID );
 
-		$stringValue->setOption( 'user.language', 'en' );
-		$stringValue->setOption( 'content.language', 'en' );
+		$stringValue->setOption( StringValue::OPT_USER_LANGUAGE, 'en' );
+		$stringValue->setOption( StringValue::OPT_CONTENT_LANGUAGE, 'en' );
 
 		$stringValue->setProperty(
 			$this->dataItemFactory->newDIProperty( 'Foo' )
@@ -144,8 +210,12 @@ class InfoLinksProviderTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new InfoLinksProvider( $stringValue );
 
+		$this->dataValueServiceFactory->expects( $this->any() )
+			->method( 'newInfoLinksProvider' )
+			->will( $this->returnValue( $instance ) );
+
 		$this->assertContains(
-			'<div class="smwttcontent">[SERVICELINK-B SERVICELINK-A]</div>',
+			'<div class="smwttcontent">&#x005B;SERVICELINK-B SERVICELINK-A]</div>',
 			$instance->getInfolinkText( SMW_OUTPUT_WIKI )
 		);
 

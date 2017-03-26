@@ -1,9 +1,11 @@
 <?php
 
 use SMW\ApplicationFactory;
+use SMW\DataValues\ValueFormatters\DataValueFormatter;
 use SMW\DataValueFactory;
 use SMW\DIProperty;
 use SMW\Highlighter;
+use SMW\Message;
 
 /**
  * Objects of this class represent properties in SMW.
@@ -32,6 +34,36 @@ use SMW\Highlighter;
 class SMWPropertyValue extends SMWDataValue {
 
 	/**
+	 * DV identifier
+	 */
+	const TYPE_ID = '__pro';
+
+	/**
+	 * Avoid the display of a tooltip
+	 */
+	const OPT_NO_HIGHLIGHT = 'no.highlight';
+
+	/**
+	 * Use linker with the highlighter
+	 */
+	const OPT_HIGHLIGHT_LINKER = 'highlight.linker';
+
+	/**
+	 * Avoid the display of a preferred label marker
+	 */
+	const OPT_NO_PREF_LHNT = 'no.preflabel.marker';
+
+	/**
+	 * Special formatting of the label/preferred label
+	 */
+	const FORMAT_LABEL = 'format.label';
+
+	/**
+	 * Label to be used for matching a DB search
+	 */
+	const SEARCH_LABEL = 'search.label';
+
+	/**
 	 * Cache for wiki page value object associated to this property, or
 	 * null if no such page exists. Use getWikiPageValue() to get the data.
 	 * @var SMWWikiPageValue
@@ -42,6 +74,11 @@ class SMWPropertyValue extends SMWDataValue {
 	 * @var array
 	 */
 	protected $linkAttributes = array();
+
+	/**
+	 * @var string
+	 */
+	private $preferredLabel = '';
 
 	/**
 	 * Cache for type value of this property, or null if not calculated yet.
@@ -59,7 +96,7 @@ class SMWPropertyValue extends SMWDataValue {
 	 *
 	 * @param string $typeid
 	 */
-	public function __construct( $typeid ) {
+	public function __construct( $typeid = self::TYPE_ID ) {
 		parent::__construct( $typeid );
 	}
 
@@ -92,7 +129,7 @@ class SMWPropertyValue extends SMWDataValue {
 	 */
 	static public function makeProperty( $propertyid ) {
 		$diProperty = new DIProperty( $propertyid );
-		$dvProperty = new SMWPropertyValue( '__pro' );
+		$dvProperty = new SMWPropertyValue( self::TYPE_ID );
 		$dvProperty->setDataItem( $diProperty );
 		return $dvProperty;
 	}
@@ -130,34 +167,60 @@ class SMWPropertyValue extends SMWDataValue {
 		$this->mPropTypeValue = null;
 		$this->m_wikipage = null;
 
-		if ( $this->m_caption === false ) { // always use this as caption
-			$this->m_caption = $value;
-		}
-
-		list( $propertyName, $inverse ) = $this->doNormalizeUserValue(
-			$value
+		$propertyValueParser = $this->dataValueServiceFactory->getValueParser(
+			$this
 		);
 
+		$propertyValueParser->isQueryContext(
+			$this->getOption( self::OPT_QUERY_CONTEXT )
+		);
+
+		$propertyValueParser->requireUpperCase(
+			$this->getContextPage() !== null &&
+			$this->getContextPage()->getNamespace() === SMW_NS_PROPERTY
+		);
+
+		list( $propertyName, $inverse ) = $propertyValueParser->parse( $value );
+
+		foreach ( $propertyValueParser->getErrors() as $error ) {
+			return $this->addErrorMsg( $error, Message::PARSE );
+		}
+
+		$contentLanguage = $this->getOption( self::OPT_CONTENT_LANGUAGE );
+
 		try {
-			$this->m_dataitem = DIProperty::newFromUserLabel( $propertyName, $inverse );
+			$this->m_dataitem = DIProperty::newFromUserLabel( $propertyName, $inverse, $contentLanguage );
 		} catch ( SMWDataItemException $e ) { // happens, e.g., when trying to sort queries by property "-"
-			$this->addError( wfMessage( 'smw_noproperty', $value )->inContentLanguage()->text() );
+			$this->addErrorMsg( array( 'smw_noproperty', $value ) );
 			$this->m_dataitem = new DIProperty( 'ERROR', false ); // just to have something
 		}
 
 		// @see the SMW_DV_PROV_DTITLE explanation
 		if ( $this->isEnabledFeature( SMW_DV_PROV_DTITLE ) ) {
-			$dataItem = $this->getPropertySpecificationLookup()->getPropertyFromDisplayTitle(
+			$dataItem = $this->dataValueServiceFactory->getPropertySpecificationLookup()->getPropertyFromDisplayTitle(
 				$value
 			);
 
 			$this->m_dataitem = $dataItem ? $dataItem : $this->m_dataitem;
 		}
 
+		// Copy the original DI to ensure we can compare it against a possible redirect
 		$this->inceptiveProperty = $this->m_dataitem;
 
 		if ( $this->isEnabledFeature( SMW_DV_PROV_REDI ) ) {
 			$this->m_dataitem = $this->m_dataitem->getRedirectTarget();
+		}
+
+		// If no external caption has been invoked then fetch a preferred label
+		if ( $this->m_caption === false || $this->m_caption === '' ) {
+			$this->preferredLabel = $this->m_dataitem->getPreferredLabel( $this->getOption( self::OPT_USER_LANGUAGE ) );
+		}
+
+		// Use the preferred label as first choice for a caption, if available
+		if ( $this->preferredLabel !== '' ) {
+			$this->m_caption = $this->preferredLabel;
+		} elseif ( $this->m_caption === false ) {
+			$this->m_caption = $value;
 		}
 	}
 
@@ -174,13 +237,27 @@ class SMWPropertyValue extends SMWDataValue {
 
 		$this->inceptiveProperty = $dataItem;
 		$this->m_dataitem = $dataItem;
+		$this->preferredLabel = $this->m_dataitem->getPreferredLabel();
 
 		$this->mPropTypeValue = null;
 		unset( $this->m_wikipage );
 		$this->m_caption = false;
 		$this->linkAttributes = array();
 
+		if ( $this->preferredLabel !== '' ) {
+			$this->m_caption = $this->preferredLabel;
+		}
+
 		return true;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getPreferredLabel() {
+		return $this->preferredLabel;
 	}
 
 	/**
@@ -205,7 +282,7 @@ class SMWPropertyValue extends SMWDataValue {
 
 	public function setOutputFormat( $formatstring ) {
 		$this->m_outformat = $formatstring;
-		if ( $this->m_wikipage instanceof SMWDataValue ) {
+		if ( $this->getWikiPageValue() instanceof SMWDataValue ) {
 			$this->m_wikipage->setOutputFormat( $formatstring );
 		}
 	}
@@ -229,9 +306,10 @@ class SMWPropertyValue extends SMWDataValue {
 		$diWikiPage = $this->m_dataitem->getCanonicalDiWikiPage();
 
 		if ( $diWikiPage !== null ) {
-			$this->m_wikipage = \SMW\DataValueFactory::getInstance()->newDataValueByItem( $diWikiPage, null, $this->m_caption );
+			$this->m_wikipage = DataValueFactory::getInstance()->newDataValueByItem( $diWikiPage, null, $this->m_caption );
 			$this->m_wikipage->setOutputFormat( $this->m_outformat );
 			$this->m_wikipage->setLinkAttributes( $this->linkAttributes );
+			$this->m_wikipage->setOptions( $this->getOptions() );
 			$this->addError( $this->m_wikipage->getErrors() );
 		} else { // should rarely happen ($value is only changed if the input $value really was a label for a predefined prop)
 			$this->m_wikipage = null;
@@ -246,7 +324,7 @@ class SMWPropertyValue extends SMWDataValue {
 	 * @note Every user defined property is necessarily visible.
 	 */
 	public function isVisible() {
-		return $this->isValid() && ( $this->m_dataitem->isUserDefined() || $this->m_dataitem->getLabel() !== '' );
+		return $this->isValid() && ( $this->m_dataitem->isUserDefined() || $this->m_dataitem->getCanonicalLabel() !== '' );
 	}
 
 	/**
@@ -255,60 +333,86 @@ class SMWPropertyValue extends SMWDataValue {
 	 * @return boolean
 	 */
 	public function canUse() {
-		return $this->isValid() && $this->m_dataitem->isUnrestrictedForUse();
+		return $this->isValid() && $this->m_dataitem->isUnrestricted();
 	}
 
-	public function getShortWikiText( $linked = null ) {
-
-		if ( $this->isVisible() ) {
-			$wikiPageValue = $this->getWikiPageValue();
-			return is_null( $wikiPageValue ) ? '' : $this->highlightText( $wikiPageValue->getShortWikiText( $linked ) );
-		}
-
-		return '';
+	/**
+	 * @see DataValue::getShortWikiText
+	 *
+	 * @return string
+	 */
+	public function getShortWikiText( $linker = null ) {
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::WIKI_SHORT, $linker );
 	}
 
-	public function getShortHTMLText( $linked = null ) {
-
-		if ( $this->isVisible() ) {
-			$wikiPageValue = $this->getWikiPageValue();
-			return is_null( $wikiPageValue ) ? '' : $this->highlightText( $wikiPageValue->getShortHTMLText( $linked ), $linked );
-		}
-
-		return '';
+	/**
+	 * @see DataValue::getShortHTMLText
+	 *
+	 * @return string
+	 */
+	public function getShortHTMLText( $linker = null ) {
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::HTML_SHORT, $linker );
 	}
 
-	public function getLongWikiText( $linked = null ) {
-
-		if ( $this->isVisible() ) {
-			$wikiPageValue = $this->getWikiPageValue();
-			return is_null( $wikiPageValue ) ? '' : $this->highlightText( $wikiPageValue->getLongWikiText( $linked ) );
-		}
-
-		return '';
+	/**
+	 * @see DataValue::getLongWikiText
+	 *
+	 * @return string
+	 */
+	public function getLongWikiText( $linker = null ) {
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::WIKI_LONG, $linker );
 	}
 
-	public function getLongHTMLText( $linked = null ) {
-
-		if ( $this->isVisible() ) {
-			$wikiPageValue = $this->getWikiPageValue();
-			return is_null( $wikiPageValue ) ? '' : $this->highlightText( $wikiPageValue->getLongHTMLText( $linked ), $linked );
-		}
-
-		return '';
+	/**
+	 * @see DataValue::getLongHTMLText
+	 *
+	 * @return string
+	 */
+	public function getLongHTMLText( $linker = null ) {
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::HTML_LONG, $linker );
 	}
 
+	/**
+	 * @see DataValue::getWikiValue
+	 *
+	 * @return string
+	 */
 	public function getWikiValue() {
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::VALUE );
+	}
 
-		if ( !$this->isVisible() ) {
-			return '';
-		}
+	/**
+	 * Outputs a formatted property label that takes into account preferred/
+	 * canonical label characteristics
+	 *
+	 * @param integer|string $format
+	 * @param Linker|null $linker
+	 *
+	 * @return string
+	 */
+	public function getFormattedLabel( $format = DataValueFormatter::VALUE, $linker = null ) {
 
-		if ( $this->getWikiPageValue() !== null && $this->getWikiPageValue()->getDisplayTitle() !== '' ) {
-			return $this->getWikiPageValue()->getDisplayTitle();
-		}
+		$dataValueFormatter = $this->dataValueServiceFactory->getValueFormatter( $this );
 
-		return $this->m_dataitem->getLabel();
+		$dataValueFormatter->setOption(
+			self::FORMAT_LABEL,
+			$format
+		);
+
+		return $dataValueFormatter->format( self::FORMAT_LABEL, $linker );
+	}
+
+	/**
+	 * Outputs a label that corresponds to the display and sort characteristics (
+	 * e.g. display title etc.) and can be used to initiate a match and search
+	 * process.
+	 *
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getSearchLabel() {
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( self::SEARCH_LABEL );
 	}
 
 	/**
@@ -346,28 +450,6 @@ class SMWPropertyValue extends SMWDataValue {
 		} else {
 			return '__err';
 		}
-	}
-
-	/**
-	 * Create special highlighting for hinting at special properties.
-	 */
-	protected function highlightText( $text, $linker = null ) {
-
-		$propertySpecificationLookup = ApplicationFactory::getInstance()->getPropertySpecificationLookup();
-
-		if ( ( $content = $propertySpecificationLookup->getPropertyDescriptionFor( $this->m_dataitem, $linker ) ) !== '' ) {
-
-			$highlighter = Highlighter::factory( Highlighter::TYPE_PROPERTY );
-			$highlighter->setContent( array (
-				'userDefined' => $this->m_dataitem->isUserDefined(),
-				'caption' => $text,
-				'content' => $content !== '' ? $content : wfMessage( 'smw_isspecprop' )->text()
-			) );
-
-			return $highlighter->getHtml();
-		}
-
-		return $text;
 	}
 
 	/**
@@ -438,33 +520,6 @@ class SMWPropertyValue extends SMWDataValue {
 	 */
 	public function getText() {
 		return $this->m_dataitem->getLabel();
-	}
-
-	private function doNormalizeUserValue( $value ) {
-
-		if (
-			( $pos = strpos( $value, '#' ) ) !== false && strlen( $value ) > 1 || /* #1567 */
-			( $pos = strpos( $value, '[' ) ) !== false ) /* #1638 */ {
-			$this->addErrorMsg( array( 'smw-datavalue-property-invalid-name', $value, substr(  $value, $pos, 1 ) ) );
-			$this->m_dataitem = new DIProperty( 'ERROR', false );
-		}
-
-		// #1727 <Foo> or <Foo-<Bar> are not permitted but
-		// Foo-<Bar will be converted to Foo-
-		$value = strip_tags( htmlspecialchars_decode( $value ) );
-		$inverse = false;
-
-		// slightly normalise label
-		$propertyName = smwfNormalTitleText( ltrim( rtrim( $value, ' ]' ), ' [' ) );
-
-		if ( ( $propertyName !== '' ) && ( $propertyName { 0 } == '-' ) ) { // property refers to an inverse
-			$propertyName = smwfNormalTitleText( (string)substr( $value, 1 ) );
-			/// NOTE The cast is necessary at least in PHP 5.3.3 to get string '' instead of boolean false.
-			/// NOTE It is necessary to normalize again here, since normalization may uppercase the first letter.
-			$inverse = true;
-		}
-
-		return array( $propertyName, $inverse );
 	}
 
 }

@@ -7,6 +7,8 @@ use SMW\PropertySpecificationLookup;
 use SMW\RequestOptions;
 use SMW\Store;
 use SMW\StringCondition;
+use SMW\Localizer;
+use SMW\ApplicationFactory;
 
 /**
  * @license GNU GPL v2+
@@ -47,14 +49,24 @@ class PropertyListByApiRequest {
 	private $meta = array();
 
 	/**
+	 * @var integer
+	 */
+	private $limit = 50;
+
+	/**
 	 * @var array
 	 */
-	private $continueOffset = 0;
+	private $continueOffset = 1;
 
 	/**
 	 * @var string
 	 */
 	private $languageCode = '';
+
+	/**
+	 * @var boolean
+	 */
+	private $listOnly = false;
 
 	/**
 	 * @since 2.4
@@ -65,9 +77,6 @@ class PropertyListByApiRequest {
 	public function __construct( Store $store, PropertySpecificationLookup $propertySpecificationLookup ) {
 		$this->store = $store;
 		$this->propertySpecificationLookup = $propertySpecificationLookup;
-		$this->requestOptions = new RequestOptions();
-		$this->requestOptions->sort = true;
-		$this->requestOptions->limit = 50;
 	}
 
 	/**
@@ -76,7 +85,16 @@ class PropertyListByApiRequest {
 	 * @param integer $limit
 	 */
 	public function setLimit( $limit ) {
-		$this->requestOptions->limit = (int)$limit;
+		$this->limit = (int)$limit;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param boolean $listOnly
+	 */
+	public function setListOnly( $listOnly ) {
+		$this->listOnly = (bool)$listOnly;
 	}
 
 	/**
@@ -131,37 +149,33 @@ class PropertyListByApiRequest {
 	 *
 	 * @return boolean
 	 */
-	public function findPropertyListFor( $property = '' ) {
+	public function findPropertyListBy( $property = '' ) {
 
-		$this->meta = array();
-		$this->propertyList = array();
-		$this->namespaces = array();
+		$requestOptions = new RequestOptions();
+		$requestOptions->sort = true;
+		$requestOptions->limit = $this->limit;
 
-		$this->requestOptions->limit++; // increase by one to look ahead
-		$this->continueOffset = 1;
+		$isFromCache = false;
 
-		if ( $property !== '' ) {
-			$property = $this->preprocessPropertyString( $property );
+		//
+		$this->matchPropertiesToPreferredLabelBy( $property );
 
-			$this->requestOptions->addStringCondition(
-				$property,
-				StringCondition::STRCOND_MID
-			);
+		// Increase by one to look ahead
+		$requestOptions->limit++;
 
-			// Disjunctive condition to allow for auto searches of foaf OR Foaf
-			$this->requestOptions->addStringCondition(
-				ucfirst( $property ),
-				StringCondition::STRCOND_MID,
-				true
-			);
-		}
+		$requestOptions = $this->doModifyRequestOptionsWith(
+			$property,
+			$requestOptions
+		);
 
-		$propertyListLookup = $this->store->getPropertiesSpecial( $this->requestOptions );
-		$this->requestOptions->limit--;
+		$propertyListLookup = $this->store->getPropertiesSpecial( $requestOptions );
+
+		// Restore original limit
+		$requestOptions->limit--;
 
 		foreach ( $propertyListLookup->fetchList() as $value ) {
 
-			if ( $this->continueOffset > $this->requestOptions->limit ) {
+			if ( $this->continueOffset > $requestOptions->limit ) {
 				break;
 			}
 
@@ -169,11 +183,11 @@ class PropertyListByApiRequest {
 			$this->continueOffset++;
 		}
 
-		$this->continueOffset = $this->continueOffset > $this->requestOptions->limit ? $this->requestOptions->limit : 0;
+		$this->continueOffset = $this->continueOffset > $requestOptions->limit ? $requestOptions->limit : 0;
 		$this->namespaces = array_keys( $this->namespaces );
 
 		$this->meta = array(
-			'limit' => $this->requestOptions->limit,
+			'limit' => $requestOptions->limit,
 			'count' => count( $this->propertyList ),
 			'isCached' => $propertyListLookup->isFromCache()
 		);
@@ -181,10 +195,14 @@ class PropertyListByApiRequest {
 		return true;
 	}
 
-	private function preprocessPropertyString( $property ) {
+	private function doModifyRequestOptionsWith( $property, $requestOptions ) {
+
+		if ( $property === '' ) {
+			return $requestOptions;
+		}
 
 		if ( $property{0} !== '_' ) {
-			return str_replace( "_", " ", $property );
+			$property = str_replace( "_", " ", $property );
 		}
 
 		// Try to match something like _MDAT to find a label and
@@ -195,7 +213,26 @@ class PropertyListByApiRequest {
 			$property = '';
 		}
 
-		return $property;
+		$requestOptions->addStringCondition(
+			$property,
+			StringCondition::STRCOND_MID
+		);
+
+		// Disjunctive condition to allow for auto searches to match foaf OR Foaf
+		$requestOptions->addStringCondition(
+			ucfirst( $property ),
+			StringCondition::STRCOND_MID,
+			true
+		);
+
+		// Allow something like FOO to match the search string `foo`
+		$requestOptions->addStringCondition(
+			strtoupper( $property ),
+			StringCondition::STRCOND_MID,
+			true
+		);
+
+		return $requestOptions;
 	}
 
 	private function addPropertyToList( array $value ) {
@@ -204,29 +241,32 @@ class PropertyListByApiRequest {
 			return;
 		}
 
-		$key = $value[0]->getKey();
+		$property = $value[0];
+		$key = $property->getKey();
 
 		if ( strpos( $key, ':' ) !== false ) {
 			$this->namespaces[substr( $key, 0, strpos( $key, ':' ) )] = true;
 		}
 
 		$this->propertyList[$key] = array(
-			'label' => $value[0]->getLabel(),
-			'key'   => $value[0]->getKey(),
-			'isUserDefined' => $value[0]->isUserDefined(),
-			'usageCount'  => $value[1],
-			'description' => $this->tryToFindPropertyDescriptionFor( $value[0] )
+			'label' => $property->getLabel(),
+			'key'   => $property->getKey()
 		);
-	}
 
-	private function tryToFindPropertyDescriptionFor( DIProperty $property ) {
-
-		if ( $this->languageCode !== '' ) {
-			$this->propertySpecificationLookup->setLanguageCode( $this->languageCode );
+		if ( $this->listOnly ) {
+			return;
 		}
 
-		$description = $this->propertySpecificationLookup->getPropertyDescriptionFor(
-			$property
+		$this->propertyList[$key]['isUserDefined'] = $property->isUserDefined();
+		$this->propertyList[$key]['usageCount'] = $value[1];
+		$this->propertyList[$key]['description'] = $this->findPropertyDescriptionBy( $property );
+	}
+
+	private function findPropertyDescriptionBy( DIProperty $property ) {
+
+		$description = $this->propertySpecificationLookup->getPropertyDescriptionBy(
+			$property,
+			$this->languageCode
 		);
 
 		if ( $description === '' || $description === null ) {
@@ -234,8 +274,25 @@ class PropertyListByApiRequest {
 		}
 
 		return array(
-			$this->propertySpecificationLookup->getLanguageCode() => $description
+			$this->languageCode => $description
 		);
+	}
+
+	private function matchPropertiesToPreferredLabelBy( $label ) {
+
+		$propertyLabelFinder = ApplicationFactory::getInstance()->getPropertyLabelFinder();
+
+		// Use the proximity search on a text field
+		$label = '~*' . $label . '*';
+
+		$results = $propertyLabelFinder->findPropertyListFromLabelByLanguageCode(
+			$label,
+			$this->languageCode
+		);
+
+		foreach ( $results as $result ) {
+			$this->addPropertyToList( array( $result, 0 ) );
+		}
 	}
 
 }

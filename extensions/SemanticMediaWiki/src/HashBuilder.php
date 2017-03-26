@@ -51,12 +51,24 @@ class HashBuilder {
 	 *
 	 * @return string
 	 */
-	public static function createHashIdForContent( $hashableContent, $prefix = '' ) {
+	public static function createFromContent( $hashableContent, $prefix = '' ) {
 
 		if ( is_string( $hashableContent ) ) {
 			$hashableContent = array( $hashableContent );
 		}
 
+		return $prefix . md5( json_encode( $hashableContent ) );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param array $hashableContent
+	 * @param string $prefix
+	 *
+	 * @return string
+	 */
+	public static function createFromArray( array $hashableContent, $prefix = '' ) {
 		return $prefix . md5( json_encode( $hashableContent ) );
 	}
 

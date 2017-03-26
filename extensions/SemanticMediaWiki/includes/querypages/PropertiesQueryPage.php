@@ -5,6 +5,8 @@ namespace SMW;
 use Html;
 use SMWDIError;
 use SMWTypesValue;
+use SMW\DataValues\ValueFormatters\DataValueFormatter;
+use SMW\Exception\PropertyNotFoundExeption;
 
 /**
  * Query class that provides content for the Special:Properties page
@@ -91,23 +93,14 @@ class PropertiesQueryPage extends QueryPage {
 	 * @param Skin $skin provided by MediaWiki, not needed here
 	 * @param mixed $result
 	 * @return String
-	 * @throws InvalidResultException if the result was not of a supported type
+	 * @throws PropertyNotFoundExeption if the result was not of a supported type
 	 */
 	function formatResult( $skin, $result ) {
 
 		list ( $dataItem, $useCount ) = $result;
 
 		if ( $dataItem instanceof DIProperty ) {
-			$infoLink = '';
-
-			// Add a link to SearchByProperty to hopefully identify the
-			// "hidden" reference
-			if ( $useCount < 1 && $dataItem->isUserDefined() ) {
-				$infoLink = '&#160;' . \SMWInfolink::newPropertySearchLink( '+', $dataItem->getLabel(), '' )->getHTML( $this->getLinker() );
-			}
-
-			return $this->formatPropertyItem( $dataItem, $useCount ) . $infoLink;
-
+			return $this->formatPropertyItem( $dataItem, $useCount );
 		} elseif ( $dataItem instanceof SMWDIError ) {
 			return $this->getMessageFormatter()->clear()
 				->setType( 'warning' )
@@ -115,7 +108,7 @@ class PropertiesQueryPage extends QueryPage {
 				->getHtml();
 		}
 
-		throw new InvalidResultException( 'PropertiesQueryPage expects results that are properties or errors.' );
+		throw new PropertyNotFoundExeption( 'PropertiesQueryPage expects results that are properties or errors.' );
 	}
 
 	/**
@@ -142,7 +135,7 @@ class PropertiesQueryPage extends QueryPage {
 
 		if ( $property->isUserDefined() ) {
 
-			if (  $title === null ) {
+			if ( $title === null ) {
 				// Show even messed up property names.
 				$typestring = '';
 				$proplink = $property->getLabel();
@@ -152,6 +145,16 @@ class PropertiesQueryPage extends QueryPage {
 			} else {
 				list( $typestring, $proplink ) = $this->getUserDefinedPropertyInfo( $title, $property, $useCount );
 			}
+
+			$infoLink = '';
+
+			// Add a link to SearchByProperty to hopefully identify the
+			// "hidden" reference
+			if ( $useCount < 1 ) {
+				$infoLink = '&#160;' . \SMWInfolink::newPropertySearchLink( '+', $property->getLabel(), '' )->getHTML( $this->getLinker() );
+			}
+
+			$proplink .= $infoLink;
 
 		} else {
 			list( $typestring, $proplink ) = $this->getPredefinedPropertyInfo( $property );
@@ -205,27 +208,26 @@ class PropertiesQueryPage extends QueryPage {
 			$linkAttributes['title'] = 'ID: ' . $property->id;
 		}
 
-		if ( $title->exists() ) {
+		$dataValue = DataValueFactory::getInstance()->newDataValueByItem( $property );
+		$dataValue->setLinkAttributes( $linkAttributes );
 
-			$typeProperty = new DIProperty( '_TYPE' );
-			$types = $this->store->getPropertyValues( $property->getDiWikiPage(), $typeProperty );
+		$proplink = $dataValue->getFormattedLabel(
+			DataValueFormatter::HTML_SHORT,
+			$this->getLinker()
+		);
 
-			if ( count( $types ) >= 1 ) {
-
-				$typeDataValue = DataValueFactory::getInstance()->newDataValueByItem( current( $types ), $typeProperty );
-				$typestring = $typeDataValue->getLongHTMLText( $this->getLinker() );
-
-			} else {
-
-				$this->getMessageFormatter()->addFromKey( 'smw_propertylackstype', $typestring );
-			}
-
-			$proplink = $this->getLinker()->link( $title, $label, $linkAttributes );
-
-		} else {
-
+		if ( !$title->exists() ) {
 			$this->getMessageFormatter()->addFromKey( 'smw_propertylackspage' );
-			$proplink = $this->getLinker()->link( $title, $label, $linkAttributes, array( 'action' => 'view' ) );
+		}
+
+		$typeProperty = new DIProperty( '_TYPE' );
+		$types = $this->store->getPropertyValues( $property->getDiWikiPage(), $typeProperty );
+
+		if ( count( $types ) >= 1 ) {
+			$typeDataValue = DataValueFactory::getInstance()->newDataValueByItem( current( $types ), $typeProperty );
+			$typestring = $typeDataValue->getLongHTMLText( $this->getLinker() );
+		} else {
+			$this->getMessageFormatter()->addFromKey( 'smw_propertylackstype', $typestring );
 		}
 
 		return array( $typestring, $proplink );
@@ -242,16 +244,20 @@ class PropertiesQueryPage extends QueryPage {
 	 */
 	private function getPredefinedPropertyInfo( DIProperty $property ) {
 
-		$dv = DataValueFactory::getInstance()->newDataValueByItem( $property, null );
-		$dv->setCaption( $property->getLabel() );
+		$dataValue = DataValueFactory::getInstance()->newDataValueByItem( $property, null );
 
-		$dv->setLinkAttributes( array(
+		$dataValue->setLinkAttributes( array(
 			'title' => 'ID: ' . ( isset( $property->id ) ? $property->id : 'N/A' ) . ' (' . $property->getKey() . ')'
 		) );
 
+		$label = $dataValue->getFormattedLabel(
+			DataValueFormatter::HTML_SHORT,
+			$this->getLinker()
+		);
+
 		return array(
 			SMWTypesValue::newFromTypeId( $property->findPropertyTypeID() )->getLongHTMLText( $this->getLinker() ),
-			$dv->getShortHtmlText( $this->getLinker() )
+			$label
 		);
 	}
 

@@ -51,7 +51,7 @@ class RequestOptionsProcessorTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(
 			$expected,
-			$instance->transformToSQLOptions( $requestOptions, 'Foo' )
+			$instance->getSQLOptionsFrom( $requestOptions, 'Foo' )
 		);
 	}
 
@@ -76,7 +76,7 @@ class RequestOptionsProcessorTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(
 			$expected,
-			$instance->transformToSQLConditions( $requestOptions, $valueCol, $labelCol )
+			$instance->getSQLConditionsFrom( $requestOptions, $valueCol, $labelCol )
 		);
 	}
 
@@ -133,6 +133,19 @@ class RequestOptionsProcessorTest extends \PHPUnit_Framework_TestCase {
 			'Foo',
 			'Bar',
 			' AND Foo >= 1 OR Bar LIKE foobar% OR Bar LIKE %foobaz'
+		);
+
+		# 3
+		$requestOptions = new RequestOptions();
+		$requestOptions->boundary = true;
+
+		$requestOptions->addStringCondition( 'foo_bar', StringCondition::COND_EQ );
+
+		$provider[] = array(
+			$requestOptions,
+			'Foo',
+			'Bar',
+			' AND Foo >= 1 AND Bar = foo\_bar'
 		);
 
 		return $provider;

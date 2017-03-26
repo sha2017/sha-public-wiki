@@ -8,6 +8,7 @@ use SMW\SemanticData;
 use SMW\SQLStore\PropertyTableInfoFetcher;
 use SMW\SQLStore\SQLStoreFactory;
 use SMW\SQLStore\TableDefinition;
+use SMW\SQLStore\TableBuilder\FieldType;
 
 /**
  * SQL-based implementation of SMW's storage abstraction layer.
@@ -77,6 +78,11 @@ class SMWSQLStore3 extends SMWStore {
 	const QUERY_LINKS_TABLE = 'smw_query_links';
 
 	/**
+	 * Name of the table that manages the fulltext index
+	 */
+	const FT_SEARCH_TABLE = 'smw_ft_search';
+
+	/**
 	 * Name of the table that manages the Store IDs
 	 */
 	const ID_TABLE = 'smw_object_ids';
@@ -100,6 +106,16 @@ class SMWSQLStore3 extends SMWStore {
 	 * @var RequestOptionsProcessor|null
 	 */
 	private $requestOptionsProcessor = null;
+
+	/**
+	 * @var DataItemHandlerDispatcher
+	 */
+	private $dataItemHandlerDispatcher;
+
+	/**
+	 * @var EntityLookup
+	 */
+	private $entityLookup;
 
 	/**
 	 * Object to access the SMW IDs table.
@@ -128,24 +144,6 @@ class SMWSQLStore3 extends SMWStore {
 	protected $writer = false;
 
 	/**
-	 * The SetupHandler object used by this store. Initialized by getSetupHandler(),
-	 * which is the only way in which it should be accessed.
-	 *
-	 * @since 1.8
-	 * @var SMWSQLStore3SetupHandlers
-	 */
-	protected $setupHandler = false;
-
-	/**
-	 * Array of DIHandler objects used by this store. Initialized by getDIHandler(),
-	 * which is the only way in which it should be accessed.
-	 *
-	 * @since 1.8
-	 * @var array
-	 */
-	protected $diHandlers = array();
-
-	/**
 	 * Cache for SemanticData objects, indexed by SMW ID.
 	 *
 	 * @todo In the future, the cache should be managed by a helper class.
@@ -165,18 +163,11 @@ class SMWSQLStore3 extends SMWStore {
 	public $m_sdstate = array();
 
 	/**
-	 * @var CachedValueLookupStore
-	 */
-	private $cachedValueLookupStore = null;
-
-	/**
 	 * @since 1.8
 	 */
 	public function __construct() {
-		$this->smwIds = new SMWSql3SmwIds( $this );
 		$this->factory = new SQLStoreFactory( $this );
-
-		$this->cachedValueLookupStore = $this->factory->newCachedValueLookupStore();
+		$this->smwIds = $this->factory->newIdTableManager();
 	}
 
 	/**
@@ -184,80 +175,31 @@ class SMWSQLStore3 extends SMWStore {
 	 *
 	 * @since 1.8
 	 * @param integer $diType
-	 * @throws MWException if no handler exists for the given type
-	 * @return SMWDataItemHandler
+	 *
+	 * @return SMWDIHandler
+	 * @throws RuntimeException if no handler exists for the given type
 	 */
 	public function getDataItemHandlerForDIType( $diType ) {
-		if( !array_key_exists( $diType, $this->diHandlers ) ) {
-			switch ( $diType ) {
-				case SMWDataItem::TYPE_NUMBER:
-					$this->diHandlers[$diType] = new SMWDIHandlerNumber( $this );
-					break;
-				case SMWDataItem::TYPE_BLOB:
-					$this->diHandlers[$diType] = new SMWDIHandlerBlob( $this );
-					break;
-				case SMWDataItem::TYPE_BOOLEAN:
-					$this->diHandlers[$diType] = new SMWDIHandlerBoolean( $this );
-					break;
-				case SMWDataItem::TYPE_URI:
-					$this->diHandlers[$diType] = new SMWDIHandlerUri( $this );
-					break;
-				case SMWDataItem::TYPE_TIME:
-					$this->diHandlers[$diType] = new SMWDIHandlerTime( $this );
-					break;
-				case SMWDataItem::TYPE_GEO:
-					$this->diHandlers[$diType] = new SMWDIHandlerGeoCoord( $this );
-					break;
-				case SMWDataItem::TYPE_WIKIPAGE:
-					$this->diHandlers[$diType] = new SMWDIHandlerWikiPage( $this );
-					break;
-				case SMWDataItem::TYPE_CONCEPT:
-					$this->diHandlers[$diType] = new SMWDIHandlerConcept( $this );
-					break;
-				case SMWDataItem::TYPE_PROPERTY:
-					throw new MWException( "There is no DI handler for SMWDataItem::TYPE_PROPERTY." );
-				case SMWDataItem::TYPE_CONTAINER:
-					throw new MWException( "There is no DI handler for SMWDataItem::TYPE_CONTAINER." );
-				case SMWDataItem::TYPE_ERROR:
-					throw new MWException( "There is no DI handler for SMWDataItem::TYPE_ERROR." );
-				default:
-					throw new MWException( "The value \"$diType\" is not a valid dataitem ID." );
-			}
-		}
-		return $this->diHandlers[$diType];
-	}
 
-	/**
-	 * Convenience method to get a dataitem handler for a datatype id.
-	 *
-	 * @since 1.8
-	 * @param string $typeid
-	 * @throws MWException if there is no handler for this type
-	 * @return SMWDataItemHandler
-	 */
-	public function getDataItemHandlerForDatatype( $typeid ) {
-		$dataItemId = DataTypeRegistry::getInstance()->getDataItemId( $typeid );
-		return $this->getDataItemHandlerForDIType( $dataItemId );
+		if ( $this->dataItemHandlerDispatcher === null ) {
+			$this->dataItemHandlerDispatcher = $this->factory->newDataItemHandlerDispatcher( $this );
+		}
+
+		return $this->dataItemHandlerDispatcher->getHandlerByType( $diType );
 	}
 
 ///// Reading methods /////
 
 	public function getReader() {
 		if( $this->reader == false ) {
-			$this->reader = new SMWSQLStore3Readers( $this );//Initialize if not done already
+			$this->reader = new SMWSQLStore3Readers( $this, $this->factory );//Initialize if not done already
 		}
 
 		return $this->reader;
 	}
 
 	public function getSemanticData( DIWikiPage $subject, $filter = false ) {
-
-		$result = $this->cachedValueLookupStore->getSemanticData(
-			$subject,
-			$filter
-		);
-
-		return $result;
+		return $this->getEntityLookup()->getSemanticData( $subject, $filter );
 	}
 
 	/**
@@ -268,43 +210,23 @@ class SMWSQLStore3 extends SMWStore {
 	 * @return SMWDataItem[]
 	 */
 	public function getPropertyValues( $subject, DIProperty $property, $requestOptions = null ) {
-
-		$result = $this->cachedValueLookupStore->getPropertyValues(
-			$subject,
-			$property,
-			$requestOptions
-		);
-
-		return $result;
-	}
-
-	public function getPropertySubjects( DIProperty $property, $dataItem, $requestOptions = null ) {
-
-		$result = $this->cachedValueLookupStore->getPropertySubjects(
-			$property,
-			$dataItem,
-			$requestOptions
-		);
-
-		return $result;
-	}
-
-	public function getAllPropertySubjects( DIProperty $property, $requestoptions = null ) {
-		return $this->getReader()->getAllPropertySubjects( $property, $requestoptions );
+		return $this->getEntityLookup()->getPropertyValues(	$subject, $property, $requestOptions );
 	}
 
 	public function getProperties( DIWikiPage $subject, $requestOptions = null ) {
+		return $this->getEntityLookup()->getProperties( $subject, $requestOptions );
+	}
 
-		$result = $this->cachedValueLookupStore->getProperties(
-			$subject,
-			$requestOptions
-		);
+	public function getPropertySubjects( DIProperty $property, $dataItem, $requestOptions = null ) {
+		return $this->getEntityLookup()->getPropertySubjects( $property, $dataItem, $requestOptions );
+	}
 
-		return $result;
+	public function getAllPropertySubjects( DIProperty $property, $requestoptions = null ) {
+		return $this->getEntityLookup()->getAllPropertySubjects( $property, $requestoptions );
 	}
 
 	public function getInProperties( SMWDataItem $value, $requestoptions = null ) {
-		return $this->getReader()->getInProperties( $value, $requestoptions );
+		return $this->getEntityLookup()->getInProperties( $value, $requestoptions );
 	}
 
 
@@ -313,7 +235,7 @@ class SMWSQLStore3 extends SMWStore {
 
 	public function getWriter() {
 		if( $this->writer == false ) {
-			$this->writer = new SMWSQLStore3Writers( $this );//Initialize if not done already
+			$this->writer = new SMWSQLStore3Writers( $this, $this->factory );
 		}
 
 		return $this->writer;
@@ -323,7 +245,7 @@ class SMWSQLStore3 extends SMWStore {
 
 		$subject = DIWikiPage::newFromTitle( $title );
 
-		$this->cachedValueLookupStore->deleteFor(
+		$this->getEntityLookup()->resetCacheBy(
 			$subject
 		);
 
@@ -336,7 +258,7 @@ class SMWSQLStore3 extends SMWStore {
 
 	protected function doDataUpdate( SemanticData $semanticData ) {
 
-		$this->cachedValueLookupStore->deleteFor(
+		$this->getEntityLookup()->resetCacheBy(
 			$semanticData->getSubject()
 		);
 
@@ -349,11 +271,11 @@ class SMWSQLStore3 extends SMWStore {
 
 	public function changeTitle( Title $oldtitle, Title $newtitle, $pageid, $redirid = 0 ) {
 
-		$this->cachedValueLookupStore->deleteFor(
+		$this->getEntityLookup()->resetCacheBy(
 			DIWikiPage::newFromTitle( $oldtitle )
 		);
 
-		$this->cachedValueLookupStore->deleteFor(
+		$this->getEntityLookup()->resetCacheBy(
 			DIWikiPage::newFromTitle( $newtitle )
 		);
 
@@ -370,7 +292,10 @@ class SMWSQLStore3 extends SMWStore {
 			return null;
 		}
 
-		$this->factory->newDeferredCallableCachedListLookupUpdate()->pushToDeferredUpdateList();
+		$deferredCallableUpdate = $this->factory->newDeferredCallableCachedListLookupUpdate();
+		$deferredCallableUpdate->setOrigin( __METHOD__ );
+		$deferredCallableUpdate->waitOnTransactionIdle();
+		$deferredCallableUpdate->pushUpdate();
 	}
 
 ///// Query answering /////
@@ -387,13 +312,16 @@ class SMWSQLStore3 extends SMWStore {
 	public function getQueryResult( SMWQuery $query ) {
 
 		$result = null;
+		$start = microtime( true );
 
-		if ( \Hooks::run( 'SMW::Store::BeforeQueryResultLookupComplete', array( $this, $query, &$result ) ) ) {
+		if ( \Hooks::run( 'SMW::Store::BeforeQueryResultLookupComplete', array( $this, $query, &$result, $this->factory->newSlaveQueryEngine() ) ) ) {
 			$result = $this->fetchQueryResult( $query );
 		}
 
 		\Hooks::run( 'SMW::SQLStore::AfterQueryResultLookupComplete', array( $this, &$result ) );
 		\Hooks::run( 'SMW::Store::AfterQueryResultLookupComplete', array( $this, &$result ) );
+
+		$query->setOption( SMWQuery::PROC_QUERY_TIME, microtime( true ) - $start );
 
 		return $result;
 	}
@@ -438,31 +366,34 @@ class SMWSQLStore3 extends SMWStore {
 
 ///// Setup store /////
 
-	public function getSetupHandler() {
-		if( $this->setupHandler == false ) {
-			$this->setupHandler = new SMWSQLStore3SetupHandlers( $this );//Initialize if not done already
-		}
 
-		return $this->setupHandler;
-	}
-
+	/**
+	 * @since 1.8
+	 *
+	 * {@inheritDoc}
+	 */
 	public function setup( $verbose = true ) {
-		return $this->getSetupHandler()->setup( $verbose );
+		return $this->factory->newInstaller()->install( $verbose );
 	}
 
+	/**
+	 * @since 1.8
+	 *
+	 * {@inheritDoc}
+	 */
 	public function drop( $verbose = true ) {
-		return $this->getSetupHandler()->drop( $verbose );
+		return $this->factory->newInstaller()->uninstall( $verbose );
 	}
 
 	public function refreshData( &$id, $count, $namespaces = false, $usejobs = true ) {
 
-		$byIdDataRebuildDispatcher = $this->factory->newByIdDataRebuildDispatcher();
+		$entityRebuildDispatcher = $this->factory->newEntityRebuildDispatcher();
 
-		$byIdDataRebuildDispatcher->setIterationLimit( $count );
-		$byIdDataRebuildDispatcher->setNamespacesTo( $namespaces );
-		$byIdDataRebuildDispatcher->setUpdateJobToUseJobQueueScheduler( $usejobs );
+		$entityRebuildDispatcher->setDispatchRangeLimit( $count );
+		$entityRebuildDispatcher->setRestrictionToNamespaces( $namespaces );
+		$entityRebuildDispatcher->useJobQueueScheduler( $usejobs );
 
-		return $byIdDataRebuildDispatcher;
+		return $entityRebuildDispatcher;
 	}
 
 
@@ -510,7 +441,7 @@ class SMWSQLStore3 extends SMWStore {
 ///// Helper methods, mostly protected /////
 
 	/**
-	 * @see RequestOptionsProcessor::transformToSQLOptions
+	 * @see RequestOptionsProcessor::getSQLOptionsFrom
 	 *
 	 * @since 1.8
 	 *
@@ -520,11 +451,11 @@ class SMWSQLStore3 extends SMWStore {
 	 * @return array
 	 */
 	public function getSQLOptions( SMWRequestOptions $requestOptions = null, $valueCol = '' ) {
-		return $this->getRequestOptionsProcessor()->transformToSQLOptions( $requestOptions, $valueCol );
+		return $this->getRequestOptionsProcessor()->getSQLOptionsFrom( $requestOptions, $valueCol );
 	}
 
 	/**
-	 * @see RequestOptionsProcessor::transformToSQLConditions
+	 * @see RequestOptionsProcessor::getSQLConditionsFrom
 	 *
 	 * @since 1.8
 	 *
@@ -536,7 +467,7 @@ class SMWSQLStore3 extends SMWStore {
 	 * @return string
 	 */
 	public function getSQLConditions( SMWRequestOptions $requestOptions = null, $valueCol = '', $labelCol = '', $addAnd = true ) {
-		return $this->getRequestOptionsProcessor()->transformToSQLConditions( $requestOptions, $valueCol, $labelCol, $addAnd );
+		return $this->getRequestOptionsProcessor()->getSQLConditionsFrom( $requestOptions, $valueCol, $labelCol, $addAnd );
 	}
 
 	/**
@@ -629,9 +560,9 @@ class SMWSQLStore3 extends SMWStore {
 					}
 				}
 
-				foreach ( $proptable->getFields( $this ) as $fieldname => $type ) {
-					if ( $type == 'p' ) {
-						$db->update( $proptable->getName(), array( $fieldname => $newid ), array( $fieldname => $oldid ), __METHOD__ );
+				foreach ( $proptable->getFields( $this ) as $fieldName => $fieldType ) {
+					if ( $fieldType === FieldType::FIELD_ID ) {
+						$db->update( $proptable->getName(), array( $fieldName => $newid ), array( $fieldName => $oldid ), __METHOD__ );
 					}
 				}
 			}
@@ -702,7 +633,7 @@ class SMWSQLStore3 extends SMWStore {
 	 *
 	 * @param string $connectionTypeId
 	 *
-	 * @return mixed
+	 * @return \SMW\MediaWiki\Database
 	 */
 	public function getConnection( $connectionTypeId = 'mw.db' ) {
 		return parent::getConnection( $connectionTypeId );
@@ -715,7 +646,6 @@ class SMWSQLStore3 extends SMWStore {
 	 */
 	public function getPropertyTableInfoFetcher() {
 
-		// We want a cached instance here
 		if ( $this->propertyTableInfoFetcher === null ) {
 			$this->propertyTableInfoFetcher = $this->factory->newPropertyTableInfoFetcher();
 		}
@@ -742,12 +672,23 @@ class SMWSQLStore3 extends SMWStore {
 	 */
 	private function getRequestOptionsProcessor() {
 
-		// We want a cached instance here
 		if ( $this->requestOptionsProcessor === null ) {
 			$this->requestOptionsProcessor = $this->factory->newRequestOptionsProcessor();
 		}
 
 		return $this->requestOptionsProcessor;
+	}
+
+	/**
+	 * @return EntityLookup
+	 */
+	private function getEntityLookup() {
+
+		if ( $this->entityLookup === null ) {
+			$this->entityLookup = $this->factory->newEntityLookup();
+		}
+
+		return $this->entityLookup;
 	}
 
 }

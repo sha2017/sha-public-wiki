@@ -18,7 +18,7 @@ class Disjunction extends Description {
 	/**
 	 * @var Description[]
 	 */
-	private $descriptions;
+	private $descriptions = array();
 
 	/**
 	 * contains a single class description if any such disjunct was given;
@@ -41,11 +41,39 @@ class Disjunction extends Description {
 		}
 	}
 
+	/**
+	 * @see Description::getFingerprint
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getFingerprint() {
+
+		// Avoid a recursive tree
+		if ( $this->fingerprint !== null ) {
+			return $this->fingerprint;
+		}
+
+		$fingerprint = array();
+
+		foreach ( $this->descriptions as $description ) {
+			$fingerprint[$description->getFingerprint()] = true;
+		}
+
+		ksort( $fingerprint );
+
+		return $this->fingerprint = 'D:' . md5( implode( '|', array_keys( $fingerprint ) ) );
+	}
+
 	public function getDescriptions() {
 		return $this->descriptions;
 	}
 
 	public function addDescription( Description $description ) {
+
+		$this->fingerprint = null;
+		$fingerprint = $description->getFingerprint();
+
 		if ( $description instanceof ThingDescription ) {
 			$this->isTrue = true;
 			$this->descriptions = array(); // no conditions any more
@@ -56,18 +84,18 @@ class Disjunction extends Description {
 			if ( $description instanceof ClassDescription ) { // combine class descriptions
 				if ( is_null( $this->classDescription ) ) { // first class description
 					$this->classDescription = $description;
-					$this->descriptions[] = $description;
+					$this->descriptions[$description->getFingerprint()] = $description;
 				} else {
 					$this->classDescription->addDescription( $description );
 				}
 			} elseif ( $description instanceof Disjunction ) { // absorb sub-disjunctions
 				foreach ( $description->getDescriptions() as $subdesc ) {
-					$this->descriptions[] = $subdesc;
+					$this->descriptions[$subdesc->getFingerprint()] = $subdesc;
 				}
 			// } elseif ($description instanceof SMWSomeProperty) {
 			   ///TODO: use subdisjunct. for multiple SMWSomeProperty descs with same property
 			} else {
-				$this->descriptions[] = $description;
+				$this->descriptions[$fingerprint] = $description;
 			}
 		}
 

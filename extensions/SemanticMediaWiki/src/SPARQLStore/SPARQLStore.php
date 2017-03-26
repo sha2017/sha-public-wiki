@@ -61,7 +61,7 @@ class SPARQLStore extends Store {
 		$this->baseStore = $baseStore;
 
 		if ( $this->baseStore === null ) {
-			$this->baseStore = $this->factory->newBaseStore( self::$baseStoreClass );
+			$this->baseStore = $this->factory->getBaseStore( self::$baseStoreClass );
 		}
 	}
 
@@ -179,33 +179,33 @@ class SPARQLStore extends Store {
 	 */
 	public function doSparqlDataUpdate( SemanticData $semanticData ) {
 
-		$this->doSparqlFlatDataUpdate( $semanticData );
+		$replicationDataTruncator = $this->factory->newReplicationDataTruncator();
+		$semanticData = $replicationDataTruncator->doTruncate( $semanticData );
+
+		$turtleTriplesBuilder = $this->factory->newTurtleTriplesBuilder();
+
+		$this->doSparqlFlatDataUpdate( $semanticData, $turtleTriplesBuilder );
 
 		foreach( $semanticData->getSubSemanticData() as $subSemanticData ) {
-			 $this->doSparqlFlatDataUpdate( $subSemanticData );
+			$subSemanticData = $replicationDataTruncator->doTruncate( $subSemanticData );
+			$this->doSparqlFlatDataUpdate( $subSemanticData, $turtleTriplesBuilder );
 		}
 
 		//wfDebugLog( 'smw', ' InMemoryPoolCache: ' . json_encode( \SMW\InMemoryPoolCache::getInstance()->getStats() ) );
 
 		// Reset internal cache
-		TurtleTriplesBuilder::reset();
+		$turtleTriplesBuilder->reset();
 	}
 
 	/**
-	 * Update the Sparql back-end, without taking any subobject data into account.
-	 *
 	 * @param SemanticData $semanticData
+	 * @param TurtleTriplesBuilder $turtleTriplesBuilder
 	 */
-	private function doSparqlFlatDataUpdate( SemanticData $semanticData ) {
+	private function doSparqlFlatDataUpdate( SemanticData $semanticData, TurtleTriplesBuilder $turtleTriplesBuilder ) {
 
-		$turtleTriplesBuilder = new TurtleTriplesBuilder(
-			$semanticData,
-			new RedirectLookup( $this->getConnection() )
-		);
+		$turtleTriplesBuilder->doBuildTriplesFrom( $semanticData );
 
-		$turtleTriplesBuilder->setTriplesChunkSize( 80 );
-
-		if ( !$turtleTriplesBuilder->hasTriplesForUpdate() ) {
+		if ( !$turtleTriplesBuilder->hasTriples() ) {
 			return;
 		}
 
@@ -271,13 +271,21 @@ class SPARQLStore extends Store {
 	 */
 	public function getQueryResult( Query $query ) {
 
-		$result = null;
+		// Use a fallback QueryEngine in case the QueryEndpoint is inaccessible
+		if ( !$this->isEnabledQueryEndpoint() ) {
+			return $this->baseStore->getQueryResult( $query );
+		}
 
-		if ( \Hooks::run( 'SMW::Store::BeforeQueryResultLookupComplete', array( $this, $query, &$result ) ) ) {
+		$result = null;
+		$start = microtime( true );
+
+		if ( \Hooks::run( 'SMW::Store::BeforeQueryResultLookupComplete', array( $this, $query, &$result, $this->factory->newMasterQueryEngine() ) ) ) {
 			$result = $this->fetchQueryResult( $query );
 		}
 
 		\Hooks::run( 'SMW::Store::AfterQueryResultLookupComplete', array( $this, &$result ) );
+
+		$query->setOption( Query::PROC_QUERY_TIME, microtime( true ) - $start );
 
 		return $result;
 	}
@@ -368,6 +376,15 @@ class SPARQLStore extends Store {
 	}
 
 	/**
+	 * @since 2.5
+	 *
+	 * @return PropertyTableInfoFetcher
+	 */
+	public function getPropertyTableInfoFetcher() {
+		return $this->baseStore->getPropertyTableInfoFetcher();
+	}
+
+	/**
 	 * @since 2.0
 	 */
 	public function getPropertyTables() {
@@ -418,6 +435,10 @@ class SPARQLStore extends Store {
 		}
 
 		return parent::getConnection( $connectionTypeId );
+	}
+
+	private function isEnabledQueryEndpoint() {
+		return $this->getConnection( 'sparql' )->getRepositoryClient()->getQueryEndpoint() !== false;
 	}
 
 }

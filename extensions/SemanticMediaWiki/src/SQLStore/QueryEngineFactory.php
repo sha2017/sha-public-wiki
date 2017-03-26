@@ -11,6 +11,9 @@ use SMW\SQLStore\QueryEngine\HierarchyTempTableBuilder;
 use SMW\SQLStore\QueryEngine\QueryEngine;
 use SMW\SQLStore\QueryEngine\QuerySegmentListBuilder;
 use SMW\SQLStore\QueryEngine\QuerySegmentListProcessor;
+use SMW\SQLStore\QueryEngine\ConceptQuerySegmentBuilder;
+use SMW\SQLStore\QueryEngine\OrderConditionsComplementor;
+use SMW\SQLStore\QueryEngine\QuerySegmentListBuildManager;
 
 /**
  * @license GNU GPL v2+
@@ -46,10 +49,17 @@ class QueryEngineFactory {
 	 * @return QuerySegmentListBuilder
 	 */
 	public function newQuerySegmentListBuilder() {
-		return new QuerySegmentListBuilder(
+
+		$querySegmentListBuilder = new QuerySegmentListBuilder(
 			$this->store,
 			new DescriptionInterpreterFactory()
 		);
+
+		$querySegmentListBuilder->isFilterDuplicates(
+			$this->applicationFactory->getSettings()->get( 'smwgQFilterDuplicates' )
+		);
+
+		return $querySegmentListBuilder;
 	}
 
 	/**
@@ -92,12 +102,54 @@ class QueryEngineFactory {
 	 * @return QueryEngine
 	 */
 	public function newQueryEngine() {
-		return new QueryEngine(
+
+		$querySegmentListBuilder = $this->newQuerySegmentListBuilder();
+
+		$orderConditionsComplementor = new OrderConditionsComplementor(
+			$querySegmentListBuilder
+		);
+
+		$orderConditionsComplementor->isSupported(
+			$this->applicationFactory->getSettings()->get( 'smwgQSortingSupport' )
+		);
+
+		$querySegmentListBuildManager = new QuerySegmentListBuildManager(
+			$this->store->getConnection( 'mw.db.queryengine' ),
+			$querySegmentListBuilder,
+			$orderConditionsComplementor
+		);
+
+		$queryEngine = new QueryEngine(
 			$this->store,
-			$this->newQuerySegmentListBuilder(),
+			$querySegmentListBuildManager,
 			$this->newQuerySegmentListProcessor(),
 			new EngineOptions()
 		);
+
+		$queryEngine->setLogger(
+			$this->applicationFactory->getMediaWikiLogger()
+		);
+
+		return $queryEngine;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return ConceptQuerySegmentBuilder
+	 */
+	public function newConceptQuerySegmentBuilder() {
+
+		$conceptQuerySegmentBuilder = new ConceptQuerySegmentBuilder(
+			$this->newQuerySegmentListBuilder(),
+			$this->newQuerySegmentListProcessor()
+		);
+
+		$conceptQuerySegmentBuilder->setConceptFeatures(
+			$this->applicationFactory->getSettings()->get( 'smwgQConceptFeatures' )
+		);
+
+		return $conceptQuerySegmentBuilder;
 	}
 
 	private function newTemporaryTableBuilder() {

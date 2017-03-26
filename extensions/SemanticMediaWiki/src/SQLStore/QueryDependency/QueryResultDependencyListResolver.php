@@ -26,9 +26,9 @@ use SMWQueryResult as QueryResult;
 class QueryResultDependencyListResolver {
 
 	/**
-	 * @var QueryResult
+	 * @var PropertyHierarchyLookup
 	 */
-	private $queryResult;
+	private $propertyHierarchyLookup;
 
 	/**
 	 * Specifies a list of property keys to be excluded from the detection
@@ -39,18 +39,12 @@ class QueryResultDependencyListResolver {
 	private $propertyDependencyExemptionlist = array();
 
 	/**
-	 * @var PropertyHierarchyLookup
-	 */
-	private $propertyHierarchyLookup;
-
-	/**
 	 * @since 2.3
 	 *
 	 * @param $queryResult Can be a string for when format=Debug
 	 * @param PropertyHierarchyLookup $propertyHierarchyLookup
 	 */
-	public function __construct( $queryResult = null, PropertyHierarchyLookup $propertyHierarchyLookup ) {
-		$this->queryResult = $queryResult;
+	public function __construct( PropertyHierarchyLookup $propertyHierarchyLookup ) {
 		$this->propertyHierarchyLookup = $propertyHierarchyLookup;
 	}
 
@@ -68,35 +62,8 @@ class QueryResultDependencyListResolver {
 	}
 
 	/**
-	 * @since 2.3
-	 *
-	 * @return Query|null
-	 */
-	public function getQuery() {
-		return $this->queryResult instanceof QueryResult ? $this->queryResult->getQuery() : null;
-	}
-
-	/**
-	 * @since 2.3
-	 *
-	 * @return string|null
-	 */
-	public function getQueryId() {
-		return $this->getQuery() !== null ? $this->getQuery()->getQueryId() : null;
-	}
-
-	/**
-	 * @since 2.3
-	 *
-	 * @return DIWikiPage|null
-	 */
-	public function getSubject() {
-		return $this->getQuery() !== null ? $this->getQuery()->getContextPage() : null;
-	}
-
-	/**
 	 * At the point where the QueryResult instantiates results by means of the
-	 * ResultArray, record the objects with the help of the TemporaryEntityListAccumulator.
+	 * ResultArray, record the objects with the help of the EntityListAccumulator.
 	 * Processing is depending and various factors which could be to early with
 	 * the row instance is not yet being resolved.
 	 *
@@ -107,16 +74,18 @@ class QueryResultDependencyListResolver {
 	 *
 	 * @since 2.4
 	 *
+	 * @param QueryResult|string $queryResult
+	 *
 	 * @return DIWikiPage[]|[]
 	 */
-	public function getDependencyListByLateRetrieval() {
+	public function getDependencyListByLateRetrievalFrom( $queryResult ) {
 
-		if ( $this->getSubject() === null || $this->getQuery()->getLimit() == 0 ) {
+		if ( !$this->canResolve( $queryResult ) ) {
 			return array();
 		}
 
-		$id = $this->getQueryId();
-		$entityListAccumulator = $this->queryResult->getEntityListAccumulator();
+		$id = $queryResult->getQuery()->getQueryId();
+		$entityListAccumulator = $queryResult->getEntityListAccumulator();
 
 		$dependencyList = $entityListAccumulator->getEntityList(
 			$id
@@ -133,25 +102,26 @@ class QueryResultDependencyListResolver {
 	/**
 	 * @since 2.3
 	 *
+	 * @param QueryResult|string $queryResult
+	 *
 	 * @return DIWikiPage[]|[]
 	 */
-	public function getDependencyList() {
+	public function getDependencyListFrom( $queryResult ) {
 
-		// Resolving dependencies for non-embedded queries or limit=0 (which only
-		// links to Special:Ask via further results) is not required
-		if ( $this->getSubject() === null || $this->getQuery()->getLimit() == 0 ) {
+		if ( !$this->canResolve( $queryResult ) ) {
 			return array();
 		}
 
-		$description = $this->getQuery()->getDescription();
+		$description = $queryResult->getQuery()->getDescription();
 
 		$dependencySubjectList = array(
-			$this->getSubject(),
+			$queryResult->getQuery()->getContextPage()
 		);
 
 		// Find entities described by the query
 		$this->doResolveDependenciesFromDescription(
 			$dependencySubjectList,
+			$queryResult->getStore(),
 			$description
 		);
 
@@ -162,26 +132,41 @@ class QueryResultDependencyListResolver {
 
 		$dependencySubjectList = array_merge(
 			$dependencySubjectList,
-			$this->queryResult->getResults()
+			$queryResult->getResults()
 		);
 
-		$this->queryResult->reset();
+		$queryResult->reset();
 
 		return $dependencySubjectList;
 	}
 
-	private function doResolveDependenciesFromDescription( &$subjects, $description ) {
+	/**
+	 * Resolving dependencies for non-embedded queries or limit=0 (which only
+	 * links to Special:Ask via further results) is not required
+	 */
+	private function canResolve( $queryResult ) {
+		return $queryResult instanceof QueryResult && $queryResult->getQuery() !== null && $queryResult->getQuery()->getContextPage() !== null && $queryResult->getQuery()->getLimit() > 0;
+	}
 
-		if ( $description instanceof ValueDescription && $description->getDataItem() instanceof DIWikiPage ) {
+	private function doResolveDependenciesFromDescription( &$subjects, $store, $description ) {
+
+		// Ignore entities that use a comparator other than SMW_CMP_EQ
+		// [[Has page::~Foo*]] or similar is going to be ignored
+		if ( $description instanceof ValueDescription &&
+			$description->getDataItem() instanceof DIWikiPage &&
+			$description->getComparator() === SMW_CMP_EQ ) {
 			$subjects[] = $description->getDataItem();
 		}
 
-		if ( $description instanceof ConceptDescription ) {
-			$subjects[] = $description->getConcept();
-			$this->doResolveDependenciesFromDescription(
-				$subjects,
-				$this->getConceptDescription( $description->getConcept() )
-			);
+		if ( $description instanceof ConceptDescription && $concept = $description->getConcept() ) {
+			if ( $concept === null || !isset( $subjects[$concept->getHash()] ) ) {
+				$subjects[$concept->getHash()] = $concept;
+				$this->doResolveDependenciesFromDescription(
+					$subjects,
+					$store,
+					$this->getConceptDescription( $store, $concept )
+				);
+			}
 		}
 
 		if ( $description instanceof ClassDescription ) {
@@ -196,13 +181,13 @@ class QueryResultDependencyListResolver {
 		}
 
 		if ( $description instanceof SomeProperty ) {
-			$this->doResolveDependenciesFromDescription( $subjects, $description->getDescription() );
+			$this->doResolveDependenciesFromDescription( $subjects, $store, $description->getDescription() );
 			$this->doMatchProperty( $subjects, $description->getProperty() );
 		}
 
 		if ( $description instanceof Conjunction || $description instanceof Disjunction ) {
 			foreach ( $description->getDescriptions() as $description ) {
-				$this->doResolveDependenciesFromDescription( $subjects, $description );
+				$this->doResolveDependenciesFromDescription( $subjects, $store, $description );
 			}
 		}
 	}
@@ -289,9 +274,9 @@ class QueryResultDependencyListResolver {
 		}
 	}
 
-	private function getConceptDescription( DIWikiPage $concept ) {
+	private function getConceptDescription( $store, DIWikiPage $concept ) {
 
-		$value = $this->queryResult->getStore()->getPropertyValues(
+		$value = $store->getPropertyValues(
 			$concept,
 			new DIProperty( '_CONC' )
 		);

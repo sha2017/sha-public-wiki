@@ -59,11 +59,13 @@ abstract class SMWOrderedListPage extends Article {
 	 * output.
 	 */
 	public function view() {
-		global $wgRequest, $wgUser, $wgOut;
+		global $wgRequest, $wgUser;
+
+		$outputPage = $this->getContext()->getOutput();
 
 		if ( !ApplicationFactory::getInstance()->getSettings()->get( 'smwgSemanticsEnabled' ) ) {
-			$wgOut->setPageTitle( $this->getTitle()->getPrefixedText() );
-			$wgOut->addHTML( wfMessage( 'smw-semantics-not-enabled' )->text() );
+			$outputPage->setPageTitle( $this->getTitle()->getPrefixedText() );
+			$outputPage->addHTML( wfMessage( 'smw-semantics-not-enabled' )->text() );
 			return;
 		}
 
@@ -76,11 +78,11 @@ abstract class SMWOrderedListPage extends Article {
 		if ( !isset( $diff ) || !$diffOnly ) {
 
 			// MW 1.25+
-			if ( method_exists( $wgOut, 'setIndicators' ) ) {
-				$wgOut->setIndicators( array( $this->getTopIndicator() ) );
+			if ( method_exists( $outputPage, 'setIndicators' ) && ( $indicators = $this->getTopIndicators() ) !== '' ) {
+				$outputPage->setIndicators( $indicators );
 			}
 
-			$wgOut->addHTML( $this->getIntroductoryText() );
+			$outputPage->addHTML( $this->getIntroductoryText() );
 		}
 
 		parent::view();
@@ -99,9 +101,13 @@ abstract class SMWOrderedListPage extends Article {
 			PropertyRegistry::getInstance()->findPropertyIdByLabel( $label )
 		);
 
-		if ( $property->getLabel() !== '' && $label !== $property->getLabel() ) {
+		// Ensure to redirect to `Property:Modification date` and not using
+		// a possible user contextualized version such as `Property:Date de modification`
+		$canonicalLabel = $property->getCanonicalLabel();
+
+		if ( $canonicalLabel !== '' && $label !== $canonicalLabel ) {
 			$outputPage = $this->getContext()->getOutput();
-			$outputPage->redirect( $property->getDiWikiPage()->getTitle()->getFullURL() );
+			$outputPage->redirect( $property->getCanonicalDiWikiPage()->getTitle()->getFullURL() );
 		}
 	}
 
@@ -110,7 +116,7 @@ abstract class SMWOrderedListPage extends Article {
 	 *
 	 * @return string
 	 */
-	protected function getTopIndicator() {
+	protected function getTopIndicators() {
 		return '';
 	}
 
@@ -146,7 +152,11 @@ abstract class SMWOrderedListPage extends Article {
 				$title,
 				$wgRequest->getVal( 'limit', $default ),
 				$wgRequest->getVal( 'offset', '0' ),
-				array(),
+				array(
+					'value'  => $wgRequest->getVal( 'value', '' ),
+					'from'   => $wgRequest->getVal( 'from', '' ),
+					'until'  => $wgRequest->getVal( 'until', '' )
+				),
 				$resultCount < $wgRequest->getVal( 'limit', $default )
 			);
 

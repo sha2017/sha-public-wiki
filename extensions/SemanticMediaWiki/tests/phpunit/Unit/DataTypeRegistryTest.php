@@ -50,6 +50,17 @@ class DataTypeRegistryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
+	public function testIsEqualItemType() {
+
+		$this->assertTrue(
+			$this->dataTypeRegistry->isEqualByType( '_wpg', '__sob' )
+		);
+
+		$this->assertFalse(
+			$this->dataTypeRegistry->isEqualByType( '_wpg', '_txt' )
+		);
+	}
+
 	public function testRegisterDatatype() {
 
 		$this->assertNull(
@@ -98,7 +109,7 @@ class DataTypeRegistryTest extends \PHPUnit_Framework_TestCase {
 		$this->dataTypeRegistry->registerDataTypeAlias( '_foo', 'FooBar' );
 
 		$this->assertTrue(
-			$this->dataTypeRegistry->isKnownTypeId( '_foo' )
+			$this->dataTypeRegistry->isKnownByType( '_foo' )
 		);
 
 		$this->assertEquals(
@@ -111,13 +122,13 @@ class DataTypeRegistryTest extends \PHPUnit_Framework_TestCase {
 	public function testGetDefaultDataItemTypeIdForValidDataItemType() {
 		$this->assertInternalType(
 			'string',
-			$this->dataTypeRegistry->getDefaultDataItemTypeId( 1 )
+			$this->dataTypeRegistry->getDefaultDataItemByType( 1 )
 		);
 	}
 
 	public function testGetDefaultDataItemTypeIdForInvalidDataItemType() {
 		$this->assertNull(
-			$this->dataTypeRegistry->getDefaultDataItemTypeId( 9999 )
+			$this->dataTypeRegistry->getDefaultDataItemByType( 9999 )
 		);
 	}
 
@@ -129,10 +140,25 @@ class DataTypeRegistryTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	public function testTypeIdAndLabelAsLanguageIndependantInvocation() {
+
+		$extraneousLanguage = $this->getMockBuilder( '\SMW\ExtraneousLanguage\ExtraneousLanguage' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeLabels' )
+			->will( $this->returnValue( array( '_wpg' => 'Page' ) ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeAliases' )
+			->will( $this->returnValue( array( 'URI'  => '_uri' ) ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getCanonicalDatatypeLabels' )
+			->will( $this->returnValue( array() ) );
+
 		$instance = new DataTypeRegistry(
-			array( '_wpg' => 'Page' ),
-			array( 'URI'  => '_uri' ),
-			array()
+			$extraneousLanguage
 		);
 
 		$this->assertEquals(
@@ -150,10 +176,24 @@ class DataTypeRegistryTest extends \PHPUnit_Framework_TestCase {
 
 	public function testKnownAliasAsLanguageIndependantInvocation() {
 
+		$extraneousLanguage = $this->getMockBuilder( '\SMW\ExtraneousLanguage\ExtraneousLanguage' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeLabels' )
+			->will( $this->returnValue( array() ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeAliases' )
+			->will( $this->returnValue( array( 'URI'  => '_uri' ) ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getCanonicalDatatypeLabels' )
+			->will( $this->returnValue( array() ) );
+
 		$instance = new DataTypeRegistry(
-			array(),
-			array( 'URI'  => '_uri' ),
-			array()
+			$extraneousLanguage
 		);
 
 		$this->assertEquals(
@@ -165,7 +205,23 @@ class DataTypeRegistryTest extends \PHPUnit_Framework_TestCase {
 
 	public function testExtraneousCallbackFunction() {
 
-		$instance = new DataTypeRegistry();
+		$extraneousLanguage = $this->getMockBuilder( '\SMW\ExtraneousLanguage\ExtraneousLanguage' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeLabels' )
+			->will( $this->returnValue( array() ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeAliases' )
+			->will( $this->returnValue( array() ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getCanonicalDatatypeLabels' )
+			->will( $this->returnValue( array() ) );
+
+		$instance = new DataTypeRegistry( $extraneousLanguage );
 		$arg = 'foo';
 
 		$instance->registerExtraneousFunction(
@@ -179,32 +235,6 @@ class DataTypeRegistryTest extends \PHPUnit_Framework_TestCase {
 			'array',
 			$instance->getExtraneousFunctions()
 		);
-	}
-
-	public function testRegisterDataValueFormatter() {
-
-		$dataValueFormatter = $this->getMockBuilder( '\SMW\DataValues\ValueFormatters\DataValueFormatter' )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$dataValueFormatter->expects( $this->never() )
-			->method( 'isFormatterFor' );
-
-		$instance = new DataTypeRegistry();
-		$instance->registerDataValueFormatter( $dataValueFormatter );
-	}
-
-	public function testRegisterDVDescriptionDeserializer() {
-
-		$descriptionDeserializer = $this->getMockBuilder( '\SMW\Deserializers\DVDescriptionDeserializer\DescriptionDeserializer' )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$descriptionDeserializer->expects( $this->never() )
-			->method( 'isDeserializerFor' );
-
-		$instance = new DataTypeRegistry();
-		$instance->registerDVDescriptionDeserializer( $descriptionDeserializer );
 	}
 
 	public function testLookupByLabelIsCaseInsensitive() {
@@ -221,31 +251,73 @@ class DataTypeRegistryTest extends \PHPUnit_Framework_TestCase {
 		}
 	}
 
+	public function testFindTypeIdByLanguage() {
+
+		$this->assertSame(
+			'_num',
+			$this->dataTypeRegistry->findTypeByLanguage( 'Número', 'es' )
+		);
+
+		$this->assertSame(
+			'_num',
+			$this->dataTypeRegistry->findTypeByLanguage( '数值型', 'zh-Hans' )
+		);
+	}
+
 	protected function assertRegistryFindsIdForLabels( $inputLabel, array $equivalentLabels ) {
+
 		$id = '_wpg';
 
-		$registry = new DataTypeRegistry(
-			array(),
-			array( $inputLabel => $id ),
-			array()
+		$extraneousLanguage = $this->getMockBuilder( '\SMW\ExtraneousLanguage\ExtraneousLanguage' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeLabels' )
+			->will( $this->returnValue( array() ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeAliases' )
+			->will( $this->returnValue( array( $inputLabel => $id ) ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getCanonicalDatatypeLabels' )
+			->will( $this->returnValue( array() ) );
+
+		$instance = new DataTypeRegistry(
+			$extraneousLanguage
 		);
 
 		foreach ( $equivalentLabels as $caseVariant ) {
-			$this->assertEquals( $id, $registry->findTypeId( $caseVariant ) );
+			$this->assertEquals( $id, $instance->findTypeId( $caseVariant ) );
 		}
 	}
 
 	protected function assertRegistryFindsIdForAliases( $inputLabel, array $equivalentLabels ) {
 		$id = '_wpg';
 
-		$registry = new DataTypeRegistry(
-			array( $id => $inputLabel ),
-			array(),
-			array()
+		$extraneousLanguage = $this->getMockBuilder( '\SMW\ExtraneousLanguage\ExtraneousLanguage' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeLabels' )
+			->will( $this->returnValue( array( $id => $inputLabel ) ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getDatatypeAliases' )
+			->will( $this->returnValue( array() ) );
+
+		$extraneousLanguage->expects( $this->once() )
+			->method( 'getCanonicalDatatypeLabels' )
+			->will( $this->returnValue( array() ) );
+
+		$instance = new DataTypeRegistry(
+			$extraneousLanguage
 		);
 
 		foreach ( $equivalentLabels as $caseVariant ) {
-			$this->assertEquals( $id, $registry->findTypeId( $caseVariant ) );
+			$this->assertEquals( $id, $instance->findTypeId( $caseVariant ) );
 		}
 	}
 

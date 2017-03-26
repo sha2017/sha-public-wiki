@@ -33,7 +33,7 @@ class TemporaryTableBuilderTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testcreateTableWithoutAutoCommit() {
+	public function testcreateWithoutAutoCommit() {
 
 		$this->connection->expects( $this->once() )
 			->method( 'query' );
@@ -42,13 +42,18 @@ class TemporaryTableBuilderTest extends \PHPUnit_Framework_TestCase {
 			$this->connection
 		);
 
-		$instance->createTable( 'Foo' );
+		$instance->create( 'Foo' );
 	}
 
-	public function testcreateTableWithoutAutoCommitOnPostgres() {
+	public function testcreateWithoutAutoCommitOnPostgres() {
 
 		$this->connection->expects( $this->once() )
-			->method( 'query' );
+			->method( 'query' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				$this->anything(),
+				$this->equalTo( false ) );
 
 		$this->connection->expects( $this->once() )
 			->method( 'isType' )
@@ -59,45 +64,60 @@ class TemporaryTableBuilderTest extends \PHPUnit_Framework_TestCase {
 			$this->connection
 		);
 
-		$instance->createTable( 'Foo' );
+		$instance->create( 'Foo' );
 	}
 
-	public function testcreateTableWithAutoCommit() {
+	public function testCreateWithAutoCommit() {
 
 		$this->connection->expects( $this->once() )
-			->method( 'queryWithAutoCommit' );
+			->method( 'query' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				$this->anything(),
+				$this->equalTo( true ) );
 
 		$instance = new TemporaryTableBuilder(
 			$this->connection
 		);
 
 		$instance->WithAutoCommit( true );
-		$instance->createTable( 'Foo' );
+		$instance->create( 'Foo' );
 	}
 
 	public function testDropWithoutAutoCommit() {
 
 		$this->connection->expects( $this->once() )
-			->method( 'query' );
+			->method( 'query' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				$this->anything(),
+				$this->equalTo( false ) );
 
 		$instance = new TemporaryTableBuilder(
 			$this->connection
 		);
 
-		$instance->dropTable( 'Foo' );
+		$instance->drop( 'Foo' );
 	}
 
 	public function testDropWithAutoCommit() {
 
 		$this->connection->expects( $this->once() )
-			->method( 'queryWithAutoCommit' );
+			->method( 'query' )
+			->with(
+				$this->anything(),
+				$this->anything(),
+				$this->anything(),
+				$this->equalTo( true ) );
 
 		$instance = new TemporaryTableBuilder(
 			$this->connection
 		);
 
 		$instance->WithAutoCommit( true );
-		$instance->dropTable( 'Foo' );
+		$instance->drop( 'Foo' );
 	}
 
 }

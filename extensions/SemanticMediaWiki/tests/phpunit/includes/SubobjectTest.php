@@ -186,16 +186,33 @@ class SubobjectTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new Subobject( Title::newFromText( __METHOD__ ) );
 
-		$this->setExpectedException( '\SMW\InvalidSemanticDataException' );
-		$instance->addDataValue( $dataValue);
+		$this->setExpectedException( '\SMW\Exception\SubSemanticDataException' );
+		$instance->addDataValue( $dataValue );
 	}
 
 	public function testGetSemanticDataInvalidSemanticDataThrowsException() {
 
 		$instance = new Subobject( Title::newFromText( __METHOD__ ) );
 
-		$this->setExpectedException( '\SMW\InvalidSemanticDataException' );
+		$this->setExpectedException( '\SMW\Exception\SubSemanticDataException' );
 		$instance->getSemanticData();
+	}
+
+	/**
+	 * @dataProvider errorProvider
+	 */
+	public function testErrorHandlingOnErrors( $errors, $expected ) {
+
+		$instance = new Subobject( Title::newFromText( __METHOD__ ) );
+
+		foreach ( $errors as $error ) {
+			$instance->addError( $error );
+		}
+
+		$this->assertCount(
+			$expected,
+			$instance->getErrors()
+		);
 	}
 
 	/**
@@ -213,9 +230,6 @@ class SubobjectTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	/**
-	 * @return array
-	 */
 	public function getDataProvider() {
 
 		$provider = array();
@@ -290,7 +304,7 @@ class SubobjectTest extends \PHPUnit_Framework_TestCase {
 				'errors' => 1,
 				'identifier' => 'bar',
 				'propertyCount'  => 1,
-				'strict-mode-valuematch' => false,
+				'strictPropertyValueMatch' => false,
 				'propertyKeys' => array( '_ERRC' )
 			)
 		);
@@ -305,7 +319,7 @@ class SubobjectTest extends \PHPUnit_Framework_TestCase {
 				'errors' => 1,
 				'identifier' => 'bar',
 				'propertyCount'  => 1,
-				'strict-mode-valuematch' => false,
+				'strictPropertyValueMatch' => false,
 				'propertyKeys' => array( '_ERRC' )
 			)
 		);
@@ -319,7 +333,7 @@ class SubobjectTest extends \PHPUnit_Framework_TestCase {
 			array(
 				'identifier' => 'bar',
 				'errors' => 1,
-				'strict-mode-valuematch' => false,
+				'strictPropertyValueMatch' => false,
 				'propertyCount'  => 1,
 				'propertyKeys' => array( '_ERRC' )
 			)
@@ -372,6 +386,49 @@ class SubobjectTest extends \PHPUnit_Framework_TestCase {
 		$instance->setEmptyContainerForId( $id );
 
 		return $instance;
+	}
+
+	public function errorProvider() {
+
+		$provider = array();
+
+		#0
+		$provider[] = array(
+			array(
+				'Foo',
+				'Foo'
+			),
+			1
+		);
+
+		#1
+		$provider[] = array(
+			array(
+				'Foo',
+				'Bar'
+			),
+			2
+		);
+
+		#2
+		$provider[] = array(
+			array(
+				array( 'Foo' => 'Bar' ),
+				array( 'Foo' => 'Bar' ),
+			),
+			1
+		);
+
+		#3
+		$provider[] = array(
+			array(
+				array( 'Foo' => 'Bar' ),
+				array( 'Bar' => 'Foo' ),
+			),
+			2
+		);
+
+		return $provider;
 	}
 
 }

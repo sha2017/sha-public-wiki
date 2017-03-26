@@ -30,7 +30,7 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 		) );
 
 		$idTable = $this->getMockBuilder( '\stdClass' )
-			->setMethods( array( 'hasIDFor' ) )
+			->setMethods( array( 'exists' ) )
 			->getMock();
 
 		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
@@ -84,7 +84,7 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( true ) );
 
 		$instance = new UpdateJob( $title );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertFalse(	$instance->run() );
 	}
@@ -110,7 +110,7 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 		$this->testEnvironment->registerObject( 'ContentParser', null );
 
 		$instance = new UpdateJob( $title );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertTrue( $instance->run() );
 	}
@@ -136,7 +136,7 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 		$this->testEnvironment->registerObject( 'ContentParser', $contentParser );
 
 		$instance = new UpdateJob( $title );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertFalse( $instance->run() );
 	}
@@ -170,11 +170,11 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 		$this->testEnvironment->registerObject( 'ContentParser', $contentParser );
 
 		$idTable = $this->getMockBuilder( '\stdClass' )
-			->setMethods( array( 'hasIDFor' ) )
+			->setMethods( array( 'exists' ) )
 			->getMock();
 
 		$idTable->expects( $this->atLeastOnce() )
-			->method( 'hasIDFor' )
+			->method( 'exists' )
 			->will( $this->returnValue( true ) );
 
 		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
@@ -192,7 +192,7 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 		$this->testEnvironment->registerObject( 'Store', $store );
 
 		$instance = new UpdateJob( $title );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertTrue( $instance->run() );
 	}
@@ -226,12 +226,12 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 		$this->testEnvironment->registerObject( 'ContentParser', $contentParser );
 
 		$idTable = $this->getMockBuilder( '\stdClass' )
-			->setMethods( array( 'hasIDFor' ) )
+			->setMethods( array( 'exists' ) )
 			->getMock();
 
 		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
 			->disableOriginalConstructor()
-			->setMethods( array( 'getPropertyValues', 'getWikiPageLastModifiedTimestamp', 'getObjectIds' ) )
+			->setMethods( array( 'getPropertyValues', 'getObjectIds' ) )
 			->getMock();
 
 		$store->expects( $this->any() )
@@ -242,14 +242,10 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getPropertyValues' )
 			->will( $this->returnValue( array() ) );
 
-		$store->expects( $this->once() )
-			->method( 'getWikiPageLastModifiedTimestamp' )
-			->will( $this->returnValue( 0 ) );
-
 		$this->testEnvironment->registerObject( 'Store', $store );
 
 		$instance = new UpdateJob( $title, array( 'pm' => SMW_UJ_PM_CLASTMDATE ) );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertTrue( $instance->run() );
 	}

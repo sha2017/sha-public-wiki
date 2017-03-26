@@ -13,8 +13,8 @@ class_alias( 'SMW\DIWikiPage', 'SMWDIWikiPage' );
 class_alias( 'SMW\DIProperty', 'SMWDIProperty' );
 class_alias( 'SMW\Serializers\QueryResultSerializer', 'SMWDISerializer' );
 class_alias( 'SMW\DataValueFactory', 'SMWDataValueFactory' );
-class_alias( 'SMW\DataItemException', 'SMWDataItemException' );
-class_alias( 'SMW\SQLStore\TableDefinition', 'SMWSQLStore3Table' );
+class_alias( 'SMW\Exception\DataItemException', 'SMWDataItemException' );
+class_alias( 'SMW\SQLStore\PropertyTableDefinition', 'SMWSQLStore3Table' );
 class_alias( 'SMW\DIConcept', 'SMWDIConcept' );
 class_alias( 'SMW\TableResultPrinter', 'SMWTableResultPrinter' );
 
@@ -32,9 +32,9 @@ class_alias( 'SMW\RawResultPrinter', 'SMW\ApiResultPrinter' );
 
 // 2.0
 class_alias( 'SMW\SPARQLStore\SPARQLStore', 'SMWSparqlStore' );
-class_alias( 'SMW\SPARQLStore\RepositoryConnector\FourstoreHttpRepositoryConnector', 'SMWSparqlDatabase4Store' );
-class_alias( 'SMW\SPARQLStore\RepositoryConnector\VirtuosoHttpRepositoryConnector', 'SMWSparqlDatabaseVirtuoso' );
-class_alias( 'SMW\SPARQLStore\RepositoryConnector\GenericHttpRepositoryConnector', 'SMWSparqlDatabase' );
+class_alias( 'SMW\SPARQLStore\RepositoryConnectors\FourstoreHttpRepositoryConnector', 'SMWSparqlDatabase4Store' );
+class_alias( 'SMW\SPARQLStore\RepositoryConnectors\VirtuosoHttpRepositoryConnector', 'SMWSparqlDatabaseVirtuoso' );
+class_alias( 'SMW\SPARQLStore\RepositoryConnectors\GenericHttpRepositoryConnector', 'SMWSparqlDatabase' );
 
 // 2.1
 class_alias( 'SMWSQLStore3', 'SMW\SQLStore\SQLStore' );
@@ -71,3 +71,10 @@ class_alias( 'SMW\RequestOptions', 'SMWRequestOptions' );
 class_alias( 'SMW\StringCondition', 'SMWStringCondition' );
 class_alias( 'SMW\HashBuilder', 'SMW\Hash' );
 class_alias( 'SMW\DataValues\BooleanValue', 'SMWBoolValue' );
+
+// 2.5
+class_alias( 'SMW\QueryPrinterFactory', 'SMW\FormatFactory' );
+class_alias( 'SMW\ParserFunctions\SubobjectParserFunction', 'SMW\SubobjectParserFunction' );
+class_alias( 'SMW\ParserFunctions\RecurringEventsParserFunction', 'SMW\RecurringEventsParserFunction' );
+class_alias( 'SMW\SQLStore\PropertyTableDefinition', 'SMW\SQLStore\TableDefinition' );
+class_alias( 'SMW\DataModel\ContainerSemanticData', 'SMWContainerSemanticData' );

@@ -3,7 +3,7 @@
 namespace SMW\Tests\SQLStore;
 
 use SMW\SQLStore\PropertyTableIdReferenceDisposer;
-use Title;
+use SMW\DIWikiPage;
 
 /**
  * @covers \SMW\SQLStore\PropertyTableIdReferenceDisposer
@@ -21,9 +21,21 @@ class PropertyTableIdReferenceDisposerTest extends \PHPUnit_Framework_TestCase {
 	protected function setUp() {
 		parent::setUp();
 
+		$idTable = $this->getMockBuilder( '\stdClass' )
+			->setMethods( array( 'getDataItemById' ) )
+			->getMock();
+
+		$idTable->expects( $this->any() )
+			->method( 'getDataItemById' )
+			->will( $this->returnValue( DIWikiPage::newFromText( 'Foo' ) ) );
+
 		$this->store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
 			->disableOriginalConstructor()
 			->getMock();
+
+		$this->store->expects( $this->any() )
+			->method( 'getObjectIds' )
+			->will( $this->returnValue( $idTable ) );
 	}
 
 	public function testCanConstruct() {
@@ -72,7 +84,7 @@ class PropertyTableIdReferenceDisposerTest extends \PHPUnit_Framework_TestCase {
 			$this->store
 		);
 
-		$instance->tryToRemoveOutdatedIDFromEntityTables( 42 );
+		$instance->removeOutdatedEntityReferencesById( 42 );
 	}
 
 	public function testCleanUpTableEntriesFor() {
@@ -93,7 +105,7 @@ class PropertyTableIdReferenceDisposerTest extends \PHPUnit_Framework_TestCase {
 			->method( 'selectRow' )
 			->will( $this->returnValue( false ) );
 
-		$connection->expects( $this->at( 2 ) )
+		$connection->expects( $this->at( 3 ) )
 			->method( 'delete' )
 			->with( $this->equalTo( \SMW\SQLStore\SQLStore::ID_TABLE ) );
 
@@ -109,7 +121,90 @@ class PropertyTableIdReferenceDisposerTest extends \PHPUnit_Framework_TestCase {
 			$this->store
 		);
 
-		$instance->cleanUpTableEntriesFor( 42 );
+		$instance->cleanUpTableEntriesById( 42 );
+	}
+
+	public function testCanConstructOutdatedEntitiesResultIterator() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$connection->expects( $this->atLeastOnce() )
+			->method( 'select' )
+			->will( $this->returnValue( array() ) );
+
+		$this->store->expects( $this->any() )
+			->method( 'getConnection' )
+			->will( $this->returnValue( $connection ) );
+
+		$instance = new PropertyTableIdReferenceDisposer(
+			$this->store
+		);
+
+		$this->assertInstanceOf(
+			'\SMW\Iterators\ResultIterator',
+			$instance->newOutdatedEntitiesResultIterator()
+		);
+	}
+
+	public function testCleanUpTableEntriesByRow() {
+
+		$row = new \stdClass;
+		$row->smw_id = 42;
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$connection->expects( $this->atLeastOnce() )
+			->method( 'delete' );
+
+		$this->store->expects( $this->any() )
+			->method( 'getConnection' )
+			->will( $this->returnValue( $connection ) );
+
+		$this->store->expects( $this->any() )
+			->method( 'getPropertyTables' )
+			->will( $this->returnValue( array() ) );
+
+		$instance = new PropertyTableIdReferenceDisposer(
+			$this->store
+		);
+
+		$instance->cleanUpTableEntriesByRow( $row );
+	}
+
+	public function testCleanUpOnTransactionIdle() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$connection->expects( $this->once() )
+			->method( 'onTransactionIdle' )
+			->will( $this->returnCallback( function( $callback ) {
+				return call_user_func( $callback );
+			}
+			) );
+
+		$connection->expects( $this->atLeastOnce() )
+			->method( 'delete' );
+
+		$this->store->expects( $this->any() )
+			->method( 'getConnection' )
+			->will( $this->returnValue( $connection ) );
+
+		$this->store->expects( $this->any() )
+			->method( 'getPropertyTables' )
+			->will( $this->returnValue( array() ) );
+
+		$instance = new PropertyTableIdReferenceDisposer(
+			$this->store
+		);
+
+		$instance->waitOnTransactionIdle();
+		$instance->cleanUpTableEntriesById( 42 );
 	}
 
 }

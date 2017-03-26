@@ -189,7 +189,23 @@ class TableResultPrinter extends ResultPrinter {
 		$values = array();
 
 		foreach ( $dataValues as $dv ) {
-			$value = $dv->getShortText( $outputMode, $this->getLinker( $isSubject ) );
+
+			// Restore output in Special:Ask on:
+			// - file/image parsing
+			// - text formatting on string elements including italic, bold etc.
+			if ( $outputMode === SMW_OUTPUT_HTML && $dv->getDataItem() instanceof DIWikiPage && $dv->getDataItem()->getNamespace() === NS_FILE ||
+				$outputMode === SMW_OUTPUT_HTML && $dv->getDataItem() instanceof \SMWDIBlob ) {
+				// Too lazy to handle the Parser object and besides the Message
+				// parse does the job and ensures no other hook is executed
+				$value = Message::get(
+					array( 'smw-parse', $dv->getShortText( SMW_OUTPUT_WIKI, $this->getLinker( $isSubject ) ) ),
+					Message::PARSE
+				);
+			} else {
+				$value = $dv->getShortText( $outputMode, $this->getLinker( $isSubject ) );
+			}
+
+
 			$values[] = $value === '' ? '&nbsp;' : $value;
 		}
 

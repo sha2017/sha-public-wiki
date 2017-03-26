@@ -97,6 +97,36 @@ class PropertyStatisticsTableTest extends MwDBaseUnitTestCase {
 		);
 	}
 
+	public function testAddToUsageCountWithInvalidCountThrowsException() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$instance = new PropertyStatisticsTable(
+			$connection,
+			'foo'
+		);
+
+		$this->setExpectedException( '\SMW\SQLStore\Exception\PropertyStatisticsInvalidArgumentException');
+		$instance->addToUsageCount( 12, 'foo' );
+	}
+
+	public function testAddToUsageCountWithInvalidIdThrowsException() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$instance = new PropertyStatisticsTable(
+			$connection,
+			'foo'
+		);
+
+		$this->setExpectedException( '\SMW\SQLStore\Exception\PropertyStatisticsInvalidArgumentException');
+		$instance->addToUsageCount( 'Foo', 12 );
+	}
+
 	/**
 	 * @dataProvider usageCountProvider
 	 *
@@ -163,6 +193,69 @@ class PropertyStatisticsTableTest extends MwDBaseUnitTestCase {
 			$counts,
 			$statsTable->getUsageCounts( array_keys( $counts ) )
 		);
+	}
+
+	public function testAddToUsageCountsOnTransactionIdle() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$connection->expects( $this->once() )
+			->method( 'onTransactionIdle' )
+			->will( $this->returnCallback( function( $callback ) {
+				return call_user_func( $callback );
+			}
+			) );
+
+		$connection->expects( $this->atLeastOnce() )
+			->method( 'update' );
+
+		$instance = new PropertyStatisticsTable(
+			$connection,
+			\SMWSQLStore3::PROPERTY_STATISTICS_TABLE
+		);
+
+		$additions = array(
+			2 => 42,
+			9001 => -9000,
+			9003 => 0,
+		);
+
+		$instance->waitOnTransactionIdle();
+
+		$this->assertTrue(
+			$instance->addToUsageCounts( $additions )
+		);
+	}
+
+	public function testAddToUsageCountsWillNotWaitOnTransactionIdleWhenCommandLineModeIsActive() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$connection->expects( $this->never() )
+			->method( 'onTransactionIdle' );
+
+		$connection->expects( $this->atLeastOnce() )
+			->method( 'update' );
+
+		$instance = new PropertyStatisticsTable(
+			$connection,
+			\SMWSQLStore3::PROPERTY_STATISTICS_TABLE
+		);
+
+		$additions = array(
+			2 => 42,
+			9001 => -9000,
+			9003 => 0,
+		);
+
+		$instance->isCommandLineMode( true );
+		$instance->waitOnTransactionIdle();
+
+		$instance->addToUsageCounts( $additions );
 	}
 
 }

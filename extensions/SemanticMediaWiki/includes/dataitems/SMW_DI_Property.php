@@ -6,6 +6,9 @@ use InvalidArgumentException;
 use RuntimeException;
 use SMWDataItem;
 use SMWDIUri;
+use SMW\Exception\PropertyLabelNotResolvedException;
+use SMW\Exception\PropertyDataTypeLookupExeption;
+use SMW\Exception\PredefinedPropertyLabelMismatchException;
 
 /**
  * This class implements Property data items.
@@ -78,13 +81,14 @@ class DIProperty extends SMWDataItem {
 	 * @param $inverse boolean states if the inverse of the property is constructed
 	 */
 	public function __construct( $key, $inverse = false ) {
+
 		if ( ( $key === '' ) || ( $key{0} == '-' ) ) {
-			throw new InvalidPropertyException( "Illegal property key \"$key\"." );
+			throw new PropertyLabelNotResolvedException( "Illegal property key \"$key\"." );
 		}
 
 		if ( $key{0} == '_' ) {
 			if ( !PropertyRegistry::getInstance()->isKnownPropertyId( $key ) ) {
-				throw new InvalidPredefinedPropertyException( "There is no predefined property with \"$key\"." );
+				throw new PredefinedPropertyLabelMismatchException( "There is no predefined property with \"$key\"." );
 			}
 		}
 
@@ -167,7 +171,7 @@ class DIProperty extends SMWDataItem {
 	 *
 	 * @return boolean
 	 */
-	public function isUnrestrictedForUse() {
+	public function isUnrestricted() {
 
 		if ( $this->isUserDefined() ) {
 			return true;
@@ -206,6 +210,31 @@ class DIProperty extends SMWDataItem {
 		}
 
 		return $prefix . PropertyRegistry::getInstance()->findCanonicalPropertyLabelById( $this->m_key );
+	}
+
+	/**
+	 * Borrowing the skos:prefLabel definition where a preferred label is expected
+	 * to have only one label per given language (skos:altLabel can have many
+	 * alternative labels)
+	 *
+	 * An empty string signals that no preferred label is available in the current
+	 * user language.
+	 *
+	 * @since 2.5
+	 *
+	 * @param string $languageCode
+	 *
+	 * @return string
+	 */
+	public function getPreferredLabel( $languageCode = '' ) {
+
+		$label = PropertyRegistry::getInstance()->findPreferredPropertyLabelById( $this->m_key, $languageCode );
+
+		if ( $label !== '' ) {
+			return ( $this->m_inverse ? '-' : '' ) . $label;
+		}
+
+		return '';
 	}
 
 	/**
@@ -250,6 +279,10 @@ class DIProperty extends SMWDataItem {
 
 		if ( $this->isUserDefined() ) {
 			$dbkey = $this->m_key;
+		} elseif ( $this->m_key === $this->findPropertyTypeID() ) {
+			// If _dat as property [[Date::...]] refers directly to its _dat type
+			// then use the en-label as canonical representation
+			$dbkey = PropertyRegistry::getInstance()->findPropertyLabelByLanguageCode( $this->m_key, 'en' );
 		} else {
 			$dbkey = PropertyRegistry::getInstance()->findCanonicalPropertyLabelById( $this->m_key );
 		}
@@ -275,13 +308,13 @@ class DIProperty extends SMWDataItem {
 	 * @since  2.0
 	 *
 	 * @return self
-	 * @throws RuntimeException
+	 * @throws PropertyDataTypeLookupExeption
 	 * @throws InvalidArgumentException
 	 */
 	public function setPropertyTypeId( $propertyTypeId ) {
 
-		if ( !DataTypeRegistry::getInstance()->isKnownTypeId( $propertyTypeId ) ) {
-			throw new RuntimeException( "{$propertyTypeId} is an unknown type id" );
+		if ( !DataTypeRegistry::getInstance()->isKnownByType( $propertyTypeId ) ) {
+			throw new PropertyDataTypeLookupExeption( "{$propertyTypeId} is an unknown type id" );
 		}
 
 		if ( $this->isUserDefined() && $this->m_proptypeid === null ) {
@@ -294,7 +327,7 @@ class DIProperty extends SMWDataItem {
 			return $this;
 		}
 
-		throw new InvalidArgumentException( 'Property type can not be altered for a predefined object' );
+		throw new RuntimeException( 'Property type can not be altered for a predefined object' );
 	}
 
 	/**
@@ -388,20 +421,25 @@ class DIProperty extends SMWDataItem {
 	 *
 	 * @return DIProperty object
 	 */
-	public static function newFromUserLabel( $label, $inverse = false ) {
+	public static function newFromUserLabel( $label, $inverse = false, $languageCode = false ) {
 
 		if ( $label !== '' && $label{0} == '-' ) {
 			$label = substr( $label, 1 );
 			$inverse = true;
 		}
 
-		$id = false;
-
 		// Special handling for when the user value contains a @LCODE marker
-		if ( ( $langCode = Localizer::getLanguageCodeFrom( $label ) ) !== false ) {
-			$id = PropertyRegistry::getInstance()->findPropertyIdByLanguageCode(
+		if ( ( $annotatedLanguageCode = Localizer::getAnnotatedLanguageCodeFrom( $label ) ) !== false ) {
+			$languageCode = $annotatedLanguageCode;
+		}
+
+		$id = false;
+		$label = str_replace( '_', ' ', $label );
+
+		if ( $languageCode ) {
+			$id = PropertyRegistry::getInstance()->findPropertyIdFromLabelByLanguageCode(
 				$label,
-				$langCode
+				$languageCode
 			);
 		}
 
@@ -410,7 +448,7 @@ class DIProperty extends SMWDataItem {
 		}
 
 		$id = PropertyRegistry::getInstance()->findPropertyIdByLabel(
-			str_replace( '_', ' ', $label )
+			$label
 		);
 
 		if ( $id === false ) {

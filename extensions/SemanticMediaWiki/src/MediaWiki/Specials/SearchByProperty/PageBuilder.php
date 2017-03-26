@@ -8,6 +8,7 @@ use SMW\DataTypeRegistry;
 use SMW\DataValueFactory;
 use SMW\DIProperty;
 use SMW\DIWikiPage;
+use SMW\ProcessingErrorMsgHandler;
 use SMW\MediaWiki\MessageBuilder;
 use SMW\MediaWiki\Renderer\HtmlFormRenderer;
 use SMWDataValue as DataValue;
@@ -139,6 +140,7 @@ class PageBuilder {
 	private function getResultHtml() {
 
 		$resultList = '';
+		$resultMessage = '';
 
 		if ( $this->pageRequestOptions->propertyString === '' || !$this->pageRequestOptions->propertyString ) {
 			return array( $this->messageBuilder->getMessage( 'smw_sbv_docu' )->text(), '', 0 );
@@ -146,11 +148,19 @@ class PageBuilder {
 
 		// #1728
 		if ( !$this->pageRequestOptions->property->isValid() ) {
-			return array( implode( ',', $this->pageRequestOptions->property->getErrors() ), '', 0 );
+			return array( ProcessingErrorMsgHandler::getMessagesAsString( $this->pageRequestOptions->property->getErrors() ), '', 0 );
 		}
 
 		if ( $this->pageRequestOptions->valueString !== '' && !$this->pageRequestOptions->value->isValid() ) {
-			return array( implode( ',', $this->pageRequestOptions->value->getErrors() ), '', 0 );
+			return array( ProcessingErrorMsgHandler::getMessagesAsString( $this->pageRequestOptions->value->getErrors() ), '', 0 );
+		}
+
+		// Find out where the subject is used in connection with a query
+		if ( $this->isAskQueryLinksRelatedRequest() ) {
+			$exactResults = $this->queryResultLookup->doQueryLinksReferences( $this->pageRequestOptions );
+			$exactCount = count( $exactResults );
+			$resultList = $this->makeResultList( $exactResults, $this->pageRequestOptions->limit, true );
+			return array( str_replace( '_', ' ', $resultMessage ), $resultList, $exactCount );
 		}
 
 		$exactResults = $this->queryResultLookup->doQuery( $this->pageRequestOptions );
@@ -268,7 +278,11 @@ class PageBuilder {
 
 			if ( $this->canShowSearchByPropertyLink( $result[0] ) ) {
 
-				$value = $result[0] instanceof StringValue ? $result[0]->getWikiValueForLengthOf( 72 ) : $result[0]->getWikiValue();
+				// Copy the instance for the InfoLinker
+				$res = clone $result[0];
+				$res->setOutputFormat( '' );
+
+				$value = $res instanceof StringValue ? $res->getWikiValueByLengthOf( 72 ) : $res->getWikiValue();
 
 				$listitem .= '&#160;&#160;' . Infolink::newPropertySearchLink(
 					'+',
@@ -316,7 +330,11 @@ class PageBuilder {
 	}
 
 	private function canShowSearchByPropertyLink ( DataValue $dataValue ) {
-		$dataTypeClass = DataTypeRegistry::getInstance()->getDataTypeClassById( $dataValue->getTypeID() );
+
+		$dataTypeClass = DataTypeRegistry::getInstance()->getDataTypeClassById(
+			$dataValue->getTypeID()
+		);
+
 		return $this->pageRequestOptions->value instanceof $dataTypeClass && $this->pageRequestOptions->valueString === '';
 	}
 
@@ -361,6 +379,13 @@ class PageBuilder {
 		}
 
 		return array( $resultMessage, $resultList, $resultCount );
+	}
+
+	private function isAskQueryLinksRelatedRequest() {
+		return $this->pageRequestOptions->property !== '' &&
+			$this->pageRequestOptions->property->getDataItem()->getKey() === '_ASK' &&
+			$this->pageRequestOptions->value->isValid() &&
+			strpos( $this->pageRequestOptions->value->getWikiValue(), '_QUERY' ) === false;
 	}
 
 }

@@ -127,26 +127,18 @@ class DescriptionFactory {
 			return $this->newThingDescription();
 		}
 
-		// RecordValue is missing
+		// Avoid circular reference when called from outside of the DV context
+		$dataValue->setOption( DataValue::OPT_QUERY_CONTEXT, true );
 
-		// FIXME This knowledge should reside with the DV itself
-		if ( $dataValue instanceof MonolingualTextValue ) {
-			$container =  $dataValue->getDataItem();
+		$description = $dataValue->getQueryDescription( $dataValue->getWikiValue() );
 
-			$value = '';
-
-			foreach ( $dataValue->getPropertyDataItems() as $property ) {
-				foreach ( $container->getSemanticData()->getPropertyValues( $property ) as $val ) {
-					$value .= ( $property->getKey() == '_LCODE' ? '@' : '' ) . $val->getString();
-				}
-			}
-
-			return $dataValue->getQueryDescription( $value );
+		if ( $dataValue->getProperty() === null ) {
+			return $description;
 		}
 
 		return $this->newSomeProperty(
 			$dataValue->getProperty(),
-			$this->newValueDescription( $dataValue->getDataItem() )
+			$description
 		);
 	}
 

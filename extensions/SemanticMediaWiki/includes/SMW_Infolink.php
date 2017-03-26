@@ -116,7 +116,7 @@ class SMWInfolink {
 			$caption,
 			$wgContLang->getNsText( NS_SPECIAL ) . ':SearchByProperty',
 			$style,
-			array( $propertyName, $propertyValue )
+			array( ':' . $propertyName, $propertyValue ) // `:` is marking that the link was auto-generated
 		);
 	}
 
@@ -156,7 +156,7 @@ class SMWInfolink {
 			$caption,
 			$wgContLang->getNsText( NS_SPECIAL ) . ':Browse',
 			$style,
-			array( $titleText )
+			array( ':' . $titleText )
 		);
 	}
 
@@ -379,8 +379,8 @@ class SMWInfolink {
 				//      make URLs less readable
 				//
 				$value = str_replace(
-					array( '-', '#', "\n", ' ', '/', '[', ']', '<', '>', '&lt;', '&gt;', '&amp;', '\'\'', '|', '&', '%', '?', '$', "\\", ";" ),
-					array( '-2D', '-23', '-0A', '-20', '-2F', '-5B', '-5D', '-3C', '-3E', '-3C', '-3E', '-26', '-27-27', '-7C', '-26', '-25', '-3F', '-24', '-5C', "-3B" ),
+					array( '-', '#', "\n", ' ', '/', '[', ']', '<', '>', '&lt;', '&gt;', '&amp;', '\'\'', '|', '&', '%', '?', '$', "\\", ";", "_" ),
+					array( '-2D', '-23', '-0A', '-20', '-2F', '-5B', '-5D', '-3C', '-3E', '-3C', '-3E', '-26', '-27-27', '-7C', '-26', '-25', '-3F', '-24', '-5C', "-3B", "-5F" ),
 					$value
 				);
 

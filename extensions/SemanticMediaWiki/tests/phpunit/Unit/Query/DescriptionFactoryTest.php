@@ -5,6 +5,7 @@ namespace SMW\Tests\Query\Parser;
 use SMW\DataItemFactory;
 use SMW\Query\DescriptionFactory;
 use SMW\Tests\TestEnvironment;
+use SMW\DataValues\ValueFormatters\MonolingualTextValueFormatter;
 
 /**
  * @covers SMW\Query\DescriptionFactory
@@ -125,11 +126,19 @@ class DescriptionFactoryTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
+		$description->expects( $this->once() )
+			->method( 'getPrintRequests' )
+			->will( $this->returnValue( array() ) );
+
 		$descriptions[] = $description;
 
 		$description = $this->getMockBuilder( '\SMW\Query\Language\ValueDescription' )
 			->disableOriginalConstructor()
 			->getMock();
+
+		$description->expects( $this->once() )
+			->method( 'getPrintRequests' )
+			->will( $this->returnValue( array() ) );
 
 		$descriptions[] = $description;
 
@@ -202,7 +211,7 @@ class DescriptionFactoryTest extends \PHPUnit_Framework_TestCase {
 
 		$dataValue = $this->getMockBuilder( '\SMWDataValue' )
 			->disableOriginalConstructor()
-			->setMethods( array( 'isValid', 'getProperty', 'getDataItem' ) )
+			->setMethods( array( 'isValid', 'getProperty', 'getDataItem', 'getWikiValue' ) )
 			->getMockForAbstractClass();
 
 		$dataValue->expects( $this->atLeastOnce() )
@@ -216,6 +225,10 @@ class DescriptionFactoryTest extends \PHPUnit_Framework_TestCase {
 		$dataValue->expects( $this->atLeastOnce() )
 			->method( 'getDataItem' )
 			->will( $this->returnValue( $this->dataItemFactory->newDIBlob( 'Bar' ) ) );
+
+		$dataValue->expects( $this->atLeastOnce() )
+			->method( 'getWikiValue' )
+			->will( $this->returnValue( 'Bar' ) );
 
 		$instance = new DescriptionFactory();
 
@@ -248,10 +261,91 @@ class DescriptionFactoryTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getDataItem' )
 			->will( $this->returnValue( $this->dataItemFactory->newDIContainer( $containerSemanticData ) ) );
 
+		$monolingualTextValueFormatter = new MonolingualTextValueFormatter();
+		$monolingualTextValueFormatter->setDataValue( $dataValue );
+
+		$monolingualTextValueParser = $this->getMockBuilder( '\SMW\DataValues\ValueParsers\MonolingualTextValueParser' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$dataValueServiceFactory = $this->getMockBuilder( '\SMW\Services\DataValueServiceFactory' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$dataValueServiceFactory->expects( $this->atLeastOnce() )
+			->method( 'getValueFormatter' )
+			->will( $this->returnValue( $monolingualTextValueFormatter ) );
+
+		$dataValueServiceFactory->expects( $this->atLeastOnce() )
+			->method( 'getValueParser' )
+			->will( $this->returnValue( $monolingualTextValueParser ) );
+
+		$dataValue->setDataValueServiceFactory(
+			$dataValueServiceFactory
+		);
+
 		$instance = new DescriptionFactory();
 
 		$this->assertInstanceOf(
 			'SMW\Query\Language\Conjunction',
+			$instance->newFromDataValue( $dataValue )
+		);
+	}
+
+	public function testCanConstructDescriptionFromMonolingualTextValueWithProperty() {
+
+		$containerSemanticData = $this->getMockBuilder( '\SMWContainerSemanticData' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$containerSemanticData->expects( $this->atLeastOnce() )
+			->method( 'getPropertyValues' )
+			->will( $this->returnValue( array( $this->dataItemFactory->newDIBlob( 'Bar' ) ) ) );
+
+		$dataValue = $this->getMockBuilder( '\SMW\DataValues\MonolingualTextValue' )
+			->disableOriginalConstructor()
+			->setMethods( array( 'isValid', 'getProperty', 'getDataItem' ) )
+			->getMock();
+
+		$dataValue->expects( $this->atLeastOnce() )
+			->method( 'isValid' )
+			->will( $this->returnValue( true ) );
+
+		$dataValue->expects( $this->atLeastOnce() )
+			->method( 'getProperty' )
+			->will( $this->returnValue( $this->dataItemFactory->newDIProperty( 'Foo' ) ) );
+
+		$dataValue->expects( $this->atLeastOnce() )
+			->method( 'getDataItem' )
+			->will( $this->returnValue( $this->dataItemFactory->newDIContainer( $containerSemanticData ) ) );
+
+		$monolingualTextValueFormatter = new MonolingualTextValueFormatter();
+		$monolingualTextValueFormatter->setDataValue( $dataValue );
+
+		$monolingualTextValueParser = $this->getMockBuilder( '\SMW\DataValues\ValueParsers\MonolingualTextValueParser' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$dataValueServiceFactory = $this->getMockBuilder( '\SMW\Services\DataValueServiceFactory' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$dataValueServiceFactory->expects( $this->atLeastOnce() )
+			->method( 'getValueFormatter' )
+			->will( $this->returnValue( $monolingualTextValueFormatter ) );
+
+		$dataValueServiceFactory->expects( $this->atLeastOnce() )
+			->method( 'getValueParser' )
+			->will( $this->returnValue( $monolingualTextValueParser ) );
+
+		$dataValue->setDataValueServiceFactory(
+			$dataValueServiceFactory
+		);
+
+		$instance = new DescriptionFactory();
+
+		$this->assertInstanceOf(
+			'SMW\Query\Language\SomeProperty',
 			$instance->newFromDataValue( $dataValue )
 		);
 	}

@@ -8,11 +8,15 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( 'Not an entry point.' );
 }
 
-SemanticMediaWiki::initExtension();
-
-$GLOBALS['wgExtensionFunctions'][] = function() {
-	SemanticMediaWiki::onExtensionFunction();
-};
+/**
+ * ExtensionRegistry only maps classes and functions after all extensions have
+ * been queued from the LocalSettings.php resulting in DefaultSettings not being
+ * loaded in-time.
+ *
+ * When changing the load order, please ensure that this function is run either
+ * via Composer's autoloading or as part of your internal registration.
+ */
+SemanticMediaWiki::load();
 
 /**
  * @codeCoverageIgnore
@@ -20,15 +24,43 @@ $GLOBALS['wgExtensionFunctions'][] = function() {
 class SemanticMediaWiki {
 
 	/**
-	 * @since 2.4
+	 * @since 2.5
+	 *
+	 * @note It is expected that this function is loaded before LocalSettings.php
+	 * to ensure that settings and global functions are available by the time
+	 * the extension is activated.
 	 */
-	public static function initExtension() {
+	public static function load() {
 
 		if ( is_readable( __DIR__ . '/vendor/autoload.php' ) ) {
 			include_once __DIR__ . '/vendor/autoload.php';
 		}
 
-		define( 'SMW_VERSION', '2.4.6' );
+		include_once __DIR__ . '/src/Aliases.php';
+		include_once __DIR__ . '/src/Defines.php';
+		include_once __DIR__ . '/src/GlobalFunctions.php';
+
+		foreach ( include __DIR__ . '/DefaultSettings.php' as $key => $value ) {
+			if ( !isset( $GLOBALS[$key] ) ) {
+				$GLOBALS[$key] = $value;
+			}
+		}
+
+		// In case extension.json is being used, the the succeeding steps will
+		// be handled by the ExtensionRegistry
+		self::initExtension();
+
+		$GLOBALS['wgExtensionFunctions'][] = function() {
+			self::onExtensionFunction();
+		};
+	}
+
+	/**
+	 * @since 2.4
+	 */
+	public static function initExtension() {
+
+		define( 'SMW_VERSION', '2.5.0' );
 
 		// Registration of the extension credits, see Special:Version.
 		$GLOBALS['wgExtensionCredits']['semantic'][] = array(
@@ -50,25 +82,9 @@ class SemanticMediaWiki {
 		// @deprecated, removal in SMW 3.0
 		define( 'SEMANTIC_EXTENSION_TYPE', true );
 
-		// Load class_alias
-		require_once __DIR__ . '/src/Aliases.php';
-
-		// Load global constants
-		require_once __DIR__ . '/src/Defines.php';
-
-		// Temporary measure to ease Composer/MW 1.22 migration
-		require_once __DIR__ . '/src/NamespaceManager.php';
-
-		// Load global functions
-		require_once __DIR__ . '/src/GlobalFunctions.php';
-
-		// Load default settings
-		require_once __DIR__ . '/DefaultSettings.php';
-
 		$GLOBALS['wgMessagesDirs']['SemanticMediaWiki'] = $GLOBALS['smwgIP'] . 'i18n';
-		$GLOBALS['wgExtensionMessagesFiles']['SemanticMediaWiki'] = $GLOBALS['smwgIP'] . 'languages/SMW_Messages.php';
-		$GLOBALS['wgExtensionMessagesFiles']['SemanticMediaWikiAlias'] = $GLOBALS['smwgIP'] . 'languages/SMW_Aliases.php';
-		$GLOBALS['wgExtensionMessagesFiles']['SemanticMediaWikiMagic'] = $GLOBALS['smwgIP'] . 'languages/SMW_Magic.php';
+		$GLOBALS['wgExtensionMessagesFiles']['SemanticMediaWikiAlias'] = $GLOBALS['smwgIP'] . 'i18n/extra/SemanticMediaWiki.alias.php';
+		$GLOBALS['wgExtensionMessagesFiles']['SemanticMediaWikiMagic'] = $GLOBALS['smwgIP'] . 'i18n/extra/SemanticMediaWiki.magic.php';
 
 		self::onCanonicalNamespaces();
 	}

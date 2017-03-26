@@ -1,6 +1,7 @@
 <?php
 
 use SMW\UrlEncoder;
+use SMW\Message;
 
 /**
  * @ingroup SMWDataValues
@@ -21,6 +22,11 @@ define( 'SMW_URI_MODE_TEL', 5 );
  * @bug Correctly create safe HTML and Wiki text.
  */
 class SMWURIValue extends SMWDataValue {
+
+	/**
+	 * Raw value without encoding
+	 */
+	const VALUE_RAW = 'uri.value.raw';
 
 	/**
 	 * The value as returned by getWikitext() and getLongText().
@@ -69,7 +75,7 @@ class SMWURIValue extends SMWDataValue {
 
 		$scheme = $hierpart = $query = $fragment = '';
 		if ( $value === '' ) { // do not accept empty strings
-			$this->addError( wfMessage( 'smw_emptystring' )->inContentLanguage()->text() );
+			$this->addErrorMsg( array( 'smw_emptystring' ) );
 			return;
 		}
 
@@ -92,11 +98,11 @@ class SMWURIValue extends SMWDataValue {
 					$parts[0] = 'http';
 				}
 				// check against blacklist
-				$uri_blacklist = explode( "\n", wfMessage( 'smw_uri_blacklist' )->inContentLanguage()->text() );
+				$uri_blacklist = explode( "\n", Message::get( 'smw_uri_blacklist', Message::TEXT, Message::CONTENT_LANGUAGE ) );
 				foreach ( $uri_blacklist as $uri ) {
 					$uri = trim( $uri );
 					if ( $uri !== '' && $uri == mb_substr( $value, 0, mb_strlen( $uri ) ) ) { // disallowed URI!
-						$this->addError( wfMessage( 'smw_baduri', $value )->inContentLanguage()->text() );
+						$this->addErrorMsg( array( 'smw_baduri', $value ) );
 						return;
 					}
 				}
@@ -142,10 +148,10 @@ class SMWURIValue extends SMWDataValue {
 					$hierpart = '+' . substr( $hierpart, 2 );
 				}
 
-				if ( !$this->getOptionValueFor( 'description.processor' ) && ( ( strlen( preg_replace( '/[^0-9]/', '', $hierpart ) ) < 6 ) ||
+				if ( !$this->getOption( self::OPT_QUERY_CONTEXT ) && ( ( strlen( preg_replace( '/[^0-9]/', '', $hierpart ) ) < 6 ) ||
 					( preg_match( '<[-+./][-./]>', $hierpart ) ) ||
 					( !self::isValidTelURI( 'tel:' . $hierpart ) ) ) ) { /// TODO: introduce error-message for "bad" phone number
-					$this->addError( wfMessage( 'smw_baduri', $this->m_wikitext )->inContentLanguage()->text() );
+					$this->addErrorMsg( array( 'smw_baduri', $this->m_wikitext ) );
 					return;
 				}
 				break;
@@ -156,9 +162,9 @@ class SMWURIValue extends SMWDataValue {
 					$this->m_wikitext = $value;
 				}
 
-				if ( !$this->getOptionValueFor( 'description.processor' ) && !Sanitizer::validateEmail( $value ) ) {
+				if ( !$this->getOption( self::OPT_QUERY_CONTEXT ) && !Sanitizer::validateEmail( $value ) ) {
 					/// TODO: introduce error-message for "bad" email
-					$this->addError( wfMessage( 'smw_baduri', $value )->inContentLanguage()->text() );
+					$this->addErrorMsg( array( 'smw_baduri', $value ) );
 					return;
 				}
 				$hierpart = str_replace( array( '%3A', '%2F', '%23', '%40', '%3F', '%3D', '%26', '%25' ), array( ':', '/', '#', '@', '?', '=', '&', '%' ), rawurlencode( $value ) );
@@ -168,7 +174,7 @@ class SMWURIValue extends SMWDataValue {
 		try {
 			$this->m_dataitem = new SMWDIUri( $scheme, $hierpart, $query, $fragment, $this->m_typeid );
 		} catch ( SMWDataItemException $e ) {
-			$this->addError( wfMessage( 'smw_baduri', $this->m_wikitext )->inContentLanguage()->text() );
+			$this->addErrorMsg( array( 'smw_baduri', $this->m_wikitext ) );
 		}
 	}
 
@@ -210,7 +216,7 @@ class SMWURIValue extends SMWDataValue {
 
 	public function getShortWikiText( $linked = null ) {
 
-		list( $url, $caption ) = $this->decodeUriContext( $this->m_caption );
+		list( $url, $caption ) = $this->decodeUriContext( $this->m_caption, $linked );
 
 		if ( is_null( $linked ) || ( $linked === false ) || ( $url === '' ) ||
 			( $this->m_outformat == '-' ) || ( $this->m_caption === '' ) ) {
@@ -224,11 +230,11 @@ class SMWURIValue extends SMWDataValue {
 
 	public function getShortHTMLText( $linker = null ) {
 
-		list( $url, $caption ) = $this->decodeUriContext( $this->m_caption );
+		list( $url, $caption ) = $this->decodeUriContext( $this->m_caption, $linker );
 
 		if ( is_null( $linker ) || ( !$this->isValid() ) || ( $url === '' ) ||
 			( $this->m_outformat == '-' ) || ( $this->m_outformat == 'nowiki' ) ||
-			( $this->m_caption === '' ) ) {
+			( $this->m_caption === '' ) || $linker === false ) {
 			return $caption;
 		} else {
 			return $linker->makeExternalLink( $url, $caption );
@@ -241,10 +247,10 @@ class SMWURIValue extends SMWDataValue {
 			return $this->getErrorText();
 		}
 
-		list( $url, $wikitext ) = $this->decodeUriContext( $this->m_wikitext );
+		list( $url, $wikitext ) = $this->decodeUriContext( $this->m_wikitext, $linked );
 
 		if ( is_null( $linked ) || ( $linked === false ) || ( $url === '' ) ||
-			( $this->m_outformat == '-' ) ) {
+			( $this->m_outformat == '-' ) || $linked === false ) {
 			return $wikitext;
 		} elseif ( $this->m_outformat == 'nowiki' ) {
 			return $this->makeNonlinkedWikiText( $wikitext );
@@ -259,10 +265,10 @@ class SMWURIValue extends SMWDataValue {
 			return $this->getErrorText();
 		}
 
-		list( $url, $wikitext ) = $this->decodeUriContext( $this->m_wikitext );
+		list( $url, $wikitext ) = $this->decodeUriContext( $this->m_wikitext, $linker );
 
 		if ( is_null( $linker ) || ( !$this->isValid() ) || ( $url === '' ) ||
-			( $this->m_outformat == '-' ) || ( $this->m_outformat == 'nowiki' ) ) {
+			( $this->m_outformat == '-' ) || ( $this->m_outformat == 'nowiki' ) || $linker === false ) {
 			return $wikitext;
 		} else {
 			return $linker->makeExternalLink( $url, $wikitext );
@@ -270,6 +276,11 @@ class SMWURIValue extends SMWDataValue {
 	}
 
 	public function getWikiValue() {
+
+		if ( $this->getOption( self::VALUE_RAW ) ) {
+			return rawurldecode( $this->m_wikitext );
+		}
+
 		return $this->m_wikitext;
 	}
 
@@ -329,7 +340,7 @@ class SMWURIValue extends SMWDataValue {
 		return str_replace( ':', '&#58;', $url );
 	}
 
-	private function decodeUriContext( $context ) {
+	private function decodeUriContext( $context, $linker ) {
 
 		// Prior to decoding turn any `-` into an internal representation to avoid
 		// potential breakage
@@ -337,6 +348,13 @@ class SMWURIValue extends SMWDataValue {
 			$context = UrlEncoder::decode( str_replace( '-', '-2D', $context ) );
 		}
 
+		if ( $this->m_mode !== SMW_URI_MODE_EMAIL && $linker !== null ) {
+			$context = str_replace( '_', ' ', $context );
+		}
+
+		// Allow the display without `_` so that URIs can be split
+		// during the outout by the browser without breaking the URL itself
+		// as it contains the `_` for spaces
 		return array( $this->getURL(), $context );
 	}
 

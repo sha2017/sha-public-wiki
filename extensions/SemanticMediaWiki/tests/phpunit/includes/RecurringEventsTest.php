@@ -7,50 +7,35 @@ use SMW\RecurringEvents;
 
 /**
  * @covers \SMW\RecurringEvents
- *
- *
- * @group SMW
- * @group SMWExtension
- * @group medium
+ * @group semantic-mediawiki
  *
  * @licence GNU GPL v2+
  * @since 1.9
  *
  * @author mwjames
  */
-class RecurringEventsTest extends SemanticMediaWikiTestCase {
+class RecurringEventsTest extends \PHPUnit_Framework_TestCase {
 
 	/**
-	 * @return string|false
-	 */
-	public function getClass() {
-		return '\SMW\RecurringEvents';
-	}
-
-	/**
-	 * @since  1.9
-	 *
 	 * @return RecurringEvents
 	 */
 	private function newInstance( array $params ) {
 
 		$parameters = new ParserParameterFormatter( $params );
 
-		$settings = $this->newSettings( array(
-			'smwgDefaultNumRecurringEvents' => 10,
-			'smwgMaxNumRecurringEvents' => 50
-		) );
+		$instance = new RecurringEvents( $parameters->toArray() );
+		$instance->setDefaultNumRecurringEvents( 10 );
+		$instance->setMaxNumRecurringEvents( 50 );
 
-		return new RecurringEvents( $parameters->toArray(), $settings );
+		return $instance;
 	}
 
-	/**
-	 * @dataProvider getParametersDataProvider
-	 *
-	 * @since 1.9
-	 */
-	public function testConstructor( array $params ) {
-		$this->assertInstanceOf( $this->getClass(), $this->newInstance( $params ) );
+	public function testCanConstruct() {
+
+		$this->assertInstanceOf(
+			'\SMW\RecurringEvents',
+			new RecurringEvents( array() )
+		);
 	}
 
 	/**
@@ -164,7 +149,7 @@ class RecurringEventsTest extends SemanticMediaWikiTestCase {
 				),
 				array(
 					'errors' => 0,
-					'dates' => array( '1 February 1970', '1 February 1971 00:00:00', '1 February 1972 00:00:00', '1 February 1973 00:00:00' ),
+					'dates' => array( '1 February 1970', '1 February 1971', '1 February 1972', '1 February 1973' ),
 					'property' => 'Has birthday',
 					'parameters' => array( 'has title' => array( 'Birthday' ) )
 				)
@@ -190,7 +175,7 @@ class RecurringEventsTest extends SemanticMediaWikiTestCase {
 				),
 				array(
 					'errors' => 0,
-					'dates' => array( '1 February 1970', '1 February 1971 00:00:00', '1 February 1972 00:00:00' ),
+					'dates' => array( '1 February 1970', '1 February 1971', '1 February 1972' ),
 					'property' => 'Has birthday',
 					'parameters' => array( 'has title' => array( 'Birthday' ) )
 				)
@@ -218,7 +203,7 @@ class RecurringEventsTest extends SemanticMediaWikiTestCase {
 				),
 				array(
 					'errors' => 0,
-					'dates' => array( '1 February 1970', '14 February 1971 00:00:00' ),
+					'dates' => array( '1 February 1970', '14 February 1971' ),
 					'property' => 'Has birthday',
 					'parameters' => array( 'has title' => array( 'Birthday' ) )
 				)
@@ -268,7 +253,7 @@ class RecurringEventsTest extends SemanticMediaWikiTestCase {
 				),
 				array(
 					'errors' => 0,
-					'dates' => array( '4 January 2010', '11 January 2010 00:00:00', '1 February 2010 00:00:00', 'March 16, 2010', 'March 23, 2010' ),
+					'dates' => array( '4 January 2010', '11 January 2010', '1 February 2010', 'March 16, 2010', 'March 23, 2010' ),
 					'property' => 'Has date',
 					'parameters' => array()
 				)
@@ -296,7 +281,7 @@ class RecurringEventsTest extends SemanticMediaWikiTestCase {
 				),
 				array(
 					'errors' => 0,
-					'dates' => array( '4 January 2010', '11 January 2010 00:00:00', '1 February 2010 00:00:00', 'March 16, 2010', 'March 23, 2010' ),
+					'dates' => array( '4 January 2010', '11 January 2010', '1 February 2010', 'March 16, 2010', 'March 23, 2010' ),
 					'property' => 'Has date',
 					'parameters' => array()
 				)

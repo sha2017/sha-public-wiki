@@ -4,7 +4,7 @@ namespace SMW\SQLStore\Lookup;
 
 use RuntimeException;
 use SMW\DIProperty;
-use SMW\InvalidPropertyException;
+use SMW\Exception\PropertyLabelNotResolvedException;
 use SMW\SQLStore\SQLStore;
 use SMW\Store;
 use SMW\Store\PropertyStatisticsStore;
@@ -131,11 +131,11 @@ class PropertyUsageListLookup implements ListLookup {
 
 			try {
 				$property = new DIProperty( str_replace( ' ', '_', $row->smw_title ) );
-				$property->id = $row->smw_id;
-			} catch ( InvalidPropertyException $e ) {
+			} catch ( PropertyLabelNotResolvedException $e ) {
 				$property = new DIError( new \Message( 'smw_noproperty', array( $row->smw_title ) ) );
 			}
 
+			$property->id = isset( $row->smw_id ) ? $row->smw_id : -1;
 			$result[] = array( $property, (int)$row->usage_count );
 		}
 

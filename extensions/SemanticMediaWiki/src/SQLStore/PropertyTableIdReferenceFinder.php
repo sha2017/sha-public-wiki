@@ -25,7 +25,7 @@ class PropertyTableIdReferenceFinder {
 	/**
 	 * @var boolean
 	 */
-	private $usesCapitalLinks = true;
+	private $isCapitalLinks = true;
 
 	/**
 	 * @since 2.4
@@ -44,10 +44,10 @@ class PropertyTableIdReferenceFinder {
 	 *
 	 * @since 2.4
 	 *
-	 * @param booelan $usesCapitalLinks
+	 * @param booelan $isCapitalLinks
 	 */
-	public function usesCapitalLinks( $usesCapitalLinks ) {
-		$this->usesCapitalLinks = $usesCapitalLinks;
+	public function isCapitalLinks( $isCapitalLinks ) {
+		$this->isCapitalLinks = $isCapitalLinks;
 	}
 
 	/**
@@ -70,7 +70,7 @@ class PropertyTableIdReferenceFinder {
 
 		// Lets see if we have some lower/upper case matching for
 		// when wgCapitalLinks setting was involved
-		if ( !$this->usesCapitalLinks && $sid == 0 ) {
+		if ( !$this->isCapitalLinks && $sid == 0 ) {
 			$sid = $this->store->getObjectIds()->getSMWPageID(
 				lcfirst( $dataItem->getDBkey() ),
 				$dataItem->getNamespace(),
@@ -89,13 +89,39 @@ class PropertyTableIdReferenceFinder {
 	 *
 	 * @return boolean
 	 */
-	public function hasResidualReferenceFor( $id ) {
+	public function hasResidualReferenceForId( $id ) {
 
 		if ( $id == SQLStore::FIXED_PROPERTY_ID_UPPERBOUND ) {
 			return true;
 		}
 
 		return (bool)$this->tryToFindAtLeastOneReferenceForId( $id );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer $id
+	 *
+	 * @return array
+	 */
+	public function searchAllTablesToFindAtLeastOneReferenceById( $id ) {
+
+		$references = array();
+
+		foreach ( $this->store->getPropertyTables() as $proptable ) {
+			$reference = false;
+
+			if ( ( $reference = $this->findReferenceByPropertyTable( $proptable, $id ) ) !== false ) {
+				$references[$proptable->getName()] = $reference;
+			}
+		}
+
+		if ( ( $reference = $this->findReferenceByQueryLinksTable( $id ) ) !== false ) {
+			$references[SQLStore::QUERY_LINKS_TABLE] = $reference;
+		}
+
+		return $references;
 	}
 
 	/**
@@ -115,10 +141,14 @@ class PropertyTableIdReferenceFinder {
 			}
 		}
 
+		if ( !isset( $reference->s_id ) ) {
+			$reference = $this->findReferenceByQueryLinksTable( $id );
+		}
+
 		// If null is returned it means that a reference was found bu no DI could
 		// be matched therefore is categorized as false positive
 		if ( isset( $reference->s_id ) ) {
-			$reference = $this->store->getObjectIds()->getDataItemForId( $reference->s_id );
+			$reference = $this->store->getObjectIds()->getDataItemById( $reference->s_id );
 		}
 
 		return $reference === false || $reference === null ? false : $reference;
@@ -173,17 +203,20 @@ class PropertyTableIdReferenceFinder {
 			);
 		}
 
+		return $row;
+	}
+
+	private function findReferenceByQueryLinksTable( $id ) {
+
 		// If the query table contains a reference then we keep the object (could
 		// be a subject, property, or printrequest) where in case the query is
 		// removed the object will also loose its reference
-		if ( $row === false ) {
-			$row = $this->connection->selectRow(
-				SQLStore::QUERY_LINKS_TABLE,
-				array( 's_id' ),
-				array( 'o_id' => $id ),
-				__METHOD__
-			);
-		}
+		$row = $this->connection->selectRow(
+			SQLStore::QUERY_LINKS_TABLE,
+			array( 's_id' ),
+			array( 'o_id' => $id ),
+			__METHOD__
+		);
 
 		return $row;
 	}

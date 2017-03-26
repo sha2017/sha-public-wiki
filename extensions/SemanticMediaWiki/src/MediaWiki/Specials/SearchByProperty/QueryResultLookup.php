@@ -8,8 +8,11 @@ use SMW\Query\Language\ThingDescription;
 use SMW\Query\Language\ValueDescription;
 use SMW\Query\PrintRequest as PrintRequest;
 use SMW\Store;
+use SMW\DIWikiPage;
+use SMW\SQLStore\QueryDependencyLinksStoreFactory;
 use SMWQuery as Query;
 use SMWRequestOptions as RequestOptions;
+use SMW\Query\DescriptionFactory;
 
 /**
  * @license GNU GPL v2+
@@ -32,6 +35,45 @@ class QueryResultLookup {
 	 */
 	public function __construct( Store $store ) {
 		$this->store = $store;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param QueryOptions $pageRequestOptions
+	 *
+	 * @return array
+	 */
+	public function doQueryLinksReferences( PageRequestOptions $pageRequestOptions ) {
+
+		$requestOptions = new RequestOptions();
+		$requestOptions->setLimit( $pageRequestOptions->limit + 1 );
+		$requestOptions->setOffset( $pageRequestOptions->offset );
+		$requestOptions->sort = true;
+
+		$queryDependencyLinksStoreFactory = new QueryDependencyLinksStoreFactory();
+
+		$queryReferenceLinks = $queryDependencyLinksStoreFactory->newQueryReferenceBacklinks(
+			$this->store
+		);
+
+		$queryBacklinks = $queryReferenceLinks->findReferenceLinks(
+			$pageRequestOptions->value->getDataItem(),
+			$requestOptions
+		);
+
+		$results = array();
+
+		$dataValueFactory = DataValueFactory::getInstance();
+
+		foreach ( $queryBacklinks as $result ) {
+			$results[] = array(
+				$dataValueFactory->newDataValueByItem( DIWikiPage::doUnserialize( $result ), null ),
+				$pageRequestOptions->value
+			);
+		}
+
+		return $results;
 	}
 
 	/**
@@ -90,22 +132,24 @@ class QueryResultLookup {
 			$comparator = SMW_CMP_LIKE;
 		}
 
+		$descriptionFactory = new DescriptionFactory();
+
 		if ( $pageRequestOptions->valueString === '' || $pageRequestOptions->valueString === null ) {
-			$description = new ThingDescription();
+			$description = $descriptionFactory->newThingDescription();
 		} else {
-			$description = new ValueDescription(
+			$description = $descriptionFactory->newValueDescription(
 				$pageRequestOptions->value->getDataItem(),
 				$pageRequestOptions->property->getDataItem(),
 				$comparator
 			);
+
+			$description = $descriptionFactory->newSomeProperty(
+				$pageRequestOptions->property->getDataItem(),
+				$description
+			);
 		}
 
-		$someProperty = new SomeProperty(
-			$pageRequestOptions->property->getDataItem(),
-			$description
-		);
-
-		$query = new Query( $someProperty );
+		$query = new Query( $description );
 
 		$query->setLimit( $pageRequestOptions->limit );
 		$query->setOffset( $pageRequestOptions->offset );

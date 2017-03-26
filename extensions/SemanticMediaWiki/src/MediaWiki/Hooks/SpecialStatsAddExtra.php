@@ -40,10 +40,12 @@ class SpecialStatsAddExtra {
 	 */
 	protected $legacyMessageMapper = array(
 		'PROPUSES'   => 'smw-statistics-property-instance',
-		'USEDPROPS'  => 'smw-statistics-property-total-legacy',
+		'ERRORUSES'   => 'smw-statistics-error-count-legacy',
+		'TOTALPROPS'  => 'smw-statistics-property-total-legacy',
 		'OWNPAGE'    => 'smw-statistics-property-page',
 		'DECLPROPS'  => 'smw-statistics-property-type',
-		'SUBOBJECTS' => 'smw-statistics-subobject-count',
+		'DELETECOUNT' => 'smw-statistics-delete-count',
+		'SUBOBJECTS' => 'smw-statistics-subobject-count-legacy',
 		'QUERY'      => 'smw-statistics-query-inline-legacy',
 		'CONCEPTS'   => 'smw-statistics-concept-count-legacy'
 	);
@@ -54,7 +56,8 @@ class SpecialStatsAddExtra {
 	protected $messageMapper = array(
 		'PROPUSES'    => 'smw-statistics-property-instance',
 		'ERRORUSES'   => 'smw-statistics-error-count',
-		'USEDPROPS'   => 'smw-statistics-property-total',
+		'TOTALPROPS'  => 'smw-statistics-property-total',
+		'USEDPROPS'   => 'smw-statistics-property-used',
 		'OWNPAGE'     => 'smw-statistics-property-page',
 		'DECLPROPS'   => 'smw-statistics-property-type',
 		'DELETECOUNT' => 'smw-statistics-delete-count',

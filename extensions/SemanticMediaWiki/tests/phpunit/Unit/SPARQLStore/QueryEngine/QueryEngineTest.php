@@ -98,7 +98,7 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( array( 'bogus-error' ) ) );
 
 		$compoundConditionBuilder->expects( $this->atLeastOnce() )
-			->method( 'buildCondition' )
+			->method( 'getConditionFrom' )
 			->will( $this->returnValue( $condition ) );
 
 		$description = $this->getMockForAbstractClass( '\SMW\Query\Language\Description' );
@@ -167,6 +167,8 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 
 	public function testInvalidSorkeyThrowsException() {
 
+		$sortKeys = array( 'Foo', 'Bar' );
+
 		$connection = $this->getMockBuilder( '\SMW\SPARQLStore\RepositoryConnection' )
 			->disableOriginalConstructor()
 			->getMockForAbstractClass();
@@ -190,15 +192,23 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( $compoundConditionBuilder ) );
 
 		$compoundConditionBuilder->expects( $this->atLeastOnce() )
-			->method( 'buildCondition' )
+			->method( 'getSortKeys' )
+			->will( $this->returnValue( $sortKeys ) );
+
+		$compoundConditionBuilder->expects( $this->atLeastOnce() )
+			->method( 'getConditionFrom' )
 			->will( $this->returnValue( $condition ) );
 
 		$description = $this->getMockForAbstractClass( '\SMW\Query\Language\Description' );
 
-		$instance = new QueryEngine( $connection, $compoundConditionBuilder, new QueryResultFactory( $store ) );
+		$instance = new QueryEngine(
+			$connection,
+			$compoundConditionBuilder,
+			new QueryResultFactory( $store )
+		);
 
 		$query = new Query( $description );
-		$query->sortkeys = array( 'Foo', 'Bar' );
+		$query->setSortKeys( $sortKeys );
 
 		$this->setExpectedException( 'RuntimeException' );
 		$instance->getQueryResult( $query );
@@ -206,7 +216,7 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 
 	public function testtestGetQueryResultForDebugQueryMode() {
 
-		$connection = $this->getMockBuilder( '\SMW\SPARQLStore\RepositoryConnector\GenericHttpRepositoryConnector' )
+		$connection = $this->getMockBuilder( '\SMW\SPARQLStore\RepositoryConnectors\GenericHttpRepositoryConnector' )
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -225,7 +235,7 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( $compoundConditionBuilder ) );
 
 		$compoundConditionBuilder->expects( $this->atLeastOnce() )
-			->method( 'buildCondition' )
+			->method( 'getConditionFrom' )
 			->will( $this->returnValue( $condition ) );
 
 		$queryResultFactory = $this->getMockBuilder( '\SMW\SPARQLStore\QueryEngine\QueryResultFactory' )
@@ -256,7 +266,7 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$connection = $this->getMockBuilder( '\SMW\SPARQLStore\RepositoryConnector\GenericHttpRepositoryConnector' )
+		$connection = $this->getMockBuilder( '\SMW\SPARQLStore\RepositoryConnectors\GenericHttpRepositoryConnector' )
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -283,7 +293,7 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( $compoundConditionBuilder ) );
 
 		$compoundConditionBuilder->expects( $this->once() )
-			->method( 'buildCondition' )
+			->method( 'getConditionFrom' )
 			->will( $this->returnValue( $condition ) );
 
 		$description = $this->getMockForAbstractClass( '\SMW\Query\Language\Description' );
@@ -337,7 +347,7 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( $compoundConditionBuilder ) );
 
 		$compoundConditionBuilder->expects( $this->once() )
-			->method( 'buildCondition' )
+			->method( 'getConditionFrom' )
 			->will( $this->returnValue( $condition ) );
 
 		$description = $this->getMockForAbstractClass( '\SMW\Query\Language\Description' );
@@ -438,7 +448,7 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( $compoundConditionBuilder ) );
 
 		$compoundConditionBuilder->expects( $this->once() )
-			->method( 'buildCondition' )
+			->method( 'getConditionFrom' )
 			->will( $this->returnValue( $condition ) );
 
 		$description = $this->getMockForAbstractClass( '\SMW\Query\Language\Description' );
@@ -460,9 +470,9 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 
 	public function testDebugQueryResultForMockedCompostion() {
 
-		// PHPUnit 3.7 goes drumming when trying to a method on an
+		// PHPUnit 3.7 goes drumming when trying to add a method on an
 		// interface hence the use of the concrete class
-		$connection = $this->getMockBuilder( '\SMW\SPARQLStore\RepositoryConnector\GenericHttpRepositoryConnector' )
+		$connection = $this->getMockBuilder( '\SMW\SPARQLStore\RepositoryConnectors\GenericHttpRepositoryConnector' )
 			->disableOriginalConstructor()
 			->setMethods( array( 'getSparqlForSelect' ) )
 			->getMock();
@@ -490,7 +500,7 @@ class QueryEngineTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( $compoundConditionBuilder ) );
 
 		$compoundConditionBuilder->expects( $this->once() )
-			->method( 'buildCondition' )
+			->method( 'getConditionFrom' )
 			->will( $this->returnValue( $condition ) );
 
 		$description = $this->getMockForAbstractClass( '\SMW\Query\Language\Description' );

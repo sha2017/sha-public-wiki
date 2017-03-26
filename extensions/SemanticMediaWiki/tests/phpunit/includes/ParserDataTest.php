@@ -78,13 +78,13 @@ class ParserDataTest extends \PHPUnit_Framework_TestCase {
 		$instance = new ParserData( $title, $parserOutput );
 
 		$this->assertTrue(
-			$instance->getUpdateJobState()
+			$instance->isEnabledWithUpdateJob()
 		);
 
 		$instance->disableBackgroundUpdateJobs();
 
 		$this->assertFalse(
-			$instance->getUpdateJobState()
+			$instance->isEnabledWithUpdateJob()
 		);
 	}
 
@@ -214,7 +214,7 @@ class ParserDataTest extends \PHPUnit_Framework_TestCase {
 		);
 
 		if ( $errorCount > 0 ) {
-			return $this->assertCount( $errorCount, $instance->getErrors() );
+			return $this->assertCount( $errorCount, $instance->getSemanticData()->getErrors() );
 		}
 
 		$expected = array(
@@ -254,11 +254,11 @@ class ParserDataTest extends \PHPUnit_Framework_TestCase {
 	public function testUpdateStore() {
 
 		$idTable = $this->getMockBuilder( '\stdClass' )
-			->setMethods( array( 'hasIDFor' ) )
+			->setMethods( array( 'exists' ) )
 			->getMock();
 
 		$idTable->expects( $this->any() )
-			->method( 'hasIDFor' )
+			->method( 'exists' )
 			->will( $this->returnValue( true ) );
 
 		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
@@ -294,8 +294,8 @@ class ParserDataTest extends \PHPUnit_Framework_TestCase {
 			$parserOutput
 		);
 
-		$this->assertEmpty(
-			$parserOutput->getProperty( 'smw-semanticdata-status' )
+		$this->assertFalse(
+			$instance->isAnnotatedWithSemanticData()
 		);
 
 		$instance->addDataValue(
@@ -308,7 +308,7 @@ class ParserDataTest extends \PHPUnit_Framework_TestCase {
 		$instance->setSemanticDataStateToParserOutputProperty();
 
 		$this->assertTrue(
-			$parserOutput->getProperty( 'smw-semanticdata-status' )
+			$instance->isAnnotatedWithSemanticData()
 		);
 	}
 
@@ -408,6 +408,30 @@ class ParserDataTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertFalse(
 			$instance->canModifySemanticData()
+		);
+	}
+
+	public function testSetGetOption() {
+
+		$title = $this->getMockBuilder( 'Title' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$title->expects( $this->once() )
+			->method( 'getNamespace' )
+			->will( $this->returnValue( -1 ) );
+
+		$parserOutput = new ParserOutput();
+
+		$instance = new ParserData(
+			$title,
+			$parserOutput
+		);
+
+		$instance->setOption( $instance::NO_QUERY_DEP_TRACE, true );
+
+		$this->assertTrue(
+			$instance->getOption( $instance::NO_QUERY_DEP_TRACE )
 		);
 	}
 

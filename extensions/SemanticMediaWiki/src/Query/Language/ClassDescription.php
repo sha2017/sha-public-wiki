@@ -48,6 +48,25 @@ class ClassDescription extends Description {
 	}
 
 	/**
+	 * @see Description::getFingerprint
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getFingerprint() {
+
+		$hash = array();
+
+		foreach ( $this->m_diWikiPages as $subject ) {
+			$hash[$subject->getHash()] = true;
+		}
+
+		ksort( $hash );
+
+		return 'Cl:' . md5( implode( '|', array_keys( $hash ) ) );
+	}
+
+	/**
 	 * @return array of DIWikiPage
 	 */
 	public function getCategories() {

@@ -51,6 +51,11 @@ class DataItemToExpResourceEncoder {
 	private $bcAuxiliaryUse = true;
 
 	/**
+	 * @var boolean
+	 */
+	private $seekImportVocabulary = true;
+
+	/**
 	 * @since 2.2
 	 *
 	 * @param Store $store
@@ -65,7 +70,7 @@ class DataItemToExpResourceEncoder {
 	 * @since 2.3
 	 */
 	public function reset() {
-		$this->inMemoryPoolCache->resetPoolCacheFor( 'exporter.dataitem.resource.encoder' );
+		$this->inMemoryPoolCache->resetPoolCacheById( 'exporter.dataitem.resource.encoder' );
 	}
 
 	/**
@@ -82,13 +87,13 @@ class DataItemToExpResourceEncoder {
 	 *
 	 * @param DIWikiPage $subject
 	 */
-	public function resetCacheFor( DIWikiPage $subject ) {
+	public function resetCacheBy( DIWikiPage $subject ) {
 
 		$hash = $subject->getHash();
 
-		$poolCache = $this->inMemoryPoolCache->getPoolCacheFor( 'exporter.dataitem.resource.encoder' );
+		$poolCache = $this->inMemoryPoolCache->getPoolCacheById( 'exporter.dataitem.resource.encoder' );
 
-		foreach ( array( $hash, $hash . self::AUX_MARKER ) as $key ) {
+		foreach ( array( $hash, $hash . self::AUX_MARKER . $this->seekImportVocabulary ) as $key ) {
 			$poolCache->delete( $key );
 		}
 	}
@@ -108,14 +113,16 @@ class DataItemToExpResourceEncoder {
 	 *
 	 * @param DIProperty $property
 	 * @param boolean $useAuxiliaryModifier
+	 * @param boolean $seekImportVocabulary
 	 *
 	 * @return ExpResource
 	 * @throws RuntimeException
 	 */
-	public function mapPropertyToResourceElement( DIProperty $property, $useAuxiliaryModifier = false ) {
+	public function mapPropertyToResourceElement( DIProperty $property, $useAuxiliaryModifier = false, $seekImportVocabulary = true ) {
 
 		// We want the a canonical representation to ensure that resources
 		// are language independent
+		$this->seekImportVocabulary = $seekImportVocabulary;
 		$diWikiPage = $property->getCanonicalDiWikiPage();
 
 		if ( $diWikiPage === null ) {
@@ -127,7 +134,10 @@ class DataItemToExpResourceEncoder {
 			$useAuxiliaryModifier = false;
 		}
 
-		return $this->mapWikiPageToResourceElement( $diWikiPage, $useAuxiliaryModifier );
+		$expResource = $this->mapWikiPageToResourceElement( $diWikiPage, $useAuxiliaryModifier );
+		$this->seekImportVocabulary = true;
+
+		return $expResource;
 	}
 
 	/**
@@ -148,9 +158,9 @@ class DataItemToExpResourceEncoder {
 
 		$modifier = $useAuxiliaryModifier ? self::AUX_MARKER : '';
 
-		$hash = $diWikiPage->getHash() . $modifier;
+		$hash = $diWikiPage->getHash() . $modifier . $this->seekImportVocabulary;
 
-		$poolCache = $this->inMemoryPoolCache->getPoolCacheFor( 'exporter.dataitem.resource.encoder' );
+		$poolCache = $this->inMemoryPoolCache->getPoolCacheById( 'exporter.dataitem.resource.encoder' );
 
 		if ( $poolCache->contains( $hash ) ) {
 			return $poolCache->fetch( $hash );
@@ -175,9 +185,9 @@ class DataItemToExpResourceEncoder {
 
 	private function newExpNsResource( $diWikiPage, $modifier ) {
 
-		 $importDataItem = $this->tryToFindImportDataItem( $diWikiPage, $modifier );
+		 $importDataItem = $this->seekImportDataItem( $diWikiPage, $modifier );
 
-		if ( $importDataItem instanceof DataItem ) {
+		if ( $this->seekImportVocabulary && $importDataItem instanceof DataItem ) {
 			list( $localName, $namespace, $namespaceId ) = $this->defineElementsForImportDataItem( $importDataItem );
 		} else {
 			list( $localName, $namespace, $namespaceId ) = $this->defineElementsForDiWikiPage( $diWikiPage, $modifier );
@@ -190,7 +200,7 @@ class DataItemToExpResourceEncoder {
 			$diWikiPage
 		);
 
-		$resource->wasMatchedToImportVocab = $importDataItem instanceof DataItem;
+		$resource->isImported = $importDataItem instanceof DataItem;
 		$dbKey = $diWikiPage->getDBkey();
 
 		if ( $diWikiPage->getNamespace() === SMW_NS_PROPERTY && $dbKey !== '' && $dbKey{0} !== '-' ) {
@@ -221,13 +231,13 @@ class DataItemToExpResourceEncoder {
 		if ( $diWikiPage->getNamespace() === NS_CATEGORY ) {
 			$namespace = Exporter::getInstance()->getNamespaceUri( 'category' );
 			$namespaceId = 'category';
-			$localName = Escaper::encodeUri( rawurlencode( $diWikiPage->getDBkey() ) );
+			$localName = Escaper::encodeUri( $diWikiPage->getDBkey() );
 		}
 
 		if ( $diWikiPage->getNamespace() === SMW_NS_PROPERTY ) {
 			$namespace = Exporter::getInstance()->getNamespaceUri( 'property' );
 			$namespaceId = 'property';
-			$localName = Escaper::encodeUri( rawurlencode( $diWikiPage->getDBkey() ) );
+			$localName = Escaper::encodeUri( $diWikiPage->getDBkey() );
 		}
 
 		if ( ( $localName === '' ) ||
@@ -240,7 +250,7 @@ class DataItemToExpResourceEncoder {
 		// "-23$modifier" where "-23" is the URI encoding of "#" (a symbol not
 	 	// occuring in MW titles).
 		if ( $modifier !== '' ) {
-			$localName .=  '-23' . Escaper::encodeUri( rawurlencode(  $modifier ) );
+			$localName .=  '-23' . Escaper::encodeUri( $modifier );
 		}
 
 		return array(
@@ -250,12 +260,12 @@ class DataItemToExpResourceEncoder {
 		);
 	}
 
-	private function tryToFindImportDataItem( DIWikiPage $diWikiPage, $modifier ) {
+	private function seekImportDataItem( DIWikiPage $diWikiPage, $modifier ) {
 
 		$importDataItems = null;
 
 		// Only try to find an import vocab for a matchable entity
-		if ( $diWikiPage->getNamespace() === NS_CATEGORY || $diWikiPage->getNamespace() === SMW_NS_PROPERTY ) {
+		if ( $this->seekImportVocabulary && $diWikiPage->getNamespace() === NS_CATEGORY || $diWikiPage->getNamespace() === SMW_NS_PROPERTY ) {
 			$importDataItems = $this->store->getPropertyValues(
 				$diWikiPage,
 				new DIProperty( '_IMPO' )

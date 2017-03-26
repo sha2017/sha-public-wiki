@@ -8,6 +8,8 @@ use SMWQueryResult;
 use SMWRequestOptions;
 use SMWSemanticData;
 use Title;
+use SMW\QueryEngine;
+use SMW\Options;
 
 /**
  * This group contains all parts of SMW that relate to storing and retrieving
@@ -28,7 +30,7 @@ use Title;
  *
  * @author Markus Krötzsch
  */
-abstract class Store {
+abstract class Store implements QueryEngine {
 
 	/**
 	 * @var boolean
@@ -40,19 +42,15 @@ abstract class Store {
 	 */
 	protected $connectionManager = null;
 
+	/**
+	 * @var Options
+	 */
+	protected $options = null;
+
 ///// Reading methods /////
 
 	/**
-	 * Retrieve all data stored about the given subject and return it as a
-	 * SMWSemanticData container. There are no options: it just returns all
-	 * available data as shown in the page's Factbox.
-	 * $filter is an array of strings that are datatype IDs. If given, the
-	 * function will avoid any work that is not necessary if only
-	 * properties of these types are of interest.
-	 *
-	 * @note There is no guarantee that the store does not retrieve more
-	 * data than requested when a filter is used. Filtering just ensures
-	 * that only necessary requests are made, i.e. it improves performance.
+	 * @see EntityLookup::getSemanticData
 	 *
 	 * @param DIWikiPage $subject
 	 * @param string[]|bool $filter
@@ -60,11 +58,7 @@ abstract class Store {
 	public abstract function getSemanticData( DIWikiPage $subject, $filter = false );
 
 	/**
-	 * Get an array of all property values stored for the given subject and
-	 * property. The result is an array of DataItem objects.
-	 *
-	 * If called with $subject == null, all values for the given property
-	 * are returned.
+	 * @see EntityLookup::getPropertyValues
 	 *
 	 * @param $subject mixed SMWDIWikiPage or null
 	 * @param $property DIProperty
@@ -75,9 +69,7 @@ abstract class Store {
 	public abstract function getPropertyValues( $subject, DIProperty $property, $requestoptions = null );
 
 	/**
-	 * Get an array of all subjects that have the given value for the given
-	 * property. The result is an array of DIWikiPage objects. If null
-	 * is given as a value, all subjects having that property are returned.
+	 * @see EntityLookup::getPropertySubjects
 	 *
 	 * @return DIWikiPage[]
 	 */
@@ -92,8 +84,7 @@ abstract class Store {
 	public abstract function getAllPropertySubjects( DIProperty $property, $requestoptions = null );
 
 	/**
-	 * Get an array of all properties for which the given subject has some
-	 * value. The result is an array of DIProperty objects.
+	 * @see EntityLookup::getProperties
 	 *
 	 * @param DIWikiPage $subject denoting the subject
 	 * @param SMWRequestOptions|null $requestOptions optionally defining further options
@@ -103,11 +94,12 @@ abstract class Store {
 	public abstract function getProperties( DIWikiPage $subject, $requestOptions = null );
 
 	/**
-	 * Get an array of all properties for which there is some subject that
-	 * relates to the given value. The result is an array of SMWDIWikiPage
-	 * objects.
-	 * @note In some stores, this function might be implemented partially
-	 * so that only values of type Page (_wpg) are supported.
+	 * @see EntityLookup::getInProperties
+	 *
+	 * @param DataItem $object
+	 * @param RequestOptions|null $requestOptions
+	 *
+	 * @return DataItem[]|[]
 	 */
 	public abstract function getInProperties( SMWDataItem $object, $requestoptions = null );
 
@@ -131,27 +123,6 @@ abstract class Store {
 	}
 
 	/**
-	 * Convenience method to find last modified MW timestamp for a subject that
-	 * has been added using the storage-engine.
-	 *
-	 * @since 2.3
-	 *
-	 * @param DIWikiPage $wikiPage
-	 *
-	 * @return integer
-	 */
-	public function getWikiPageLastModifiedTimestamp( DIWikiPage $wikiPage ) {
-
-		$dataItems = $this->getPropertyValues( $wikiPage, new DIProperty( '_MDAT' ) );
-
-		if ( $dataItems !== array() ) {
-			return end( $dataItems )->getMwTimestamp( TS_MW );
-		}
-
-		return 0;
-	}
-
-	/**
 	 * Convenience method to find the redirect target of a DIWikiPage
 	 * or DIProperty object. Returns a dataitem of the same type that
 	 * the input redirects to, or the input itself if there is no redirect.
@@ -172,10 +143,11 @@ abstract class Store {
 		}
 
 		$hash = $wikipage->getHash();
-		$poolCache = InMemoryPoolCache::getInstance()->getPoolCacheFor( 'store.redirectTarget.lookup' );
+		$poolCache = InMemoryPoolCache::getInstance()->getPoolCacheById( 'store.redirectTarget.lookup' );
 
-		if ( $poolCache->contains( $hash ) ) {
-			return $poolCache->fetch( $hash );
+		// Ensure that the same type context is used
+		if ( ( $di = $poolCache->fetch( $hash ) ) !== false && $di->getDIType() === $dataItem->getDIType() ) {
+			return $di;
 		}
 
 		$redirectDataItems = $this->getPropertyValues( $wikipage, new DIProperty( '_REDI' ) );
@@ -226,19 +198,17 @@ abstract class Store {
 	 */
 	public function updateData( SemanticData $semanticData ) {
 
-		if ( !ApplicationFactory::getInstance()->getSettings()->get( 'smwgSemanticsEnabled' ) ) {
+		if ( !$this->getOptions()->get( 'smwgSemanticsEnabled' ) ) {
 			return;
 		}
 
+		$applicationFactory = ApplicationFactory::getInstance();
+
 		$subject = $semanticData->getSubject();
+		$hash = $subject->getHash();
 
-		$dispatchContext = EventHandler::getInstance()->newDispatchContext();
-		$dispatchContext->set( 'subject', $subject );
-
-		EventHandler::getInstance()->getEventDispatcher()->dispatch(
-			'on.before.semanticdata.update.complete',
-			$dispatchContext
-		);
+		// @see Store::getRedirectTarget
+		$applicationFactory->getInMemoryPoolCache()->getPoolCacheById( 'store.redirectTarget.lookup' )->delete( $hash );
 
 		/**
 		 * @since 1.6
@@ -252,10 +222,17 @@ abstract class Store {
 		 */
 		\Hooks::run( 'SMWStore::updateDataAfter', array( $this, $semanticData ) );
 
-		EventHandler::getInstance()->getEventDispatcher()->dispatch(
-			'on.after.semanticdata.update.complete',
-			$dispatchContext
-		);
+		$pageUpdater = $applicationFactory->newPageUpdater();
+
+		if ( !$this->getOptions()->get( 'smwgAutoRefreshSubject' ) || !$pageUpdater->canUpdate() ) {
+			return;
+		}
+
+		$pageUpdater->addPage( $subject->getTitle() );
+		$pageUpdater->waitOnTransactionIdle();
+
+		$pageUpdater->doPurgeParserCache();
+		$pageUpdater->doPurgeHtmlCache();
 	}
 
 	/**
@@ -441,13 +418,16 @@ abstract class Store {
 	 * @since 1.8
 	 *
 	 * @param bool $verbose
+	 * @param bool $isFromExtensionSchemaUpdate
 	 *
 	 * @return boolean Success indicator
 	 */
-	public static function setupStore( $verbose = true ) {
-		$result = StoreFactory::getStore()->setup( $verbose );
-		\Hooks::run( 'smwInitializeTables' );
-		return $result;
+	public static function setupStore( $verbose = true, $isFromExtensionSchemaUpdate = false ) {
+
+		$store = StoreFactory::getStore();
+		$store->getOptions()->set( 'isFromExtensionSchemaUpdate', $isFromExtensionSchemaUpdate );
+
+		return $store->setup( $verbose );
 	}
 
 	/**
@@ -464,11 +444,25 @@ abstract class Store {
 	}
 
 	/**
+	 * @since 2.5
+	 *
+	 * @return Options
+	 */
+	public function getOptions() {
+
+		if ( $this->options === null ) {
+			$this->options = new Options();
+		}
+
+		return $this->options;
+	}
+
+	/**
 	 * @since 2.0
 	 */
 	public function clear() {
 		$this->connectionManager->releaseConnections();
-		InMemoryPoolCache::getInstance()->resetPoolCacheFor( 'store.redirectTarget.lookup' );
+		InMemoryPoolCache::getInstance()->resetPoolCacheById( 'store.redirectTarget.lookup' );
 	}
 
 	/**

@@ -69,12 +69,30 @@ class QuerySegment {
 	/**
 	 * @var string
 	 */
+	public $fingerprint = '';
+
+	/**
+	 * @var string
+	 */
+	public $joinType = '';
+
+	/**
+	 * @var string
+	 */
 	public $joinTable = '';
 
 	/**
 	 * @var string|array
 	 */
 	public $joinfield = '';
+
+	/**
+	 * Allows to define an index field, for example in case when a sub-query rewires
+	 * a match condition.
+	 *
+	 * @var string
+	 */
+	public $indexField = '';
 
 	/**
 	 * @var string

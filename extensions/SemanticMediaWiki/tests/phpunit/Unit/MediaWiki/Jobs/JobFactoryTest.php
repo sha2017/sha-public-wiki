@@ -24,34 +24,88 @@ class JobFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testUpdateJob() {
+	/**
+	 * @dataProvider typeProvider
+	 */
+	public function testNewByType( $type, $expected ) {
 
 		$instance = new JobFactory();
 
 		$this->assertInstanceOf(
-			'\SMW\MediaWiki\Jobs\UpdateJob',
-			$instance->newUpdateJob( Title::newFromText( __METHOD__ ) )
+			$expected,
+			$instance->newByType( $type, Title::newFromText( __METHOD__ ) )
 		);
 	}
 
-	public function testUpdateDispatcherJob() {
+	/**
+	 * @dataProvider typeProvider
+	 */
+	public function testNewByTypeWithNullTitle( $type ) {
 
 		$instance = new JobFactory();
 
 		$this->assertInstanceOf(
-			'\SMW\MediaWiki\Jobs\UpdateDispatcherJob',
-			$instance->newUpdateDispatcherJob( Title::newFromText( __METHOD__ ) )
+			'\SMW\MediaWiki\Jobs\NullJob',
+			$instance->newByType( $type, null )
 		);
 	}
 
-	public function testParserCachePurgeJob() {
+	public function testNewByTypeOnUnknownJobThrowsException() {
 
 		$instance = new JobFactory();
 
-		$this->assertInstanceOf(
-			'\SMW\MediaWiki\Jobs\ParserCachePurgeJob',
-			$instance->newParserCachePurgeJob( Title::newFromText( __METHOD__ ) )
+		$this->setExpectedException( 'RuntimeException' );
+		$instance->newByType( 'Foo', Title::newFromText( __METHOD__ ) );
+	}
+
+	public function typeProvider() {
+
+		$provider[] = array(
+			'SMW\RefreshJob',
+			'\SMW\MediaWiki\Jobs\RefreshJob'
 		);
+
+		$provider[] = array(
+			'SMW\UpdateJob',
+			'\SMW\MediaWiki\Jobs\UpdateJob'
+		);
+
+		$provider[] = array(
+			'SMW\UpdateDispatcherJob',
+			'\SMW\MediaWiki\Jobs\UpdateDispatcherJob'
+		);
+
+		$provider[] = array(
+			'SMW\ParserCachePurgeJob',
+			'\SMW\MediaWiki\Jobs\ParserCachePurgeJob'
+		);
+
+		$provider[] = array(
+			'SMW\FulltextSearchTableUpdateJob',
+			'\SMW\MediaWiki\Jobs\FulltextSearchTableUpdateJob'
+		);
+
+		$provider[] = array(
+			'SMW\EntityIdDisposerJob',
+			'\SMW\MediaWiki\Jobs\EntityIdDisposerJob'
+		);
+
+		$provider[] = array(
+			'SMW\TempChangeOpPurgeJob',
+			'\SMW\MediaWiki\Jobs\TempChangeOpPurgeJob'
+		);
+
+		$provider[] = array(
+			'SMW\PropertyStatisticsRebuildJob',
+			'\SMW\MediaWiki\Jobs\PropertyStatisticsRebuildJob'
+		);
+
+		$provider[] = array(
+			'SMW\FulltextSearchTableRebuildJob',
+			'\SMW\MediaWiki\Jobs\FulltextSearchTableRebuildJob'
+		);
+
+		return $provider;
 	}
 
 }

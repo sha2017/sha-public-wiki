@@ -47,7 +47,10 @@ final class Setup {
 	 */
 	public function run() {
 		$this->addSomeDefaultConfigurations();
-		$this->registerSettings();
+
+		if ( CompatibilityMode::extensionNotEnabled() ) {
+			CompatibilityMode::disableSemantics();
+		}
 
 		$this->registerConnectionProviders();
 		$this->registerMessageCallbackHandler();
@@ -81,17 +84,6 @@ final class Setup {
 
 		if ( is_file( $this->directory . "/res/Resources.php" ) ) {
 			$this->globalVars['wgResourceModules'] = array_merge( $this->globalVars['wgResourceModules'], include ( $this->directory . "/res/Resources.php" ) );
-		}
-	}
-
-	private function registerSettings() {
-		$this->applicationFactory->registerObject(
-			'Settings',
-			Settings::newFromGlobals( $this->globalVars )
-		);
-
-		if ( CompatibilityMode::requiresCompatibilityMode() || CompatibilityMode::extensionNotEnabled() ) {
-			CompatibilityMode::disableSemantics();
 		}
 	}
 
@@ -164,7 +156,9 @@ final class Setup {
 				$language = Localizer::getInstance()->getUserLanguage();
 			}
 
-			return call_user_func_array( 'wfMessage', $arguments )->inLanguage( $language )->parse();
+			// 1.27+
+			// [GlobalTitleFail] MessageCache::parse called by ... Message::parseText/MessageCache::parse with no title set.
+			return call_user_func_array( 'wfMessage', $arguments )->inLanguage( $language )->title( $GLOBALS['wgTitle'] )->parse();
 		} );
 	}
 
@@ -176,10 +170,8 @@ final class Setup {
 		$smwgIP = $this->applicationFactory->getSettings()->get( 'smwgIP' );
 
 		$this->globalVars['wgMessagesDirs']['SemanticMediaWiki'] = $smwgIP . 'i18n';
-		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWiki'] = $smwgIP . 'languages/SMW_Messages.php';
-		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWikiAlias'] = $smwgIP . 'languages/SMW_Aliases.php';
-		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWikiMagic'] = $smwgIP . 'languages/SMW_Magic.php';
-		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWikiNamespaces'] = $smwgIP . 'languages/SemanticMediaWiki.namespaces.php';
+		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWikiAlias'] = $smwgIP . 'i18n/extra/SemanticMediaWiki.alias.php';
+		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWikiMagic'] = $smwgIP . 'i18n/extra/SemanticMediaWiki.magic.php';
 	}
 
 	/**
@@ -202,14 +194,26 @@ final class Setup {
 	 * @see https://www.mediawiki.org/wiki/Manual:$wgJobClasses
 	 */
 	private function registerJobClasses() {
-		$this->globalVars['wgJobClasses']['SMW\UpdateJob']  = 'SMW\MediaWiki\Jobs\UpdateJob';
-		$this->globalVars['wgJobClasses']['SMW\RefreshJob'] = 'SMW\MediaWiki\Jobs\RefreshJob';
-		$this->globalVars['wgJobClasses']['SMW\UpdateDispatcherJob'] = 'SMW\MediaWiki\Jobs\UpdateDispatcherJob';
-		$this->globalVars['wgJobClasses']['SMW\ParserCachePurgeJob'] = 'SMW\MediaWiki\Jobs\ParserCachePurgeJob';
 
-		// Legacy definition to be removed with 1.10
-		$this->globalVars['wgJobClasses']['SMWUpdateJob']  = 'SMW\MediaWiki\Jobs\UpdateJob';
-		$this->globalVars['wgJobClasses']['SMWRefreshJob'] = 'SMW\MediaWiki\Jobs\RefreshJob';
+		$jobClasses = array(
+			'SMW\UpdateJob' => 'SMW\MediaWiki\Jobs\UpdateJob',
+			'SMW\RefreshJob' => 'SMW\MediaWiki\Jobs\RefreshJob',
+			'SMW\UpdateDispatcherJob' => 'SMW\MediaWiki\Jobs\UpdateDispatcherJob',
+			'SMW\ParserCachePurgeJob' => 'SMW\MediaWiki\Jobs\ParserCachePurgeJob',
+			'SMW\FulltextSearchTableUpdateJob' => 'SMW\MediaWiki\Jobs\FulltextSearchTableUpdateJob',
+			'SMW\EntityIdDisposerJob' => 'SMW\MediaWiki\Jobs\EntityIdDisposerJob',
+			'SMW\TempChangeOpPurgeJob' => 'SMW\MediaWiki\Jobs\TempChangeOpPurgeJob',
+			'SMW\PropertyStatisticsRebuildJob' => 'SMW\MediaWiki\Jobs\PropertyStatisticsRebuildJob',
+			'SMW\FulltextSearchTableRebuildJob' => 'SMW\MediaWiki\Jobs\FulltextSearchTableRebuildJob',
+
+			// Legacy definition to be removed with 1.10
+			'SMWUpdateJob'  => 'SMW\MediaWiki\Jobs\UpdateJob',
+			'SMWRefreshJob' => 'SMW\MediaWiki\Jobs\RefreshJob'
+		);
+
+		foreach ( $jobClasses as $job => $class ) {
+			$this->globalVars['wgJobClasses'][$job] = $class;
+		}
 	}
 
 	/**
@@ -225,6 +229,7 @@ final class Setup {
 		// Rights
 		$this->globalVars['wgAvailableRights'][] = 'smw-admin';
 		$this->globalVars['wgAvailableRights'][] = 'smw-patternedit';
+		$this->globalVars['wgAvailableRights'][] = 'smw-pageedit';
 
 		// User group rights
 		if ( !isset( $this->globalVars['wgGroupPermissions']['sysop']['smw-admin'] ) ) {
@@ -235,8 +240,17 @@ final class Setup {
 			$this->globalVars['wgGroupPermissions']['smwcurator']['smw-patternedit'] = true;
 		}
 
+		if ( !isset( $this->globalVars['wgGroupPermissions']['smwcurator']['smw-pageedit'] ) ) {
+			$this->globalVars['wgGroupPermissions']['smwcurator']['smw-pageedit'] = true;
+		}
+
 		if ( !isset( $this->globalVars['wgGroupPermissions']['smwadministrator']['smw-admin'] ) ) {
 			$this->globalVars['wgGroupPermissions']['smwadministrator']['smw-admin'] = true;
+		}
+
+		// Add an additional protection level restricting edit/move/etc
+		if ( ( $editProtectionRight = $this->applicationFactory->getSettings()->get( 'smwgEditProtectionRight' ) ) !== false ) {
+			$this->globalVars['wgRestrictionLevels'][] = $editProtectionRight;
 		}
 	}
 
@@ -255,7 +269,7 @@ final class Setup {
 				'group' => 'smw_group'
 			),
 			'Browse' => array(
-				'page' =>  'SMWSpecialBrowse',
+				'page' =>  'SMW\MediaWiki\Specials\SpecialBrowse',
 				'group' => 'smw_group'
 			),
 			'PageProperty' => array(
@@ -266,8 +280,16 @@ final class Setup {
 				'page' => 'SMW\MediaWiki\Specials\SpecialSearchByProperty',
 				'group' => 'smw_group'
 			),
+			'ProcessingErrorList' => array(
+				'page' => 'SMW\MediaWiki\Specials\SpecialProcessingErrorList',
+				'group' => 'smw_group'
+			),
+			'PropertyLabelSimilarity' => array(
+				'page' => 'SMW\MediaWiki\Specials\SpecialPropertyLabelSimilarity',
+				'group' => 'smw_group'
+			),
 			'SMWAdmin' => array(
-				'page' => 'SMWAdmin',
+				'page' => 'SMW\MediaWiki\Specials\SpecialAdmin',
 				'group' => 'smw_group'
 			),
 			'SemanticStatistics' => array(
@@ -348,9 +370,9 @@ final class Setup {
 	}
 
 	/**
-	 * @see https://www.mediawiki.org/wiki/Manual:$this->globalVars['wgHooks']
+	 * @see https://www.mediawiki.org/wiki/Manual:$wgHooks
 	 *
-	 * @note $this->globalVars['wgHooks'] contains a list of hooks which specifies for every event an
+	 * @note $wgHooks contains a list of hooks which specifies for every event an
 	 * array of functions to be called.
 	 */
 	private function registerHooks() {

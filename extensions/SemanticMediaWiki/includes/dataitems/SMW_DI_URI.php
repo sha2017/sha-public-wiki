@@ -1,6 +1,6 @@
 <?php
 
-use SMW\DataItemException;
+use SMW\Exception\DataItemException;
 
 /**
  * This class implements URI data items.
@@ -75,7 +75,11 @@ class SMWDIUri extends SMWDataItem {
 			. ( $this->m_query ? '?' . $this->m_query : '' )
 			. ( $this->m_fragment ? '#' . $this->m_fragment : '' );
 
-		return $uri;
+		// #1878
+		// https://tools.ietf.org/html/rfc3986
+		// Normalize spaces to use `_` instead of %20 and so ensure
+		// that http://example.org/Foo bar === http://example.org/Foo_bar === http://example.org/Foo%20bar
+		return str_replace( array( ' ', '%20'), '_', $uri );
 	}
 
 	public function getScheme() {
@@ -94,8 +98,13 @@ class SMWDIUri extends SMWDataItem {
 		return $this->m_fragment;
 	}
 
+	/**
+	 * @since 1.6
+	 *
+	 * @return string
+	 */
 	public function getSortKey() {
-		return $this->getURI();
+		return urldecode( $this->getURI() );
 	}
 
 	public function getSerialization() {

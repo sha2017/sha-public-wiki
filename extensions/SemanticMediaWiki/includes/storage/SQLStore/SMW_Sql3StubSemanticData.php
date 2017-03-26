@@ -4,6 +4,7 @@ use SMW\DataTypeRegistry;
 use SMW\DIProperty;
 use SMW\DIWikiPage;
 use SMW\StoreFactory;
+use SMW\SQLStore\EntityStore\Exception\DataItemHandlerException;
 
 /**
  * This class provides a subclass of SMWSemanticData that can store
@@ -54,7 +55,7 @@ class SMWSql3StubSemanticData extends SMWSemanticData {
 	 *
 	 * @var boolean
 	 */
-	private $subSemanticDataInitialized = false;
+	private $subSemanticDataInit = false;
 
 	/**
 	 * Constructor.
@@ -127,6 +128,19 @@ class SMWSql3StubSemanticData extends SMWSemanticData {
 	}
 
 	/**
+	 * @see SemanticData::hasProperty
+	 * @since 2.5
+	 *
+	 * @param DIProperty $property
+	 *
+	 * @return boolean
+	 */
+	public function hasProperty( DIProperty $property ) {
+		$this->unstubProperties();
+		return parent::hasProperty( $property );
+	}
+
+	/**
 	 * Get the array of all stored values for some property.
 	 *
 	 * @since 1.8
@@ -156,7 +170,7 @@ class SMWSql3StubSemanticData extends SMWSemanticData {
 					} else {
 						$this->mPropVals[$property->getKey()][] = $di;
 					}
-				} catch ( SMWDataItemException $e ) {
+				} catch ( DataItemHandlerException $e ) {
 					// ignore data
 				}
 			}
@@ -177,11 +191,11 @@ class SMWSql3StubSemanticData extends SMWSemanticData {
 	 */
 	public function getSubSemanticData() {
 
-		if ( $this->subSemanticDataInitialized ) {
+		if ( $this->subSemanticDataInit ) {
 			return parent::getSubSemanticData();
 		}
 
-		$this->subSemanticDataInitialized = true;
+		$this->subSemanticDataInit = true;
 
 		foreach ( $this->getProperties() as $property ) {
 
@@ -190,7 +204,7 @@ class SMWSql3StubSemanticData extends SMWSemanticData {
 				continue;
 			}
 
-			$this->addSubSemanticDataToInternalCache( $property );
+			$this->initSubSemanticData( $property );
 		}
 
 		return parent::getSubSemanticData();
@@ -206,11 +220,25 @@ class SMWSql3StubSemanticData extends SMWSemanticData {
 	 */
 	public function hasSubSemanticData( $subobjectName = null ) {
 
-		if ( !$this->subSemanticDataInitialized ) {
+		if ( !$this->subSemanticDataInit ) {
 			$this->getSubSemanticData();
 		}
 
 		return parent::hasSubSemanticData( $subobjectName );
+	}
+
+	/**
+	 * @see SemanticData::findSubSemanticData
+	 *
+	 * @since 2.5
+	 */
+	public function findSubSemanticData( $subobjectName ) {
+
+		if ( !$this->subSemanticDataInit ) {
+			$this->getSubSemanticData();
+		}
+
+		return parent::findSubSemanticData( $subobjectName );
 	}
 
 	/**
@@ -339,12 +367,18 @@ class SMWSql3StubSemanticData extends SMWSemanticData {
 		return $this->store->getObjectIds()->checkIsRedirect( $this->mSubject );
 	}
 
-	private function addSubSemanticDataToInternalCache( DIProperty $property ) {
-
+	private function initSubSemanticData( DIProperty $property ) {
 		foreach ( $this->getPropertyValues( $property ) as $value ) {
-			if ( $value instanceof DIWikiPage && $value->getSubobjectName() !== '' && !$this->hasSubSemanticData( $value->getSubobjectName() ) ) {
-				$this->addSubSemanticData( $this->store->getSemanticData( $value ) );
+
+			if ( !$value instanceof DIWikiPage || $value->getSubobjectName() === '' ) {
+				continue;
 			}
+
+			if ( $this->hasSubSemanticData( $value->getSubobjectName() ) ) {
+				continue;
+			}
+
+			$this->addSubSemanticData( $this->store->getSemanticData( $value ) );
 		}
 	}
 

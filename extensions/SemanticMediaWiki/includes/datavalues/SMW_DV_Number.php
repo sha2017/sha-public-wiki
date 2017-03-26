@@ -4,6 +4,7 @@ use SMW\DataValues\ValueFormatters\DataValueFormatter;
 use SMW\IntlNumberFormatter;
 use SMW\Localizer;
 use SMW\Message;
+use SMW\ApplicationFactory;
 
 /**
  * @ingroup SMWDataValues
@@ -40,6 +41,16 @@ use SMW\Message;
  * solution might be unsafe.
  */
 class SMWNumberValue extends SMWDataValue {
+
+	/**
+	 * DV identifier
+	 */
+	const TYPE_ID = '_num';
+
+	/**
+	 * Internal state to ensure no precision limitation is applied to an output
+	 */
+	const NO_DISP_PRECISION_LIMIT = 'num.no.displayprecision.limit';
 
 	/**
 	 * Array with entries unit=>value, mapping a normalized unit to the
@@ -84,7 +95,7 @@ class SMWNumberValue extends SMWDataValue {
 	public function __construct( $typeid = '' ) {
 		parent::__construct( $typeid );
 		$this->intlNumberFormatter = IntlNumberFormatter::getInstance();
-		$this->intlNumberFormatter->initialize();
+		$this->intlNumberFormatter->reset();
 	}
 
 	/**
@@ -102,12 +113,12 @@ class SMWNumberValue extends SMWDataValue {
 		$intlNumberFormatter = $this->getNumberFormatter();
 
 		// Parse to find $number and (possibly) $unit
-		$kiloseparator = $intlNumberFormatter->getSeparator(
+		$kiloseparator = $intlNumberFormatter->getSeparatorByLanguage(
 			IntlNumberFormatter::THOUSANDS_SEPARATOR,
 			IntlNumberFormatter::CONTENT_LANGUAGE
 		);
 
-		$decseparator = $intlNumberFormatter->getSeparator(
+		$decseparator = $intlNumberFormatter->getSeparatorByLanguage(
 			IntlNumberFormatter::DECIMAL_SEPARATOR,
 			IntlNumberFormatter::CONTENT_LANGUAGE
 		);
@@ -120,9 +131,12 @@ class SMWNumberValue extends SMWDataValue {
 				'|\\' . $decseparator . '\d+' .
 				')\s*(?:[eE][-+]?\d+)?)/u';
 
+		// #1718 Whether to preserve spaces in unit labels or not (e.g. sq mi, sqmi)
+		$space = $this->isEnabledFeature( SMW_DV_NUMV_USPACE ) ? ' ' : '';
+
 		$parts = preg_split(
 			$regex,
-			trim( str_replace( array( '&nbsp;', '&#160;', '&thinsp;', ' ' ), '', $value ) ),
+			trim( str_replace( array( '&nbsp;', '&#160;', '&thinsp;', ' ' ), $space, $value ) ),
 			2,
 			PREG_SPLIT_DELIM_CAPTURE
 		);
@@ -248,7 +262,7 @@ class SMWNumberValue extends SMWDataValue {
 	 * @return string
 	 */
 	public function getShortWikiText( $linker = null ) {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::WIKI_SHORT, $linker );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::WIKI_SHORT, $linker );
 	}
 
 	/**
@@ -257,7 +271,7 @@ class SMWNumberValue extends SMWDataValue {
 	 * @return string
 	 */
 	public function getShortHTMLText( $linker = null ) {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::HTML_SHORT, $linker );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::HTML_SHORT, $linker );
 	}
 
 	/**
@@ -266,7 +280,7 @@ class SMWNumberValue extends SMWDataValue {
 	 * @return string
 	 */
 	public function getLongWikiText( $linker = null ) {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::WIKI_LONG, $linker );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::WIKI_LONG, $linker );
 	}
 
 	/**
@@ -275,7 +289,7 @@ class SMWNumberValue extends SMWDataValue {
 	 * @return string
 	 */
 	public function getLongHTMLText( $linker = null ) {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::HTML_LONG, $linker );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::HTML_LONG, $linker );
 	}
 
 	public function getNumber() {
@@ -283,7 +297,7 @@ class SMWNumberValue extends SMWDataValue {
 	}
 
 	public function getWikiValue() {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::VALUE );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::VALUE );
 	}
 
 	/**
@@ -295,10 +309,10 @@ class SMWNumberValue extends SMWDataValue {
 
 		// When generating an infoLink, use the normalized value without any
 		// precision limitation
-		$this->setOption( 'no.displayprecision', true );
+		$this->setOption( self::NO_DISP_PRECISION_LIMIT, true );
 		$this->setOption( 'content.language', Message::CONTENT_LANGUAGE );
 		$infoLinks = parent::getInfolinks();
-		$this->setOption( 'no.displayprecision', false );
+		$this->setOption( self::NO_DISP_PRECISION_LIMIT, false );
 
 		return $infoLinks;
 	}
@@ -449,13 +463,13 @@ class SMWNumberValue extends SMWDataValue {
 
 	protected function getPreferredDisplayPrecision() {
 
-		// In case of a value description, don't restrict the value with a display precision
-		if ( $this->getProperty() === null || $this->getOptionValueFor( 'value.description' ) || $this->getOptionValueFor( 'no.displayprecision' ) ) {
+		// Don't restrict the value with a display precision
+		if ( $this->getProperty() === null || $this->getOption( self::NO_DISP_PRECISION_LIMIT ) ) {
 			return false;
 		}
 
 		if ( $this->precision === null ) {
-			$this->precision = $this->getPropertySpecificationLookup()->getDisplayPrecisionFor(
+			$this->precision = ApplicationFactory::getInstance()->getPropertySpecificationLookup()->getDisplayPrecisionBy(
 				$this->getProperty()
 			);
 		}
@@ -489,22 +503,22 @@ class SMWNumberValue extends SMWDataValue {
 
 		$this->intlNumberFormatter->setOption(
 			'user.language',
-			$this->getOptionValueFor( 'user.language' )
+			$this->getOption( 'user.language' )
 		);
 
 		$this->intlNumberFormatter->setOption(
 			'content.language',
-			$this->getOptionValueFor( 'content.language' )
+			$this->getOption( 'content.language' )
 		);
 
 		$this->intlNumberFormatter->setOption(
 			'separator.thousands',
-			$this->getOptionValueFor( 'separator.thousands' )
+			$this->getOption( 'separator.thousands' )
 		);
 
 		$this->intlNumberFormatter->setOption(
 			'separator.decimal',
-			$this->getOptionValueFor( 'separator.decimal' )
+			$this->getOption( 'separator.decimal' )
 		);
 
 		return $this->intlNumberFormatter;

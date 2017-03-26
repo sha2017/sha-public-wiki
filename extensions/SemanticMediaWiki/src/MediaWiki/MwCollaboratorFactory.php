@@ -155,12 +155,16 @@ class MwCollaboratorFactory {
 	}
 
 	/**
-	 * @since 2.1
+	 * @since 2.5
 	 *
-	 * @return PageUpdater
+	 * @param WikiPage $wkiPage
+	 * @param Revision $revision
+	 * @param User|null $user
+	 *
+	 * @return EditInfoProvider
 	 */
-	public function newPageUpdater() {
-		return new PageUpdater();
+	public function newEditInfoProvider( WikiPage $wkiPage, Revision $revision, User $user = null ) {
+		return new EditInfoProvider( $wkiPage, $revision, $user );
 	}
 
 	/**

@@ -4,9 +4,8 @@ namespace SMW\Tests\MediaWiki\Hooks;
 
 use SMW\ApplicationFactory;
 use SMW\MediaWiki\Hooks\InternalParseBeforeLinks;
-use SMW\Settings;
 use SMW\Tests\Utils\Mock\MockTitle;
-use SMW\Tests\Utils\UtilityFactory;
+use SMW\Tests\TestEnvironment;
 use Title;
 
 /**
@@ -22,25 +21,25 @@ class InternalParseBeforeLinksTest extends \PHPUnit_Framework_TestCase {
 
 	private $semanticDataValidator;
 	private $parserFactory;
-	private $applicationFactory;
+	private $testEnvironment;
 
 	protected function setUp() {
 		parent::setUp();
 
-		$this->semanticDataValidator = UtilityFactory::getInstance()->newValidatorFactory()->newSemanticDataValidator();
-		$this->parserFactory = UtilityFactory::getInstance()->newParserFactory();
-		$this->applicationFactory = ApplicationFactory::getInstance();
+		$this->testEnvironment = new TestEnvironment();
+
+		$this->semanticDataValidator = $this->testEnvironment->getUtilityFactory()->newValidatorFactory()->newSemanticDataValidator();
+		$this->parserFactory = $this->testEnvironment->getUtilityFactory()->newParserFactory();
 
 		$store = $this->getMockBuilder( '\SMW\Store' )
 			->disableOriginalConstructor()
 			->getMockForAbstractClass();
 
-		$this->applicationFactory->registerObject( 'Store', $store );
+		$this->testEnvironment->registerObject( 'Store', $store );
 	}
 
 	protected function tearDown() {
-		$this->applicationFactory->clear();
-
+		$this->testEnvironment->tearDown();
 		parent::tearDown();
 	}
 
@@ -50,11 +49,9 @@ class InternalParseBeforeLinksTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$text = '';
-
 		$this->assertInstanceOf(
 			'\SMW\MediaWiki\Hooks\InternalParseBeforeLinks',
-			new InternalParseBeforeLinks( $parser, $text )
+			new InternalParseBeforeLinks( $parser )
 		);
 	}
 
@@ -70,16 +67,24 @@ class InternalParseBeforeLinksTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getOptions' );
 
 		$instance = new InternalParseBeforeLinks(
-			$parser,
-			$text
+			$parser
 		);
 
-		$this->assertTrue( $instance->process() );
+		$this->assertTrue(
+			$instance->process( $text )
+		);
 	}
 
-	public function testNonProcessForInterfaceMessage() {
+	public function testDisableProcessOfInterfaceMessageOnNonSpecialPage() {
 
 		$text = 'Foo';
+
+		$title = $this->testEnvironment->createConfiguredStub(
+			'\Title',
+			array(
+				'isSpecialPage' => false
+			)
+		);
 
 		$parserOptions = $this->getMockBuilder( '\ParserOptions' )
 			->disableOriginalConstructor()
@@ -97,15 +102,74 @@ class InternalParseBeforeLinksTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getOptions' )
 			->will( $this->returnValue( $parserOptions ) );
 
-		$parser->expects( $this->never() )
-			->method( 'getTitle' );
+		$parser->expects( $this->once() )
+			->method( 'getTitle' )
+			->will( $this->returnValue( $title ) );
 
 		$instance = new InternalParseBeforeLinks(
-			$parser,
-			$text
+			$parser
 		);
 
-		$this->assertTrue( $instance->process() );
+		$this->assertTrue(
+			$instance->process( $text )
+		);
+	}
+
+	public function testProcessOfInterfaceMessageOnEnabledSpecialPage() {
+
+		$text = 'Foo';
+
+		$title = $this->testEnvironment->createConfiguredStub(
+			'\Title',
+			array(
+				'getDBKey'      => __METHOD__,
+				'getNamespace'  => NS_MAIN,
+				'isSpecialPage' => true
+			)
+		);
+
+		$title->expects( $this->atLeastOnce() )
+			->method( 'isSpecial' )
+			->with( $this->equalTo( 'Bar' ) )
+			->will( $this->returnValue( true ) );
+
+		$parserOptions = $this->getMockBuilder( '\ParserOptions' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$parserOutput = $this->getMockBuilder( '\ParserOutput' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$parserOptions->expects( $this->once() )
+			->method( 'getInterfaceMessage' )
+			->will( $this->returnValue( true ) );
+
+		$parser = $this->getMockBuilder( 'Parser' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$parser->expects( $this->atLeastOnce() )
+			->method( 'getOptions' )
+			->will( $this->returnValue( $parserOptions ) );
+
+		$parser->expects( $this->atLeastOnce() )
+			->method( 'getOutput' )
+			->will( $this->returnValue( $parserOutput ) );
+
+		$parser->expects( $this->atLeastOnce() )
+			->method( 'getTitle' )
+			->will( $this->returnValue( $title ) );
+
+		$instance = new InternalParseBeforeLinks(
+			$parser
+		);
+
+		$instance->setEnabledSpecialPage(
+			array( 'Bar' )
+		);
+
+		$instance->process( $text );
 	}
 
 	/**
@@ -117,11 +181,12 @@ class InternalParseBeforeLinksTest extends \PHPUnit_Framework_TestCase {
 		$parser = $this->parserFactory->newFromTitle( $title );
 
 		$instance = new InternalParseBeforeLinks(
-			$parser,
-			$text
+			$parser
 		);
 
-		$this->assertTrue( $instance->process() );
+		$this->assertTrue(
+			$instance->process( $text )
+		);
 	}
 
 	/**
@@ -129,30 +194,38 @@ class InternalParseBeforeLinksTest extends \PHPUnit_Framework_TestCase {
 	 */
 	public function testTextChangeWithParserOuputUpdateIntegration( $parameters, $expected ) {
 
+		$this->testEnvironment->withConfiguration(
+			$parameters['settings']
+		);
+
 		$text   = $parameters['text'];
 		$parser = $this->parserFactory->newFromTitle( $parameters['title'] );
 
 		$instance = new InternalParseBeforeLinks(
-			$parser,
+			$parser
+		);
+
+		$instance->setEnabledSpecialPage(
+			isset( $parameters['settings']['smwgEnabledSpecialPage'] ) ? $parameters['settings']['smwgEnabledSpecialPage'] : array()
+		);
+
+		$this->assertTrue(
+			$instance->process( $text )
+		);
+
+		$this->assertEquals(
+			$expected['resultText'],
 			$text
 		);
 
-		$this->applicationFactory->registerObject(
-			'Settings',
-			Settings::newFromArray( $parameters['settings'] )
-		);
-
-		$this->assertTrue( $instance->process() );
-		$this->assertEquals( $expected['resultText'], $text );
-
-		$parserData = $this->applicationFactory->newParserData(
+		$parserData = ApplicationFactory::getInstance()->newParserData(
 			$parser->getTitle(),
 			$parser->getOutput()
 		);
 
 		$this->assertEquals(
 			$expected['propertyCount'] > 0,
-			$parser->getOutput()->getProperty( 'smw-semanticdata-status' )
+			$parserData->isAnnotatedWithSemanticData()
 		);
 
 		$this->semanticDataValidator->assertThatPropertiesAreSet(

@@ -32,7 +32,7 @@ class StoreUpdaterTest  extends \PHPUnit_Framework_TestCase {
 		) );
 
 		$idTable = $this->getMockBuilder( '\stdClass' )
-			->setMethods( array( 'hasIDFor' ) )
+			->setMethods( array( 'exists' ) )
 			->getMock();
 
 		$this->store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
@@ -121,7 +121,7 @@ class StoreUpdaterTest  extends \PHPUnit_Framework_TestCase {
 			$semanticData
 		);
 
-		$instance->setUpdateJobsEnabledState(
+		$instance->isEnabledWithUpdateJob(
 			$updateJobStatus
 		);
 
@@ -138,11 +138,11 @@ class StoreUpdaterTest  extends \PHPUnit_Framework_TestCase {
 		$semanticData = $this->semanticDataFactory->newEmptySemanticData( __METHOD__ );
 
 		$idTable = $this->getMockBuilder( '\stdClass' )
-			->setMethods( array( 'hasIDFor' ) )
+			->setMethods( array( 'exists' ) )
 			->getMock();
 
 		$idTable->expects( $this->atLeastOnce() )
-			->method( 'hasIDFor' )
+			->method( 'exists' )
 			->will( $this->returnValue( true ) );
 
 		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
@@ -177,7 +177,7 @@ class StoreUpdaterTest  extends \PHPUnit_Framework_TestCase {
 			$semanticData
 		);
 
-		$instance->setUpdateJobsEnabledState(
+		$instance->isEnabledWithUpdateJob(
 			$updateJobStatus
 		);
 
@@ -251,6 +251,10 @@ class StoreUpdaterTest  extends \PHPUnit_Framework_TestCase {
 
 		$this->testEnvironment->registerObject( 'PageCreator', $pageCreator );
 
+		$source = $this->getMockBuilder( '\SMW\DIWikiPage' )
+			->disableOriginalConstructor()
+			->getMock();
+
 		$subject = new DIWikiPage(
 			'Foo',
 			NS_MAIN
@@ -266,12 +270,10 @@ class StoreUpdaterTest  extends \PHPUnit_Framework_TestCase {
 			->getMockForAbstractClass();
 
 		$store->expects( $this->once() )
-			->method( 'changeTitle' )
-			->with(
-				$this->equalTo( $subject->getTitle() ),
-				$this->equalTo( $target->getTitle() ),
-				$this->anything(),
-				$this->anything() );
+			->method( 'changeTitle' );
+
+		$store->getOptions()->set( 'smwgSemanticsEnabled', true );
+		$store->getOptions()->set( 'smwgAutoRefreshSubject', true );
 
 		$semanticData = new SemanticData( $subject );
 
@@ -285,7 +287,7 @@ class StoreUpdaterTest  extends \PHPUnit_Framework_TestCase {
 			$semanticData
 		);
 
-		$instance->setUpdateJobsEnabledState( true );
+		$instance->isEnabledWithUpdateJob( true );
 		$instance->doUpdate();
 	}
 

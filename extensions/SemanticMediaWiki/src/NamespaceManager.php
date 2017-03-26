@@ -2,6 +2,8 @@
 
 namespace SMW;
 
+use SMW\ExtraneousLanguage\ExtraneousLanguage;
+
 /**
  * @license GNU GPL v2+
  * @since 1.9
@@ -54,18 +56,6 @@ class NamespaceManager {
 	}
 
 	/**
-	 * @since 2.4
-	 *
-	 * @param string $languageCode
-	 *
-	 * @return array
-	 */
-	public static function getNamespacesByLanguageCode( $languageCode ) {
-		$GLOBALS['smwgContLang'] = ExtraneousLanguage::getInstance()->fetchByLanguageCode( $languageCode );
-		return $GLOBALS['smwgContLang']->getNamespaces();
-	}
-
-	/**
 	 * @see Hooks:CanonicalNamespaces
 	 * CanonicalNamespaces initialization
 	 *
@@ -79,7 +69,7 @@ class NamespaceManager {
 	 * @since 2.5
 	 */
 	public static function initCanonicalNamespaces( array &$namespaces ) {
-		$namespaces += NamespaceManager::initCustomNamespace( $GLOBALS )->getCanonicalNames();
+		$namespaces += self::initCustomNamespace( $GLOBALS )->getCanonicalNames();
 		return true;
 	}
 
@@ -100,6 +90,11 @@ class NamespaceManager {
 			SMW_NS_CONCEPT       => 'Concept',
 			SMW_NS_CONCEPT_TALK  => 'Concept_talk'
 		);
+
+		if ( !array_key_exists( 'smwgHistoricTypeNamespace', $GLOBALS ) || !$GLOBALS['smwgHistoricTypeNamespace'] ) {
+			unset( $canonicalNames[SMW_NS_TYPE] );
+			unset( $canonicalNames[SMW_NS_TYPE_TALK] );
+		}
 
 		return $canonicalNames;
 	}
@@ -218,10 +213,33 @@ class NamespaceManager {
 			$smwNamespacesSettings,
 			$this->globalVars['smwgNamespacesWithSemanticLinks']
 		);
+
+		/**
+		 * Allow custom namespaces to be acknowledged as containing useful content
+		 *
+		 * @see https://www.mediawiki.org/wiki/Manual:$wgContentNamespaces
+		 */
+		$this->globalVars['wgContentNamespaces'] = $this->globalVars['wgContentNamespaces'] + array(
+			SMW_NS_PROPERTY,
+			SMW_NS_CONCEPT
+		);
+
+		/**
+		 * To indicate which namespaces are enabled for searching by default
+		 *
+		 * @see https://www.mediawiki.org/wiki/Manual:$wgNamespacesToBeSearchedDefault
+		 */
+		$this->globalVars['wgNamespacesToBeSearchedDefault'][SMW_NS_PROPERTY] = true;
+		$this->globalVars['wgNamespacesToBeSearchedDefault'][SMW_NS_CONCEPT] = true;
 	}
 
 	protected function isDefinedConstant( $constant ) {
 		return defined( $constant );
+	}
+
+	protected function getNamespacesByLanguageCode( $languageCode ) {
+		$GLOBALS['smwgContLang'] = $this->extraneousLanguage->fetchByLanguageCode( $languageCode );
+		return $GLOBALS['smwgContLang']->getNamespaces();
 	}
 
 }

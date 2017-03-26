@@ -8,6 +8,8 @@ use SMWDIBoolean as DIBoolean;
 use SMWDIContainer as DIContainer;
 use SMWDIError as DIError;
 use SMWDINumber as DINumber;
+use SMWDIUri as DIUri;
+use SMWDITime  as DITime;
 
 /**
  * @private
@@ -98,6 +100,53 @@ class DataItemFactory {
 	 */
 	public function newDIBoolean( $boolean ) {
 		return new DIBoolean( $boolean );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param string $concept
+	 * @param string $docu
+	 * @param integer $queryfeatures
+	 * @param integer $size
+	 * @param integer $depth
+	 *
+	 * @return DIConcept
+	 */
+	public function newDIConcept( $concept, $docu = '', $queryfeatures = 0, $size = 0, $depth = 0 ) {
+		return new DIConcept( $concept, $docu, $queryfeatures, $size, $depth );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param string $scheme
+	 * @param string $hierpart
+	 * @param string $query
+	 * @param string $fragment
+	 *
+	 * @return DIUri
+	 */
+	public function newDIUri( $scheme, $hierpart, $query = '', $fragment = '' ) {
+		return new DIUri( $scheme, $hierpart, $query, $fragment );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer $calendarmodel
+	 * @param integer $year
+	 * @param integer|false $month
+	 * @param integer|false $day
+	 * @param integer|false $hour
+	 * @param integer|false $minute
+	 * @param integer|false $second
+	 * @param integer|false $timezone
+	 *
+	 * @return DITime
+	 */
+	public function newDITime( $calendarmodel, $year, $month = false, $day = false, $hour = false, $minute = false, $second = false, $timezone = false ) {
+		return new DITime( $calendarmodel, $year, $month, $day, $hour, $minute, $second, $timezone );
 	}
 
 }

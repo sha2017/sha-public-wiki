@@ -5,6 +5,9 @@ namespace SMW\SQLStore\QueryDependency;
 use SMW\SQLStore\CompositePropertyTableDiffIterator;
 use SMW\SQLStore\SQLStore;
 use SMW\Store;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
+use SMW\Utils\Timer;
 
 /**
  * This class filters entities recorded in the CompositePropertyTableDiffIterator
@@ -22,7 +25,7 @@ use SMW\Store;
  *
  * @author mwjames
  */
-class EntityIdListRelevanceDetectionFilter {
+class EntityIdListRelevanceDetectionFilter implements LoggerAwareInterface {
 
 	/**
 	 * @var Store
@@ -45,6 +48,11 @@ class EntityIdListRelevanceDetectionFilter {
 	private $affiliatePropertyDetectionlist = array();
 
 	/**
+	 * @var LoggerInterface
+	 */
+	private $logger;
+
+	/**
 	 * @since 2.4
 	 *
 	 * @param Store $store
@@ -53,6 +61,17 @@ class EntityIdListRelevanceDetectionFilter {
 	public function __construct( Store $store, CompositePropertyTableDiffIterator $compositePropertyTableDiffIterator ) {
 		$this->store = $store;
 		$this->compositePropertyTableDiffIterator = $compositePropertyTableDiffIterator;
+	}
+
+	/**
+	 * @see LoggerAwareInterface::setLogger
+	 *
+	 * @since 2.5
+	 *
+	 * @param LoggerInterface $logger
+	 */
+	public function setLogger( LoggerInterface $logger ) {
+		$this->logger = $logger;
 	}
 
 	/**
@@ -84,7 +103,7 @@ class EntityIdListRelevanceDetectionFilter {
 	 */
 	public function getFilteredIdList() {
 
-		$start = microtime( true );
+		Timer::start( __CLASS__ );
 
 		$combinedChangedEntityList = array_flip(
 			$this->compositePropertyTableDiffIterator->getCombinedIdListOfChangedEntities()
@@ -106,7 +125,7 @@ class EntityIdListRelevanceDetectionFilter {
 			array_keys( $affiliateEntityList )
 		);
 
-		wfDebugLog( 'smw', __METHOD__ . ' processing (sec): ' . round( ( microtime( true ) - $start ), 6 )  );
+		$this->log( __METHOD__ . ' procTime (sec): ' . Timer::getElapsedTime( __CLASS__, 6 ) );
 
 		return $filteredIdList;
 	}
@@ -117,8 +136,8 @@ class EntityIdListRelevanceDetectionFilter {
 
 			// Copy fields temporarily
 			if ( $tableChangeOp->isFixedPropertyOp() ) {
-				$insertFieldChangeOp->set( 'p_id', $tableChangeOp->getFixedPropertyValueFor( 'p_id' ) );
-				$insertFieldChangeOp->set( 'key', $tableChangeOp->getFixedPropertyValueFor( 'key' ) );
+				$insertFieldChangeOp->set( 'p_id', $tableChangeOp->getFixedPropertyValueBy( 'p_id' ) );
+				$insertFieldChangeOp->set( 'key', $tableChangeOp->getFixedPropertyValueBy( 'key' ) );
 			}
 
 			$this->modifyEntityList( $insertFieldChangeOp, $affiliateEntityList, $combinedChangedEntityList );
@@ -127,8 +146,8 @@ class EntityIdListRelevanceDetectionFilter {
 		foreach ( $tableChangeOp->getFieldChangeOps( 'delete' ) as $deleteFieldChangeOp ) {
 
 			if ( $tableChangeOp->isFixedPropertyOp() ) {
-				$deleteFieldChangeOp->set( 'p_id', $tableChangeOp->getFixedPropertyValueFor( 'p_id' ) );
-				$deleteFieldChangeOp->set( 'key', $tableChangeOp->getFixedPropertyValueFor( 'key' ) );
+				$deleteFieldChangeOp->set( 'p_id', $tableChangeOp->getFixedPropertyValueBy( 'p_id' ) );
+				$deleteFieldChangeOp->set( 'key', $tableChangeOp->getFixedPropertyValueBy( 'key' ) );
 			}
 
 			$this->modifyEntityList( $deleteFieldChangeOp, $affiliateEntityList, $combinedChangedEntityList );
@@ -141,8 +160,8 @@ class EntityIdListRelevanceDetectionFilter {
 		if ( $fieldChangeOp->has( 'key' ) ) {
 			$key = $fieldChangeOp->get( 'key' );
 		} elseif ( $fieldChangeOp->has( 'p_id' ) ) {
-			$dataItem = $this->store->getObjectIds()->getDataItemForId( $fieldChangeOp->get( 'p_id' ) );
-			$key = $dataItem->getDBKey();
+			$dataItem = $this->store->getObjectIds()->getDataItemById( $fieldChangeOp->get( 'p_id' ) );
+			$key = $dataItem !== null ? $dataItem->getDBKey() : null;
 		}
 
 		// Exclusion before inclusion
@@ -166,6 +185,15 @@ class EntityIdListRelevanceDetectionFilter {
 		if ( $fieldChangeOp->has( 's_id' ) ) {
 			unset( $combinedChangedEntityList[$fieldChangeOp->get( 's_id' )] );
 		}
+	}
+
+	private function log( $message, $context = array() ) {
+
+		if ( $this->logger === null ) {
+			return;
+		}
+
+		$this->logger->info( $message, $context );
 	}
 
 }

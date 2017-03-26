@@ -33,7 +33,7 @@ class TemporaryTableBuilder {
 	}
 
 	/**
-	 * @see DefaultSettings::smwgQTemporaryTablesWithAutoCommit
+	 * @see $smwgQTemporaryTablesWithAutoCommit
 	 * @since 2.5
 	 *
 	 * @param boolean $withAutoCommit
@@ -47,18 +47,8 @@ class TemporaryTableBuilder {
 	 *
 	 * @param string $tableName
 	 */
-	public function createTable( $tableName ) {
-
-		$sql = $this->getSQLCodeFor( $tableName );
-
-		// #1605
-		// "... creating temporary tables in a transaction is not replication-safe
-		// and causes errors in MySQL 5.6. ..."
-		if ( $this->withAutoCommit ) {
-			$this->connection->queryWithAutoCommit( $sql, __METHOD__ );
-		} else {
-			$this->connection->query( $sql, __METHOD__ );
-		}
+	public function create( $tableName ) {
+		$this->connection->query( $this->getSQLCodeFor( $tableName ), __METHOD__, false, $this->withAutoCommit );
 	}
 
 	/**
@@ -66,23 +56,19 @@ class TemporaryTableBuilder {
 	 *
 	 * @param string $tableName
 	 */
-	public function dropTable( $tableName ) {
-
-		$sql = "DROP TEMPORARY TABLE " . $tableName;
-
-		if ( $this->withAutoCommit ) {
-			$this->connection->queryWithAutoCommit( $sql, __METHOD__ );
-		} else {
-			$this->connection->query( $sql, __METHOD__ );
-		}
+	public function drop( $tableName ) {
+		$this->connection->query( "DROP TEMPORARY TABLE " . $tableName, __METHOD__, false, $this->withAutoCommit );
 	}
 
 	/**
-	 * Get SQL code suitable to create a temporary table of the given name, used to store ids.
-	 * MySQL can do that simply by creating new temporary tables. PostgreSQL first checks if such
-	 * a table exists, so the code is ready to reuse existing tables if the code was modified to
-	 * keep them after query answering. Also, PostgreSQL tables will use a RULE to achieve built-in
-	 * duplicate elimination. The latter is done using INSERT IGNORE in MySQL.
+	 * Get SQL code suitable to create a temporary table of the given name, used
+	 * to store ids.
+	 *
+	 * MySQL can do that simply by creating new temporary tables. PostgreSQL first
+	 * checks if such a table exists, so the code is ready to reuse existing tables
+	 * if the code was modified to keep them after query answering. Also, PostgreSQL
+	 * tables will use a RULE to achieve built-in duplicate elimination. The latter
+	 * is done using INSERT IGNORE in MySQL.
 	 *
 	 * @param string $tableName
 	 *

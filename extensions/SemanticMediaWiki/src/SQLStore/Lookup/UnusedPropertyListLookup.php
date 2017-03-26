@@ -4,7 +4,7 @@ namespace SMW\SQLStore\Lookup;
 
 use RuntimeException;
 use SMW\DIProperty;
-use SMW\InvalidPropertyException;
+use SMW\Exception\PropertyLabelNotResolvedException;
 use SMW\SQLStore\SQLStore;
 use SMW\Store;
 use SMW\Store\PropertyStatisticsStore;
@@ -101,13 +101,19 @@ class UnusedPropertyListLookup implements ListLookup {
 		}
 
 		$conditions = array(
+			"smw_title NOT LIKE '\_%'", // #2182, exclude predefined properties
 			'smw_id > ' . SQLStore::FIXED_PROPERTY_ID_UPPERBOUND,
 			'smw_namespace' => SMW_NS_PROPERTY,
 			'smw_iw' => '',
-			'smw_subobject' => ''
+			'smw_subobject' => '',
+			'smw_proptable_hash IS NOT NULL'
 		);
 
 		$conditions['usage_count'] = 0;
+
+		if ( $this->requestOptions->getStringConditions() ) {
+			$conditions[] = $this->store->getSQLConditions( $this->requestOptions, '', 'smw_sortkey', false );
+		}
 
 		$idTable = $this->store->getObjectIds()->getIdTable();
 
@@ -138,7 +144,7 @@ class UnusedPropertyListLookup implements ListLookup {
 
 		try {
 			$property = new DIProperty( $title );
-		} catch ( InvalidPropertyException $e ) {
+		} catch ( PropertyLabelNotResolvedException $e ) {
 			$property = new DIError( new \Message( 'smw_noproperty', array( $title ) ) );
 		}
 

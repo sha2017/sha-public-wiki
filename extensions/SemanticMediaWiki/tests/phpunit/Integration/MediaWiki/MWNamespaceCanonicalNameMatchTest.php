@@ -38,12 +38,11 @@ class MWNamespaceCanonicalNameMatchTest extends \PHPUnit_Framework_TestCase {
 		$default = array(
 			'smwgNamespacesWithSemanticLinks' => array(),
 			'wgNamespacesWithSubpages' => array(),
-			'wgExtraNamespaces'  => array(),
-			'wgNamespaceAliases' => array(),
-			'wgLanguageCode'     => 'en'
+			'wgExtraNamespaces'   => array(),
+			'wgNamespaceAliases'  => array(),
+			'wgContentNamespaces' => array(),
+			'wgLanguageCode'      => 'en'
 		);
-
-		$smwBasePath = __DIR__ . '../../../..';
 
 		$instance = $this->getMock( '\SMW\NamespaceManager',
 			array( 'isDefinedConstant' ),

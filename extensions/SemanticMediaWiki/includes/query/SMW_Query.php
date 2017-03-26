@@ -3,6 +3,11 @@
 use SMW\DIWikiPage;
 use SMW\HashBuilder;
 use SMW\Query\PrintRequest;
+use SMW\Query\Language\Description;
+use SMW\Query\QueryContext;
+use SMW\Query\QueryStringifier;
+use SMW\Query\QueryToken;
+use SMW\Message;
 
 /**
  * This file contains the class for representing queries in SMW, each
@@ -29,12 +34,40 @@ use SMW\Query\PrintRequest;
  * additional settings).
  * @ingroup SMWQuery
  */
-class SMWQuery {
+class SMWQuery implements QueryContext {
 
-	const MODE_INSTANCES = 1; // normal instance retrieval
-	const MODE_COUNT = 2; // find result count only
-	const MODE_DEBUG = 3; // prepare query, but show debug data instead of executing it
-	const MODE_NONE = 4;  // do nothing with the query
+	const ID_PREFIX = '_QUERY';
+
+	/**
+	 * The time the QueryEngine required to answer a query condition
+	 */
+	const PROC_QUERY_TIME = 'proc.query.time';
+
+	/**
+	 * The time a ResultPrinter required to build the final result including all
+	 * PrintRequests
+	 */
+	const PROC_PRINT_TIME = 'proc.print.time';
+
+	/**
+	 * The processing context in which the query is being executed
+	 */
+	const PROC_CONTEXT = 'proc.context';
+
+	/**
+	 * The processing parameters
+	 */
+	const OPT_PARAMETERS = 'proc.parameters';
+
+	/**
+	 * Suppress a possible cache request
+	 */
+	const NO_CACHE = 'no.cache';
+
+	/**
+	 * Indicates no dependency trace
+	 */
+	const NO_DEP_TRACE = 'no.dep.trace';
 
 	public $sort = false;
 	public $sortkeys = array(); // format: "Property key" => "ASC" / "DESC" (note: order of entries also matters)
@@ -67,20 +100,62 @@ class SMWQuery {
 	private $querySource = null;
 
 	/**
-	 * Constructor.
-	 * @param $description SMWDescription object describing the query conditions
-	 * @param $inline bool stating whether this query runs in an inline context; used to determine
-	 * proper default parameters (e.g. the default limit)
-	 * @param $concept bool stating whether this query belongs to a concept; used to determine
-	 * proper default parameters (concepts usually have less restrictions)
+	 * @var QueryToken|null
 	 */
-	public function __construct( $description = null, $inline = false, $concept = false ) {
-		global $smwgQMaxLimit, $smwgQMaxInlineLimit;
-		$this->limit = $inline ? $smwgQMaxInlineLimit : $smwgQMaxLimit;
+	private $queryToken;
+
+	/**
+	 * @var array
+	 */
+	private $options = array();
+
+	/**
+	 * @since 1.6
+	 *
+	 * @param Description $description
+	 * @param integer|boolean $context
+	 */
+	public function __construct( Description $description = null, $context = false ) {
+		$inline = false;
+		$concept = false;
+
+		// stating whether this query runs in an inline context; used to
+		// determine proper default parameters (e.g. the default limit)
+		if ( $context === self::INLINE_QUERY ) {
+			$inline = true;
+		}
+
+		// stating whether this query belongs to a concept; used to determine
+		// proper default parameters (concepts usually have less restrictions)
+		if ( $context === self::CONCEPT_DESC ) {
+			$concept = true;
+		}
+
+		$this->limit = $inline ? $GLOBALS['smwgQMaxInlineLimit'] : $GLOBALS['smwgQMaxLimit'];
 		$this->isInline = $inline;
 		$this->isUsedInConcept = $concept;
 		$this->description = $description;
 		$this->applyRestrictions();
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer
+	 */
+	public function setQueryMode( $queryMode ) {
+		// FIXME 3.0; $this->querymode is a public property
+		// delcare it private and rename it to $this->queryMode
+		$this->querymode = $queryMode;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer
+	 */
+	public function getQueryMode() {
+		return $this->querymode;
 	}
 
 	/**
@@ -117,6 +192,24 @@ class SMWQuery {
 	 */
 	public function getQuerySource() {
 		return $this->querySource;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param QueryToken|null $queryToken
+	 */
+	public function setQueryToken( QueryToken $queryToken = null ) {
+		$this->queryToken = $queryToken;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return QueryToken|null
+	 */
+	public function getQueryToken() {
+		return $this->queryToken;
 	}
 
 	/**
@@ -182,6 +275,27 @@ class SMWQuery {
 
 	public function setQueryString( $querystring ) {
 		$this->queryString = $querystring;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param string|integer $key
+	 * @param mixed $value
+	 */
+	public function setOption( $key, $value ) {
+		$this->options[$key] = $value;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param string|integer $key
+	 *
+	 * @return mixed
+	 */
+	public function getOption( $key ) {
+		return isset( $this->options[$key] ) ? $this->options[$key] : false;
 	}
 
 	/**
@@ -299,10 +413,11 @@ class SMWQuery {
 			$this->description = $this->description->prune( $maxsize, $maxdepth, $log );
 
 			if ( count( $log ) > 0 ) {
-				$this->errors[] = wfMessage(
+				$this->errors[] = Message::encode( array(
 					'smw_querytoolarge',
-					str_replace( '[', '&#x005B;', implode( ', ', $log ) )
-				)->inContentLanguage()->text();
+					str_replace( '[', '&#91;', implode( ', ', $log ) ),
+					count( $log )
+				) );
 			}
 		}
 	}
@@ -339,7 +454,7 @@ class SMWQuery {
 		// @2.4 Keep the queryID stable with previous versions unless
 		// a query source is selected. The "same" query executed on different
 		// remote systems requires a different queryID
-		if ( $this->querySource !== '' ) {
+		if ( $this->querySource !== null && $this->querySource !== '' ) {
 			$serialized['parameters']['source'] = $this->querySource;
 		}
 
@@ -354,12 +469,35 @@ class SMWQuery {
 	}
 
 	/**
+	 * @note Before 2.5, toArray was used to generate the content, as of 2.5
+	 * only parameters that influence the result of an query is included.
+	 *
 	 * @since 2.1
 	 *
 	 * @return string
 	 */
 	public function getHash() {
-		return HashBuilder::createHashIdForContent( $this->toArray() );
+
+		// For an optimal (less fragmentation) use of the cache, only use
+		// elements that directly influence the result list
+		$expectFingerprint = ($GLOBALS['smwgQueryResultCacheType'] !== false && $GLOBALS['smwgQueryResultCacheType'] !== CACHE_NONE ) || $GLOBALS['smwgQFilterDuplicates'] !== false;
+
+		if ( $this->description !== null && $expectFingerprint ) {
+			return $this->createFromFingerprint( $this->description->getFingerprint() );
+		}
+
+		// FIXME 3.0 Leave the hash unchanged to avoid unnecessary BC issues in
+		// case the cache is not used.
+		return HashBuilder::createFromArray( $this->toArray() );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getAsString() {
+		return QueryStringifier::get( $this );
 	}
 
 	/**
@@ -368,7 +506,34 @@ class SMWQuery {
 	 * @return string
 	 */
 	public function getQueryId() {
-		return '_QUERY' . $this->getHash();
+		return self::ID_PREFIX . $this->getHash();
+	}
+
+	private function createFromFingerprint( $fingerprint ) {
+
+		$serialized = array();
+
+		// Don't use the QueryString, use the canonized fingerprint to ensure that
+		// [[Foo::123]][[Bar::abc]] returns the same ID as [[Bar::abc]][[Foo::123]]
+		// given that limit, offset, and sort/order are the same
+		$serialized['fingerprint'] = $fingerprint;
+
+		$serialized['parameters'] = array(
+			'limit'     => $this->limit,
+			'offset'    => $this->offset,
+			'sortkeys'  => $this->sortkeys,
+			'querymode' => $this->querymode // COUNT, DEBUG ...
+		);
+
+		// Make to sure to distinguish queries and results from a foreign repository
+		if ( $this->querySource !== null && $this->querySource !== '' ) {
+			$serialized['parameters']['source'] = $this->querySource;
+		}
+
+		// Printouts are avoided as part of the hash as they not influence the
+		// result match process and are only resolved after the query result has
+		// been retrieved
+		return HashBuilder::createFromArray( $serialized );
 	}
 
 }

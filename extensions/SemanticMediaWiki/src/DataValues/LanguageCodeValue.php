@@ -20,10 +20,15 @@ use SMWStringValue as StringValue;
 class LanguageCodeValue extends StringValue {
 
 	/**
+	 * DV identifier
+	 */
+	const TYPE_ID = '__lcode';
+
+	/**
 	 * @param string $typeid
 	 */
 	public function __construct( $typeid = '' ) {
-		parent::__construct( '__lcode' );
+		parent::__construct( self::TYPE_ID );
 	}
 
 	/**
@@ -43,9 +48,9 @@ class LanguageCodeValue extends StringValue {
 			return;
 		}
 
-		// Checks whether any localisation is available for that language tag in
-		// MediaWiki
-		if ( !Localizer::isSupportedLanguage( $languageCode ) ) {
+		// Checks whether the language tag is valid in MediaWiki for when
+		// it is not executed in a query context
+		if ( !$this->getOption( self::OPT_QUERY_CONTEXT ) && !Localizer::isSupportedLanguage( $languageCode ) ) {
 			$this->addErrorMsg( array(
 				'smw-datavalue-languagecode-invalid',
 				$languageCode

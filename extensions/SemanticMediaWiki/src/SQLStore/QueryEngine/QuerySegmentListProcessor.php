@@ -99,7 +99,7 @@ class QuerySegmentListProcessor {
 	 * @param integer $id
 	 * @throws RuntimeException
 	 */
-	public function doExecuteSubqueryJoinDependenciesFor( $id ) {
+	public function doResolveQueryDependenciesById( $id ) {
 
 		$this->hierarchyTempTableBuilder->emptyHierarchyCache();
 		$this->executedQueries = array();
@@ -183,7 +183,7 @@ class QuerySegmentListProcessor {
 			break;
 			case QuerySegment::Q_DISJUNCTION:
 				if ( $this->queryMode !== Query::MODE_NONE ) {
-					$this->temporaryTableBuilder->createTable( $db->tableName( $query->alias ) );
+					$this->temporaryTableBuilder->create( $db->tableName( $query->alias ) );
 				}
 
 				$this->executedQueries[$query->alias] = array();
@@ -308,7 +308,7 @@ class QuerySegmentListProcessor {
 	 */
 	public function cleanUp() {
 		foreach ( $this->executedQueries as $table => $log ) {
-			$this->temporaryTableBuilder->dropTable( $this->connection->tableName( $table ) );
+			$this->temporaryTableBuilder->drop( $this->connection->tableName( $table ) );
 		}
 	}
 

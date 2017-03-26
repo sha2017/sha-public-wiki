@@ -2,6 +2,8 @@
 
 namespace SMW;
 
+use SMW\Utils\ErrorCodeFormatter;
+
 /**
  * @license GNU GPL v2+
  * @since   1.9
@@ -108,6 +110,8 @@ class ParserParameterProcessor {
 	/**
 	 * @since 2.3
 	 *
+	 * @param string $key
+	 *
 	 * @return boolean
 	 */
 	public function hasParameter( $key ) {
@@ -115,11 +119,32 @@ class ParserParameterProcessor {
 	}
 
 	/**
+	 * @since 2.5
+	 *
+	 * @param string $key
+	 */
+	public function removeParameterByKey( $key ) {
+		unset( $this->parameters[$key] );
+	}
+
+	/**
+	 * @deprecated since 2.5, use ParserParameterProcessor::getParameterValuesByKey
 	 * @since 2.3
 	 *
 	 * @return array
 	 */
 	public function getParameterValuesFor( $key ) {
+		return $this->getParameterValuesByKey( $key );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param string $key
+	 *
+	 * @return array
+	 */
+	public function getParameterValuesByKey( $key ) {
 
 		if ( $this->hasParameter( $key ) ) {
 			return $this->parameters[$key];
@@ -129,11 +154,9 @@ class ParserParameterProcessor {
 	}
 
 	/**
-	 * Inject parameters from an outside source
-	 *
 	 * @since 1.9
 	 *
-	 * @param array
+	 * @param array $parameters
 	 */
 	public function setParameters( array $parameters ) {
 		$this->parameters = $parameters;
@@ -172,7 +195,7 @@ class ParserParameterProcessor {
 		$previousProperty = null;
 
 		while ( key( $params ) !== null ) {
-			$separator = '';
+
 			$pipe = false;
 			$values = array();
 
@@ -185,23 +208,7 @@ class ParserParameterProcessor {
 			$currentElement = explode( '=', trim( current ( $params ) ), 2 );
 
 			// Looking to the next element for comparison
-			if( next( $params ) ) {
-				$nextElement = explode( '=', trim( current( $params ) ), 2 );
-
-				if ( $nextElement !== array() ) {
-					// This allows assignments of type |Has property=Test1,Test2|+sep=,
-					// as a means to support multiple value declaration
-					if ( substr( $nextElement[0], - 5 ) === '+sep' ) {
-						$separator = isset( $nextElement[1] ) ? $nextElement[1] !== '' ? $nextElement[1] : $this->defaultSeparator : $this->defaultSeparator;
-						next( $params );
-					}
-				}
-
-				if ( current( $params ) === '+pipe' ) {
-					$pipe = true;
-					next( $params );
-				}
-			}
+			$separator = $this->lookAheadOnNextElement( $params, $pipe );
 
 			// First named parameter
 			if ( count( $currentElement ) == 1 && $previousProperty === null ) {
@@ -226,8 +233,8 @@ class ParserParameterProcessor {
 
 			// Remap properties and values to output a simple array
 			foreach ( $values as $value ) {
-				if ( $value !== '' ){
-					$results[$currentElement[0]][] = $value;
+				if ( $value !== '' ) {
+					$results[$currentElement[0]][] = trim( $value );
 				}
 			}
 
@@ -238,6 +245,70 @@ class ParserParameterProcessor {
 			}
 		}
 
-		return $results;
+		return $this->parseFromJson( $results );
 	}
+
+	private function lookAheadOnNextElement( &$params, &$pipe ) {
+
+		$separator = '';
+
+		if( !next( $params ) ) {
+			return $separator;
+		}
+
+		$nextElement = explode( '=', trim( current( $params ) ), 2 );
+
+		if ( $nextElement !== array() ) {
+			// This allows assignments of type |Has property=Test1,Test2|+sep=,
+			// as a means to support multiple value declaration
+			if ( substr( $nextElement[0], - 5 ) === '+sep' ) {
+				$separator = isset( $nextElement[1] ) ? $nextElement[1] !== '' ? $nextElement[1] : $this->defaultSeparator : $this->defaultSeparator;
+				next( $params );
+			}
+		}
+
+		if ( current( $params ) === '+pipe' ) {
+			$pipe = true;
+			next( $params );
+		}
+
+		return $separator;
+	}
+
+	private function parseFromJson( $results ) {
+
+		if ( !isset( $results['@json'] ) || !isset( $results['@json'][0] ) ) {
+			return $results;
+		}
+
+		// Restrict the depth to avoid resolving recursive assignment
+		// that can not be handled beyond the 2:n
+		$depth = 3;
+		$params = json_decode( $results['@json'][0], true, $depth );
+
+		if ( $params === null || json_last_error() !== JSON_ERROR_NONE ) {
+			$this->addError( Message::encode(
+				array(
+					'smw-parser-invalid-json-format',
+					ErrorCodeFormatter::getStringFromJsonErrorCode( json_last_error() )
+				)
+			) );
+			return $results;
+		}
+
+		array_walk( $params, function( &$value, $key ) {
+
+			if ( $value === '' ) {
+				$value = array();
+			}
+
+			if ( !is_array( $value ) ) {
+				$value = array( $value );
+			}
+		} );
+
+		unset( $results['@json'] );
+		return array_merge( $results, $params );
+	}
+
 }

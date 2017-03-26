@@ -18,11 +18,11 @@ class DatabaseHelper {
 	/**
 	 * @see Database::makeSelectOptions
 	 */
-	public static function makeSelectOptions( $options ) {
+	public static function makeSelectOptions( Database $connection, $options ) {
 		$preLimitTail = $postLimitTail = '';
 		$startOpts = '';
 
-		$noKeyOptions = array();
+		$noKeyOptions = [];
 
 		foreach ( $options as $key => $option ) {
 			if ( is_numeric( $key ) ) {
@@ -30,7 +30,7 @@ class DatabaseHelper {
 			}
 		}
 
-		$preLimitTail .= self::makeGroupByWithHaving( $options );
+		$preLimitTail .= self::makeGroupByWithHaving( $connection, $options );
 
 		$preLimitTail .= self::makeOrderBy( $options );
 
@@ -91,17 +91,19 @@ class DatabaseHelper {
 		return array( $startOpts, $useIndex, $preLimitTail, $postLimitTail, $ignoreIndex );
 	}
 
-	protected static function makeGroupByWithHaving( $options ) {
+	protected static function makeGroupByWithHaving( $connection, $options ) {
 		$sql = '';
+
 		if ( isset( $options['GROUP BY'] ) ) {
 			$gb = is_array( $options['GROUP BY'] )
 				? implode( ',', $options['GROUP BY'] )
 				: $options['GROUP BY'];
 			$sql .= ' GROUP BY ' . $gb;
 		}
+
 		if ( isset( $options['HAVING'] ) ) {
 			$having = is_array( $options['HAVING'] )
-				? $this->makeList( $options['HAVING'], self::LIST_AND )
+				? $connection->makeList( $options['HAVING'], self::LIST_AND )
 				: $options['HAVING'];
 			$sql .= ' HAVING ' . $having;
 		}

@@ -52,7 +52,7 @@ class TimeValueFormatterTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(
 			1001,
-			$instance->getOptionValueFor( 'Foo' )
+			$instance->getOption( 'Foo' )
 		);
 	}
 
@@ -227,7 +227,7 @@ class TimeValueFormatterTest extends \PHPUnit_Framework_TestCase {
 		$timeValue = new TimeValue( '_dat' );
 		$timeValue->setUserValue( '2015-02-28' );
 
-		$timeValue->setOption( 'user.language', 'en' );
+		$timeValue->setOption( TimeValue::OPT_USER_LANGUAGE, 'en' );
 		$timeValue->setOutputFormat( 'LOCL' );
 
 		$instance = new TimeValueFormatter( $timeValue );
@@ -240,6 +240,64 @@ class TimeValueFormatterTest extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals(
 			$instance->format( TimeValueFormatter::HTML_LONG ),
 			$instance->getLocalizedFormat( $timeValue->getDataItem() )
+		);
+	}
+
+	public function testLOCLOutputFormatWithSpecificAnnotatedLanguage() {
+
+		$timeValue = new TimeValue( '_dat' );
+		$timeValue->setUserValue( '2015-02-28' );
+
+		$timeValue->setOption( TimeValue::OPT_USER_LANGUAGE, 'en' );
+		$timeValue->setOutputFormat( 'LOCL@ja' );
+
+		$instance = new TimeValueFormatter( $timeValue );
+
+		$this->assertEquals(
+			'2015年2月28日 (土)',
+			$instance->getLocalizedFormat( $timeValue->getDataItem() )
+		);
+	}
+
+	public function testLOCLOutputFormatWithTimeZone() {
+
+		$timeValue = new TimeValue( '_dat' );
+		$timeValue->setUserValue( '2015-02-28 12:12:00 A' );
+
+		$timeValue->setOption( TimeValue::OPT_USER_LANGUAGE, 'en' );
+		$timeValue->setOutputFormat( 'LOCL#TZ' );
+
+		$instance = new TimeValueFormatter( $timeValue );
+
+		$this->assertEquals(
+			'12:12:00 A, 28 February 2015',
+			$instance->format( TimeValueFormatter::HTML_LONG )
+		);
+
+		$this->assertEquals(
+			'2015-02-28 12:12:00 A',
+			$instance->format( TimeValueFormatter::WIKI_SHORT )
+		);
+	}
+
+	public function testLOCLOutputFormatWithTimeZoneOnSpecificAnnotatedLanguage() {
+
+		$timeValue = new TimeValue( '_dat' );
+		$timeValue->setUserValue( '2015-02-28 12:12:00 A' );
+
+		$timeValue->setOption( TimeValue::OPT_USER_LANGUAGE, 'en' );
+		$timeValue->setOutputFormat( 'LOCL@ja#TZ' );
+
+		$instance = new TimeValueFormatter( $timeValue );
+
+		$this->assertEquals(
+			'2015年2月28日 (土) 12:12:00 A',
+			$instance->format( TimeValueFormatter::HTML_LONG )
+		);
+
+		$this->assertEquals(
+			'2015-02-28 12:12:00 A',
+			$instance->format( TimeValueFormatter::WIKI_SHORT )
 		);
 	}
 

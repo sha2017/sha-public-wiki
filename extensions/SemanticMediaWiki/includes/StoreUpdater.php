@@ -29,7 +29,7 @@ class StoreUpdater {
 	/**
 	 * @var boolean|null
 	 */
-	private $updateJobsEnabledState = null;
+	private $isEnabledWithUpdateJob = null;
 
 	/**
 	 * @var boolean|null
@@ -64,11 +64,10 @@ class StoreUpdater {
 	/**
 	 * @since 1.9
 	 *
-	 * @param boolean $status
+	 * @param boolean $isEnabledWithUpdateJob
 	 */
-	public function setUpdateJobsEnabledState( $status ) {
-		$this->updateJobsEnabledState = (bool)$status;
-		return $this;
+	public function isEnabledWithUpdateJob( $isEnabledWithUpdateJob ) {
+		$this->isEnabledWithUpdateJob = (bool)$isEnabledWithUpdateJob;
 	}
 
 	/**
@@ -89,7 +88,14 @@ class StoreUpdater {
 	 * @return boolean
 	 */
 	public function doUpdate() {
-		return $this->canPerformUpdate() ? $this->performUpdate() : false;
+
+		if ( !$this->canPerformUpdate() ) {
+			return false;
+		}
+
+		$this->doPerformUpdate();
+
+		return true;
 	}
 
 	private function canPerformUpdate() {
@@ -109,26 +115,34 @@ class StoreUpdater {
 	 * check if semantic data should be processed and displayed for a page in
 	 * the given namespace
 	 */
-	private function performUpdate() {
+	private function doPerformUpdate() {
 
 		$this->applicationFactory = ApplicationFactory::getInstance();
 
-		if ( $this->updateJobsEnabledState === null ) {
-			$this->setUpdateJobsEnabledState( $this->applicationFactory->getSettings()->get( 'smwgEnableUpdateJobs' ) );
+		if ( $this->isEnabledWithUpdateJob === null ) {
+			$this->isEnabledWithUpdateJob( $this->applicationFactory->getSettings()->get( 'smwgEnableUpdateJobs' ) );
 		}
 
 		$title = $this->getSubject()->getTitle();
 		$wikiPage = $this->applicationFactory->newPageCreator()->createPage( $title );
-		$revision = $wikiPage->getRevision();
 
-		$this->updateSemanticData( $title, $wikiPage, $revision );
+		$revision = $wikiPage->getRevision();
+		$user = $revision !== null ? User::newFromId( $revision->getUser() ) : null;
+
+		$this->addFinalAnnotations( $title, $wikiPage, $revision, $user );
+
+		// In case of a restricted update, only the protection update is required
+		// hence the process bails-out early to avoid unnecessary DB connections
+		// or updates
+		if ( $this->doUpdateEditProtection( $wikiPage, $user ) === true ) {
+			return true;
+		}
+
 		$this->inspectPropertySpecification();
 		$this->doRealUpdate();
-
-		return true;
 	}
 
-	private function updateSemanticData( Title $title, WikiPage $wikiPage, $revision ) {
+	private function addFinalAnnotations( Title $title, WikiPage $wikiPage, $revision, $user ) {
 
 		$this->processSemantics = $revision !== null && $this->isSemanticEnabledNamespace( $title );
 
@@ -139,15 +153,33 @@ class StoreUpdater {
 		$pageInfoProvider = $this->applicationFactory->newMwCollaboratorFactory()->newPageInfoProvider(
 			$wikiPage,
 			$revision,
-			User::newFromId( $revision->getUser() )
+			$user
 		);
 
-		$propertyAnnotator = $this->applicationFactory->newPropertyAnnotatorFactory()->newPredefinedPropertyAnnotator(
-			$this->semanticData,
+		$propertyAnnotatorFactory = $this->applicationFactory->singleton( 'PropertyAnnotatorFactory' );
+
+		$propertyAnnotator = $propertyAnnotatorFactory->newNullPropertyAnnotator(
+			$this->semanticData
+		);
+
+		$propertyAnnotator = $propertyAnnotatorFactory->newPredefinedPropertyAnnotator(
+			$propertyAnnotator,
 			$pageInfoProvider
 		);
 
 		$propertyAnnotator->addAnnotation();
+	}
+
+	private function doUpdateEditProtection( $wikiPage, $user ) {
+
+		$editProtectionUpdater = $this->applicationFactory->create( 'EditProtectionUpdater',
+			$wikiPage,
+			$user
+		);
+
+		$editProtectionUpdater->doUpdateFrom( $this->semanticData );
+
+		return $editProtectionUpdater->isRestrictedUpdate();
 	}
 
 	/**
@@ -156,27 +188,27 @@ class StoreUpdater {
 	 */
 	private function inspectPropertySpecification() {
 
-		if ( !$this->updateJobsEnabledState ) {
+		if ( !$this->isEnabledWithUpdateJob ) {
 			return;
 		}
 
 		$propertySpecificationChangeNotifier = new PropertySpecificationChangeNotifier(
-			$this->store,
-			$this->semanticData
+			$this->store
 		);
 
-		$propertySpecificationChangeNotifier->setPropertiesToCompare(
+		$propertySpecificationChangeNotifier->setPropertyList(
 			$this->applicationFactory->getSettings()->get( 'smwgDeclarationProperties' )
 		);
 
-		$propertySpecificationChangeNotifier->compareForListedSpecification();
+		$propertySpecificationChangeNotifier->detectChangesOn( $this->semanticData );
+		$propertySpecificationChangeNotifier->notify();
 	}
 
 	private function doRealUpdate() {
 
-		$this->store->setUpdateJobsEnabledState( $this->updateJobsEnabledState );
+		$this->store->setUpdateJobsEnabledState( $this->isEnabledWithUpdateJob );
 
-		$semanticData = $this->checkForRequiredRedirectUpdate(
+		$semanticData = $this->checkOnRequiredRedirectUpdate(
 			$this->semanticData
 		);
 
@@ -184,8 +216,8 @@ class StoreUpdater {
 
 		if ( $this->processSemantics ) {
 			$this->store->updateData( $semanticData );
-		} elseif ( $this->store->getObjectIds()->hasIDFor( $subject ) ) {
-			// Only clear the data where it is know that "hasIDFor" is true otherwise
+		} elseif ( $this->store->getObjectIds()->exists( $subject ) ) {
+			// Only clear the data where it is know that "exists" is true otherwise
 			// an empty entity is created and later being removed by the
 			// "PropertyTableOutdatedReferenceDisposer" since it is an entity that is
 			// empty == has no reference
@@ -199,11 +231,11 @@ class StoreUpdater {
 		return $this->applicationFactory->getNamespaceExaminer()->isSemanticEnabled( $title->getNamespace() );
 	}
 
-	private function checkForRequiredRedirectUpdate( SemanticData $semanticData ) {
+	private function checkOnRequiredRedirectUpdate( SemanticData $semanticData ) {
 
 		// Check only during online-mode so that when a user operates Special:MovePage
 		// or #redirect the same process is applied
-		if ( !$this->updateJobsEnabledState ) {
+		if ( !$this->isEnabledWithUpdateJob ) {
 			return $semanticData;
 		}
 
@@ -212,13 +244,13 @@ class StoreUpdater {
 		);
 
 		if ( $redirects !== array() && !$semanticData->getSubject()->equals( end( $redirects ) ) ) {
-			return $this->handleYetUnknownRedirectTarget( $semanticData, end( $redirects ) );
+			return $this->doUpdateUnknownRedirectTarget( $semanticData, end( $redirects ) );
 		}
 
 		return $semanticData;
 	}
 
-	private function handleYetUnknownRedirectTarget( SemanticData $semanticData, DIWikiPage $target ) {
+	private function doUpdateUnknownRedirectTarget( SemanticData $semanticData, DIWikiPage $target ) {
 
 		// Only keep the reference to safeguard that even in case of a text keeping
 		// its annotations there are removed from the Store. A redirect is not
@@ -234,11 +266,14 @@ class StoreUpdater {
 
 		// Force a manual changeTitle before the general update otherwise
 		// #redirect can cause an inconsistent data container as observed in #895
+		$source = $subject->getTitle();
+		$target = $target->getTitle();
+
 		$this->store->changeTitle(
-			$subject->getTitle(),
-			$target->getTitle(),
-			$subject->getTitle()->getArticleID(),
-			$target->getTitle()->getArticleID()
+			$source,
+			$target,
+			$source->getArticleID(),
+			$target->getArticleID()
 		);
 
 		$dispatchContext = EventHandler::getInstance()->newDispatchContext();

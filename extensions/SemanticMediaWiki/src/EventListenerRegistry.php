@@ -39,10 +39,18 @@ class EventListenerRegistry implements EventListenerCollection {
 
 	private function addListenersToCollection() {
 
+		/**
+		 * Emitted during UpdateJob, ArticlePurge
+		 */
 		$this->eventListenerCollection->registerCallback(
 			'factbox.cache.delete', function( $dispatchContext ) {
 
-				$title = $dispatchContext->get( 'title' );
+				if ( $dispatchContext->has( 'subject' ) ) {
+					$title = $dispatchContext->get( 'subject' )->getTitle();
+				} else{
+					$title = $dispatchContext->get( 'title' );
+				}
+
 				$applicationFactory = ApplicationFactory::getInstance();
 
 				$applicationFactory->getCache()->delete(
@@ -64,18 +72,53 @@ class EventListenerRegistry implements EventListenerCollection {
 		);
 
 		/**
-		 * Emitted during NewRevisionFromEditComplete, UpdateJob, ArticleDelete
+		 * Emitted during UpdateJob
 		 */
 		$this->eventListenerCollection->registerCallback(
 			'cached.propertyvalues.prefetcher.reset', function( $dispatchContext ) {
 
-				$subject = DIWikiPage::newFromTitle( $dispatchContext->get( 'title' ) );
-				wfDebugLog( 'smw', 'Clear CachedPropertyValuesPrefetcher for ' . $subject->getHash() );
+				if ( $dispatchContext->has( 'title' ) ) {
+					$subject = DIWikiPage::newFromTitle( $dispatchContext->get( 'title' ) );
+				} else{
+					$subject = $dispatchContext->get( 'subject' );
+				}
 
 				$applicationFactory = ApplicationFactory::getInstance();
+				$applicationFactory->getMediaWikiLogger()->info( 'Event: cached.propertyvalues.prefetcher.reset :: ' . $subject->getHash() );
 
-				$applicationFactory->getCachedPropertyValuesPrefetcher()->resetCacheFor(
+				$applicationFactory->singleton( 'CachedPropertyValuesPrefetcher' )->resetCacheBy(
 					$subject
+				);
+
+				$dispatchContext->set( 'propagationstop', true );
+			}
+		);
+
+		/**
+		 * Emitted during NewRevisionFromEditComplete, ArticleDelete, TitleMoveComplete,
+		 * PropertyTableIdReferenceDisposer, ArticlePurge
+		 */
+		$this->eventListenerCollection->registerCallback(
+			'cached.prefetcher.reset', function( $dispatchContext ) {
+
+				if ( $dispatchContext->has( 'title' ) ) {
+					$subject = DIWikiPage::newFromTitle( $dispatchContext->get( 'title' ) );
+				} else{
+					$subject = $dispatchContext->get( 'subject' );
+				}
+
+				$context = $dispatchContext->has( 'context' ) ? $dispatchContext->get( 'context' ) : '';
+
+				$applicationFactory = ApplicationFactory::getInstance();
+				$applicationFactory->getMediaWikiLogger()->info( 'Event: cached.prefetcher.reset :: ' . $subject->getHash() );
+
+				$applicationFactory->singleton( 'CachedPropertyValuesPrefetcher' )->resetCacheBy(
+					$subject
+				);
+
+				$applicationFactory->singleton( 'CachedQueryResultPrefetcher' )->resetCacheBy(
+					$subject,
+					$context
 				);
 
 				$dispatchContext->set( 'propagationstop', true );
@@ -93,66 +136,20 @@ class EventListenerRegistry implements EventListenerCollection {
 		 * Emitted during PropertySpecificationChangeNotifier::notifyDispatcher
 		 */
 		$this->eventListenerCollection->registerCallback(
-			'property.spec.change', function( $dispatchContext ) {
+			'property.specification.change', function( $dispatchContext ) {
 
 				$applicationFactory = ApplicationFactory::getInstance();
 				$subject = $dispatchContext->get( 'subject' );
 
-				$updateDispatcherJob = $applicationFactory->newJobFactory()->newUpdateDispatcherJob(
+				$updateDispatcherJob = $applicationFactory->newJobFactory()->newByType(
+					'SMW\UpdateDispatcherJob',
 					$subject->getTitle()
 				);
 
 				$updateDispatcherJob->run();
 
-				Exporter::getInstance()->resetCacheFor( $subject );
-				$applicationFactory->getPropertySpecificationLookup()->resetCacheFor( $subject );
-
-				$dispatchContext->set( 'propagationstop', true );
-			}
-		);
-
-		/**
-		 * Emitted during Store::updateData
-		 */
-		$this->eventListenerCollection->registerCallback(
-			'on.before.semanticdata.update.complete', function( $dispatchContext ) {
-
-				$subject = $dispatchContext->get( 'subject' );
-				$hash = $subject->getHash();
-
-				$applicationFactory = ApplicationFactory::getInstance();
-
-				$poolCache = $applicationFactory->getInMemoryPoolCache()->getPoolCacheFor(
-					'store.redirectTarget.lookup'
-				);
-
-				$poolCache->delete( $hash );
-
-				$dispatchContext->set( 'propagationstop', true );
-			}
-		);
-
-		/**
-		 * Emitted during Store::updateData
-		 */
-		$this->eventListenerCollection->registerCallback(
-			'on.after.semanticdata.update.complete', function( $dispatchContext ) {
-
-				$applicationFactory = ApplicationFactory::getInstance();
-				$subject = $dispatchContext->get( 'subject' );
-
-				$pageUpdater = $applicationFactory->newMwCollaboratorFactory()->newPageUpdater();
-
-				if ( $GLOBALS['smwgAutoRefreshSubject'] && $pageUpdater->canUpdate() ) {
-					$pageUpdater->addPage( $subject->getTitle() );
-
-					$deferredCallableUpdate = $applicationFactory->newDeferredCallableUpdate( function() use( $pageUpdater ) {
-						$pageUpdater->doPurgeParserCache();
-						$pageUpdater->doPurgeHtmlCache();
-					} );
-
-					$deferredCallableUpdate->pushToDeferredUpdateList();
-				}
+				Exporter::getInstance()->resetCacheBy( $subject );
+				$applicationFactory->getPropertySpecificationLookup()->resetCacheBy( $subject );
 
 				$dispatchContext->set( 'propagationstop', true );
 			}

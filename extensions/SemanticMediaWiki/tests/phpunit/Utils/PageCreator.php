@@ -8,28 +8,17 @@ use Title;
 use UnexpectedValueException;
 
 /**
- *
- * @group SMW
- * @group SMWExtension
- *
- * @licence GNU GPL v2+
+ * @license GNU GPL v2+
  * @since 1.9.1
+ *
+ * @author mwjames
  */
 class PageCreator {
-
-	/**
-	 * @var TestEnvironment
-	 */
-	private $testEnvironment;
 
 	/**
 	 * @var null
 	 */
 	protected $page = null;
-
-	public function __construct() {
-		$this->testEnvironment = new TestEnvironment();
-	}
 
 	/**
 	 * @since 1.9.1
@@ -48,6 +37,10 @@ class PageCreator {
 
 	/**
 	 * @since 1.9.1
+	 *
+	 * @param Title $title
+	 * @param string $editContent
+	 * @param string $pageContentLanguage
 	 *
 	 * @return PageCreator
 	 */
@@ -80,12 +73,18 @@ class PageCreator {
 	/**
 	 * @since 1.9.1
 	 *
+	 * @param string $pageContent
+	 * @param string $editMessage
+	 *
 	 * @return PageCreator
 	 */
 	public function doEdit( $pageContent = '', $editMessage = '' ) {
 
-		if ( class_exists( 'WikitextContent' ) ) {
-			$content = new \WikitextContent( $pageContent );
+		if ( class_exists( 'ContentHandler' ) ) {
+			$content = \ContentHandler::makeContent(
+				$pageContent,
+				$this->getPage()->getTitle()
+			);
 
 			$this->getPage()->doEditContent(
 				$content,
@@ -96,13 +95,16 @@ class PageCreator {
 			$this->getPage()->doEdit( $pageContent, $editMessage );
 		}
 
-		$this->testEnvironment->executePendingDeferredUpdates();
+		TestEnvironment::executePendingDeferredUpdates();
 
 		return $this;
 	}
 
 	/**
 	 * @since 2.3
+	 *
+	 * @param Title $target
+	 * @param boolean $isRedirect
 	 *
 	 * @return PageCreator
 	 */
@@ -115,19 +117,23 @@ class PageCreator {
 			$isRedirect
 		);
 
-		$this->testEnvironment->executePendingDeferredUpdates();
+		TestEnvironment::executePendingDeferredUpdates();
 
 		return $this;
 	}
 
 	/**
 	 * @since 2.0
+	 *
+	 * @return EditInfo
 	 */
 	public function getEditInfo() {
 
-		if ( class_exists( 'WikitextContent' ) ) {
+		$revision = $this->getPage()->getRevision();
 
-			$content = $this->getPage()->getRevision()->getContent();
+		if ( class_exists( 'ContentHandler' ) ) {
+
+			$content = $revision->getContent();
 			$format  = $content->getContentHandler()->getDefaultFormat();
 
 			return $this->getPage()->prepareContentForEdit(
@@ -138,11 +144,8 @@ class PageCreator {
 			);
 		}
 
-		if ( method_exists( $this->getPage()->getRevision(), 'getContent' ) ) {
-			$text = $this->getPage()->getRevision()->getContent( Revision::RAW );
-		} else {
-			$text = $this->getPage()->getRevision()->getRawText();
-		}
+		$text = method_exists( $revision, 'getContent' ) ? $revision->getContent( Revision::RAW ) : $revision->getRawText();
+
 		return $this->getPage()->prepareTextForEdit(
 			$text,
 			null,
@@ -151,6 +154,3 @@ class PageCreator {
 	}
 
 }
-
-// FIXME SemanticGlossary usage
-class_alias( 'SMW\Tests\Utils\PageCreator', 'SMW\Tests\Util\PageCreator' );

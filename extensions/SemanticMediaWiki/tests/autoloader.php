@@ -8,8 +8,7 @@
  *
  * require __DIR__ . '/../../SemanticMediaWiki/tests/autoloader.php'
  */
-
-if ( PHP_SAPI !== 'cli' ) {
+if ( PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg' ) {
 	die( 'Not an entry point' );
 }
 
@@ -18,7 +17,7 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 }
 
 if ( !class_exists( 'SemanticMediaWiki' ) || ( $version = SemanticMediaWiki::getVersion() ) === null ) {
-	die( "\Semantic MediaWiki is not available, please check your LocalSettings or Composer settings.\n" );
+	die( "\nSemantic MediaWiki is not available, please check your LocalSettings or Composer settings.\n" );
 }
 
 // @codingStandardsIgnoreStart phpcs, ignore --sniffs=Generic.Files.LineLength.MaxExceeded
@@ -30,13 +29,14 @@ if ( is_readable( $path = __DIR__ . '/../vendor/autoload.php' ) ) {
 } elseif ( is_readable( $path = __DIR__ . '/../../../vendor/autoload.php' ) ) {
 	print sprintf( "%-20s%s\n", "MediaWiki:", $GLOBALS['wgVersion'] . " (MediaWiki vendor autoloader)" );
 } else {
-	die( 'To run tests it is required that packages are installed using Composer.' );
+	die( 'To run the test suite it is required that packages are installed using Composer.' );
 }
 
 print sprintf( "%-20s%s\n", "Site language:", $GLOBALS['wgLanguageCode'] );
 
 $dateTimeUtc = new \DateTime( 'now', new \DateTimeZone( 'UTC' ) );
 print sprintf( "\n%-20s%s\n", "Execution time:", $dateTimeUtc->format( 'Y-m-d h:i' ) );
+print sprintf( "%-20s%s\n", "Debug logs:", $GLOBALS['wgDebugLogGroups'] !== array() || $GLOBALS['wgDebugLogFile'] !== '' ? 'Enabled' : 'Disabled' );
 
 if ( extension_loaded('xdebug') && xdebug_is_enabled() ) {
 	print sprintf( "%-20s%s\n\n", "Xdebug:", phpversion('xdebug') . ' (enabled)' );
@@ -57,8 +57,9 @@ $autoloader->addPsr4( 'SMW\\Tests\\Utils\\', __DIR__ . '/phpunit/Utils' );
 $autoloader->addClassMap( array(
 	'SMW\Tests\TestEnvironment'             => __DIR__ . '/phpunit/TestEnvironment.php',
 	'SMW\Tests\MwDBaseUnitTestCase'         => __DIR__ . '/phpunit/MwDBaseUnitTestCase.php',
-	'SMW\Tests\ByJsonTestCaseProvider'      => __DIR__ . '/phpunit/ByJsonTestCaseProvider.php',
+	'SMW\Tests\JsonTestCaseScriptRunner'    => __DIR__ . '/phpunit/JsonTestCaseScriptRunner.php',
 	'SMW\Tests\JsonTestCaseFileHandler'     => __DIR__ . '/phpunit/JsonTestCaseFileHandler.php',
+	'SMW\Tests\JsonTestCaseContentHandler'  => __DIR__ . '/phpunit/JsonTestCaseContentHandler.php',
 	'SMW\Test\QueryPrinterTestCase'         => __DIR__ . '/phpunit/QueryPrinterTestCase.php',
 	'SMW\Test\QueryPrinterRegistryTestCase' => __DIR__ . '/phpunit/QueryPrinterRegistryTestCase.php',
 ) );

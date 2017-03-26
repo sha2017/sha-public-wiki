@@ -105,13 +105,13 @@ class LocalizerTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanGetLanguageCodeOnValidMarkedValue() {
+	public function testCanGetAnnotatedLanguageCodeOnValidMarkedValue() {
 
 		$value = 'Foo@en';
 
 		$this->assertEquals(
 			'en',
-			Localizer::getLanguageCodeFrom( $value )
+			Localizer::getAnnotatedLanguageCodeFrom( $value )
 		);
 
 		$this->assertEquals(
@@ -120,18 +120,42 @@ class LocalizerTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanGetLanguageCodeOnDoubledMarker() {
+	public function testCanGetAnnotatedLanguageCodeOnDoubledMarkedValue() {
 
 		$value = 'Foo@@en';
 
 		$this->assertEquals(
 			'en',
-			Localizer::getLanguageCodeFrom( $value )
+			Localizer::getAnnotatedLanguageCodeFrom( $value )
 		);
 
 		$this->assertEquals(
 			'Foo@',
 			$value
+		);
+	}
+
+	public function testCanGetAnnotatedLanguageCodeOnValueWithDash() {
+
+		$value = 'Foo@zh-Hans';
+
+		$this->assertEquals(
+			'zh-Hans',
+			Localizer::getAnnotatedLanguageCodeFrom( $value )
+		);
+
+		$this->assertEquals(
+			'Foo',
+			$value
+		);
+	}
+
+	public function testCanNotGetAnnotatedLanguageCodeThatContainsInvalidCharacter() {
+
+		$value = 'Foo@en#bar';
+
+		$this->assertFalse(
+			Localizer::getAnnotatedLanguageCodeFrom( $value )
 		);
 	}
 
@@ -208,12 +232,12 @@ class LocalizerTest extends \PHPUnit_Framework_TestCase {
 		$instance = Localizer::getInstance();
 
 		$this->assertInstanceOf(
-			'\SMW\ExtraneousLanguage',
+			'\SMW\ExtraneousLanguage\ExtraneousLanguage',
 			$instance->getExtraneousLanguage()
 		);
 
 		$this->assertInstanceOf(
-			'\SMW\ExtraneousLanguage',
+			'\SMW\ExtraneousLanguage\ExtraneousLanguage',
 			$instance->getExtraneousLanguage( 'en' )
 		);
 
@@ -226,7 +250,7 @@ class LocalizerTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( 'en' ) );
 
 		$this->assertInstanceOf(
-			'\SMW\ExtraneousLanguage',
+			'\SMW\ExtraneousLanguage\ExtraneousLanguage',
 			$instance->getExtraneousLanguage( $language )
 		);
 	}
@@ -241,6 +265,58 @@ class LocalizerTest extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals(
 			'aBc',
 			Localizer::getInstance()->convertDoubleWidth( 'ａＢｃ' )
+		);
+	}
+
+	public function testCreateTextWithNamespacePrefix() {
+
+		$instance = new Localizer( Language::factory( 'en') );
+
+		$this->assertEquals(
+			'Property:foo bar',
+			$instance->createTextWithNamespacePrefix( SMW_NS_PROPERTY, 'foo bar' )
+		);
+	}
+
+	public function testGetCanonicalizedUrlByNamespace() {
+
+		$language = $this->getMockBuilder( '\Language' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$language->expects( $this->exactly( 2 ) )
+			->method( 'getNsText' )
+			->will( $this->returnValue( 'Spécial' ) );
+
+		$instance = new Localizer( $language );
+
+		$this->assertEquals(
+			'http://example.org/wiki/Special:URIResolver/Property-3AHas_query',
+			$instance->getCanonicalizedUrlByNamespace( NS_SPECIAL, 'http://example.org/wiki/Sp%C3%A9cial:URIResolver/Property-3AHas_query' )
+		);
+
+		$this->assertEquals(
+			'http://example.org/wiki/Special:URIResolver/Property-3AHas_query',
+			$instance->getCanonicalizedUrlByNamespace( NS_SPECIAL, 'http://example.org/wiki/Spécial:URIResolver/Property-3AHas_query' )
+		);
+	}
+
+	public function testGetCanonicalName() {
+
+		$language = $this->getMockBuilder( '\Language' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$instance = new Localizer( $language );
+
+		$this->assertEquals(
+			'Property',
+			$instance->getCanonicalNamespaceTextById( SMW_NS_PROPERTY )
+		);
+
+		$this->assertEquals(
+			'Help',
+			$instance->getCanonicalNamespaceTextById( NS_HELP )
 		);
 	}
 

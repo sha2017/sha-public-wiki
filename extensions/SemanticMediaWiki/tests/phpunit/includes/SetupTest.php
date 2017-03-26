@@ -149,6 +149,10 @@ class SetupTest extends \PHPUnit_Framework_TestCase {
 		);
 
 		$this->assertTrue(
+			$config['wgGroupPermissions']['smwcurator']['smw-pageedit']
+		);
+
+		$this->assertTrue(
 			$config['wgGroupPermissions']['smwadministrator']['smw-admin']
 		);
 	}
@@ -228,7 +232,9 @@ class SetupTest extends \PHPUnit_Framework_TestCase {
 			'Properties',
 			'UnusedProperties',
 			'WantedProperties',
-			'DeferredRequestDispatcher'
+			'DeferredRequestDispatcher',
+			'ProcessingErrorList',
+			'PropertyLabelSimilarity'
 		);
 
 		return $this->buildDataProvider( 'wgSpecialPages', $specials, '' );
@@ -244,6 +250,11 @@ class SetupTest extends \PHPUnit_Framework_TestCase {
 			'SMW\RefreshJob',
 			'SMW\UpdateDispatcherJob',
 			'SMW\ParserCachePurgeJob',
+			'SMW\FulltextSearchTableUpdateJob',
+			'SMW\EntityIdDisposerJob',
+			'SMW\TempChangeOpPurgeJob',
+			'SMW\PropertyStatisticsRebuildJob',
+			'SMW\FulltextSearchTableRebuildJob',
 
 			// Legacy
 			'SMWUpdateJob',
@@ -276,10 +287,8 @@ class SetupTest extends \PHPUnit_Framework_TestCase {
 	public function messagesFilesDataProvider() {
 
 		$modules = array(
-			'SemanticMediaWiki',
 			'SemanticMediaWikiAlias',
-			'SemanticMediaWikiMagic',
-			'SemanticMediaWikiNamespaces'
+			'SemanticMediaWikiMagic'
 		);
 
 		return $this->buildDataProvider( 'wgExtensionMessagesFiles', $modules, '' );

@@ -5,6 +5,12 @@ use SMW\DataValueFactory;
 use SMW\Localizer;
 use SMW\RequestOptions;
 use SMW\StringCondition;
+use SMW\PropertyRegistry;
+use SMWDataValue as DataValue;
+use SMW\DataValues\ValueFormatters\DataValueFormatter;
+use SMW\DIProperty;
+use SMW\Content\PropertyPageMessageHtmlBuilder;
+use SMW\PropertySpecificationReqExaminer;
 
 /**
  * Implementation of MediaWiki's Article that shows additional information on
@@ -24,8 +30,9 @@ class SMWPropertyPage extends SMWOrderedListPage {
 	protected function initParameters() {
 		global $smwgPropertyPagingLimit;
 		$this->limit = $smwgPropertyPagingLimit;
-		$this->mProperty = SMW\DIProperty::newFromUserLabel( $this->mTitle->getText() );
+		$this->mProperty = DIProperty::newFromUserLabel( $this->mTitle->getText() );
 		$this->store = ApplicationFactory::getInstance()->getStore();
+		$this->propertyValue = DataValueFactory::getInstance()->newDataItemValue( $this->mProperty );
 		return true;
 	}
 
@@ -40,65 +47,120 @@ class SMWPropertyPage extends SMWOrderedListPage {
 			return '';
 		}
 
-		$list = $this->getSubpropertyList() . $this->getPropertyValueList();
+		$dv = DataValueFactory::getInstance()->newDataValueByItem(
+			$this->mProperty
+		);
+
+		$title = $dv->getFormattedLabel( DataValueFormatter::WIKI_LONG );
+		$this->getContext()->getOutput()->setPageTitle( $title );
+
+		$requestOptions = new RequestOptions();
+		$requestOptions->sort = true;
+		$requestOptions->ascending = true;
+
+		// +1 look ahead
+		$requestOptions->setLimit( $GLOBALS['smwgRedirectPropertyListLimit'] + 1 );
+
+		$list = $this->getPropertyList(
+			new DIProperty( '_REDI' ),
+			$requestOptions,
+			$GLOBALS['smwgRedirectPropertyListLimit'],
+			'smw-propertylist-redirect'
+		);
+
+		$requestOptions->setLimit( $GLOBALS['smwgSubPropertyListLimit'] + 1 );
+
+		$list .= $this->getPropertyList(
+			new DIProperty( '_SUBP' ),
+			$requestOptions,
+			$GLOBALS['smwgSubPropertyListLimit'],
+			'smw-propertylist-subproperty'
+		);
+
+		$list .= $this->getPropertyValueList();
+
 		$result = ( $list !== '' ? Html::element( 'div', array( 'id' => 'smwfootbr' ) ) . $list : '' );
 
 		return $result;
 	}
 
 	/**
-	 * Returns an introductory text for a predefined property
-	 *
-	 * @note In order to enable a more detailed description for a specific
-	 * predefined property a concatenated message key can be used (e.g
-	 * 'smw-pa-property-predefined' + <internal property key> => '_asksi' )
-	 *
 	 * @since 1.9
 	 *
 	 * @return string
 	 */
 	protected function getIntroductoryText() {
-		$propertyName = htmlspecialchars( $this->mTitle->getText() );
-		$message = '';
 
-		if ( !$this->mProperty->isUserDefined() ) {
-			$propertyKey  = 'smw-pa-property-predefined' . strtolower( $this->mProperty->getKey() );
-			$messageKey   = wfMessage( $propertyKey )->exists() ? $propertyKey : 'smw-pa-property-predefined-default';
-			$message .= wfMessage( $messageKey, $propertyName )->parse();
-			$message .= wfMessage( 'smw-pa-property-predefined-long' . strtolower( $this->mProperty->getKey() ) )->exists() ? ' ' . wfMessage( 'smw-pa-property-predefined-long' . strtolower( $this->mProperty->getKey() ) )->parse() : '';
-			$message .= ' ' . wfMessage( 'smw-pa-property-predefined-common' )->parse();
+		if ( !$this->store->getRedirectTarget( $this->mProperty )->equals( $this->mProperty ) ) {
+			return '';
 		}
 
-		return Html::rawElement( 'div', array( 'class' => 'smw-property-predefined-intro' ), $message );
+		$applicationFactory = ApplicationFactory::getInstance();
+
+		$propertySpecificationReqExaminer = new PropertySpecificationReqExaminer(
+			$this->store
+		);
+
+		$propertySpecificationReqExaminer->setSemanticData(
+			$this->getSemanticData()
+		);
+
+		$propertySpecificationReqExaminer->setEditProtectionRight(
+			$applicationFactory->getSettings()->get( 'smwgEditProtectionRight' )
+		);
+
+		$propertyPageMessageHtmlBuilder = new PropertyPageMessageHtmlBuilder(
+			$this->store,
+			$propertySpecificationReqExaminer
+		);
+
+		$propertyPageMessageHtmlBuilder->hasEditProtection(
+			$applicationFactory->singleton( 'EditProtectionValidator' )->hasEditProtection( $this->mTitle )
+		);
+
+		return $propertyPageMessageHtmlBuilder->createMessageBody( $this->mProperty );
 	}
 
-	protected function getTopIndicator() {
+	protected function getTopIndicators() {
 
-		$propertyName = htmlspecialchars( $this->mTitle->getText() );
+		$propertyValue = DataValueFactory::getInstance()->newDataValueByItem(
+			$this->mProperty
+		);
 
-		$usageCount = '';
+		// Label that corresponds to the display and sort characteristics
+		$searchLabel = $this->mProperty->isUserDefined() ? $propertyValue->getSearchLabel() : $this->mProperty->getCanonicalLabel();
+		$usageCountHtml = '';
+
 		$requestOptions = new RequestOptions();
-		$requestOptions->limit = 1;
-		$requestOptions->addStringCondition( $propertyName, StringCondition::STRCOND_PRE );
+		$requestOptions->setLimit( 1 );
+		$requestOptions->addStringCondition( $searchLabel, StringCondition::COND_EQ );
+
 		$cachedLookupList = $this->store->getPropertiesSpecial( $requestOptions );
 		$usageList = $cachedLookupList->fetchList();
 
 		if ( $usageList && $usageList !== array() ) {
 			$usage = end( $usageList );
-			$usageCount = Html::rawElement(
+			$usageCount = $usage[1];
+			$usageCountHtml = Html::rawElement(
 				'div', array(
-					'title' => $this->getContext()->getLanguage()->timeanddate( $cachedLookupList->getTimestamp() ),
-					'class' => 'smw-page-indicator usage-count' ),
-				$usage[1]
+					'title' => wfMessage( 'smw-property-indicator-last-count-update', $this->getContext()->getLanguage()->timeanddate( $cachedLookupList->getTimestamp() ) )->text(),
+					'class' => 'smw-property-page-indicator usage-count' . ( $usageCount < 25000 ? ( $usageCount > 5000 ? ' moderate' : '' ) : ' high' ) ),
+				$usageCount
 			);
 		}
 
-		return Html::rawElement( 'div', array(), Html::rawElement(
-				'div', array(
-				'class' => 'smw-page-indicator property-type',
-				'title' => wfMessage( 'smw-page-indicator-type-info', $this->mProperty->isUserDefined() )->parse()
+		$type = Html::rawElement(
+				'div',
+				array(
+					'class' => 'smw-property-page-indicator property-type',
+					'title' => wfMessage( 'smw-property-indicator-type-info', $this->mProperty->isUserDefined() )->parse()
 			), ( $this->mProperty->isUserDefined() ? 'U' : 'S' )
-		) . $usageCount );
+		);
+
+		return array(
+			'smw-prop-count' => $usageCountHtml,
+			'smw-prop-type' => $type
+		);
 	}
 
 	/**
@@ -107,30 +169,49 @@ class SMWPropertyPage extends SMWOrderedListPage {
 	 *
 	 * @return string
 	 */
-	protected function getSubpropertyList() {
+	protected function getPropertyList( $property, $requestOptions, $listLimit, $header ) {
 
-		$options = new SMWRequestOptions();
-		$options->sort = true;
-		$options->ascending = true;
-		$subproperties = $this->store->getPropertySubjects( new SMW\DIProperty( '_SUBP' ), $this->getDataItem(), $options );
+		$propertyList =  $this->store->getPropertySubjects(
+			$property,
+			$this->getDataItem(),
+			$requestOptions
+		);
+
+		$more = false;
+
+		// Pop the +1 look ahead from the list
+		if ( count( $propertyList ) > $listLimit ) {
+			array_pop( $propertyList );
+			$more = true;
+		}
 
 		$result = '';
+		$resultCount = count( $propertyList );
 
-		$resultCount = count( $subproperties );
+		if ( $more ) {
+			$message = Html::rawElement(
+				'span',
+				array( 'class' => 'plainlinks' ),
+				wfMessage( 'smw-propertylist-count-with-restricted-note', $resultCount, $listLimit )->parse()
+			);
+		} else {
+			$message = wfMessage( 'smw-propertylist-count', $resultCount )->text();
+		}
+
 		if ( $resultCount > 0 ) {
 			$titleText = htmlspecialchars( $this->mTitle->getText() );
-			$result .= "<div id=\"mw-subcategories\">\n<h2>" . wfMessage( 'smw_subproperty_header', $titleText )->text() . "</h2>\n<p>";
+			$result .= "<div id=\"{$header}\">" . Html::rawElement( 'h2', array(), wfMessage( $header . '-header', $titleText )->text() ) . "\n<p>";
 
 			if ( !$this->mProperty->isUserDefined() ) {
 				$result .= wfMessage( 'smw_isspecprop' )->text() . ' ';
 			}
 
-			$result .= wfMessage( 'smw_subpropertyarticlecount' )->numParams( $resultCount )->text() . "</p>\n";
+			$result .= $message . "</p>";
 
 			if ( $resultCount < 6 ) {
-				$result .= SMWPageLister::getShortList( 0, $resultCount, $subproperties, null );
+				$result .= SMWPageLister::getShortList( 0, $resultCount, $propertyList, null );
 			} else {
-				$result .= SMWPageLister::getColumnList( 0, $resultCount, $subproperties, null );
+				$result .= SMWPageLister::getColumnList( 0, $resultCount, $propertyList, null );
 			}
 
 			$result .= "\n</div>";
@@ -148,19 +229,25 @@ class SMWPropertyPage extends SMWOrderedListPage {
 	protected function getPropertyValueList() {
 		global $smwgPropertyPagingLimit, $wgRequest;
 
-		if ( $this->limit > 0 ) { // limit==0: configuration setting to disable this completely
-			$options = SMWPageLister::getRequestOptions( $this->limit, $this->from, $this->until );
-
-			$options->limit = $wgRequest->getVal( 'limit', $smwgPropertyPagingLimit );
-			$options->offset = $wgRequest->getVal( 'offset', '0' );
-
-			$diWikiPages = $this->store->getAllPropertySubjects( $this->mProperty, $options );
-
-			if ( !$options->ascending ) {
-				$diWikiPages = array_reverse( $diWikiPages );
-			}
-		} else {
+		 // limit==0: configuration setting to disable this completely
+		if ( $this->limit < 1 ) {
 			return '';
+		}
+
+		$diWikiPages = array();
+		$options = SMWPageLister::getRequestOptions( $this->limit, $this->from, $this->until );
+
+		$options->limit = $wgRequest->getVal( 'limit', $smwgPropertyPagingLimit );
+		$options->offset = $wgRequest->getVal( 'offset', '0' );
+
+		if ( ( $value = $wgRequest->getVal( 'value', '' ) ) !== '' ) {
+			$diWikiPages = $this->doQuerySubjectListWithValue( $value, $options );
+		} else {
+			$diWikiPages = $this->store->getAllPropertySubjects( $this->mProperty, $options );
+		}
+
+		if ( !$options->ascending ) {
+			$diWikiPages = array_reverse( $diWikiPages );
 		}
 
 		$result = '';
@@ -177,7 +264,7 @@ class SMWPropertyPage extends SMWOrderedListPage {
 
 			// Allow the DV formatter to access a specific language code
 			$dvWikiPage->setOption(
-				'user.language',
+				DataValue::OPT_USER_LANGUAGE,
 				Localizer::getInstance()->getUserLanguage()->getCode()
 			);
 
@@ -239,7 +326,7 @@ class SMWPropertyPage extends SMWOrderedListPage {
 			      '&#160;' . $searchlink->getHTML( smwfGetLinker() ) . '</td><td class="smwprops">';
 
 			// Property values
-			$ropts = new SMWRequestOptions();
+			$ropts = new RequestOptions();
 			$ropts->limit = $smwgMaxPropertyValues + 1;
 			$values = $this->store->getPropertyValues( $diWikiPage, $this->mProperty, $ropts );
 			$i = 0;
@@ -268,6 +355,43 @@ class SMWPropertyPage extends SMWOrderedListPage {
 		$r .= '</table>';
 
 		return $r;
+	}
+
+	private function doQuerySubjectListWithValue( $value, $options ) {
+
+		$applicationFactory = ApplicationFactory::getInstance();
+
+		$dataValue = $applicationFactory->getDataValueFactory()->newDataValueByProperty( $this->mProperty );
+		$dataValue->setOption( DataValue::OPT_QUERY_CONTEXT, true );
+		$dataValue->setUserValue( $value );
+		$queryFactory = $applicationFactory->getQueryFactory();
+
+		$description = $queryFactory->newDescriptionFactory()->newFromDataValue(
+			$dataValue
+		);
+
+		$query = $queryFactory->newQuery( $description );
+		$query->setLimit( $options->limit );
+		$query->setOffset( $options->offset );
+		$query->setSortKeys( array( '' => 'asc' ) );
+
+		return $this->store->getQueryResult( $query )->getResults();
+	}
+
+	private function getSemanticData() {
+
+		$applicationFactory = ApplicationFactory::getInstance();
+
+		if ( $this->getPage()->getRevision() === null ) {
+			return null;
+		}
+
+		$editInfoProvider = $applicationFactory->newMwCollaboratorFactory()->newEditInfoProvider(
+			$this->getPage(),
+			$this->getPage()->getRevision()
+		);
+
+		return $editInfoProvider->fetchSemanticData();
 	}
 
 }

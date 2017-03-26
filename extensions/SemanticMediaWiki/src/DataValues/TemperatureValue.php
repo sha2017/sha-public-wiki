@@ -4,6 +4,7 @@ namespace SMW\DataValues;
 
 use SMWDINumber as DINumber;
 use SMWNumberValue as NumberValue;
+use SMW\ApplicationFactory;
 
 /**
  * This datavalue implements unit support for measuring temperatures. This is
@@ -18,10 +19,15 @@ use SMWNumberValue as NumberValue;
 class TemperatureValue extends NumberValue {
 
 	/**
+	 * DV identifier
+	 */
+	const TYPE_ID = '_tem';
+
+	/**
 	 * @param string $typeid
 	 */
 	public function __construct( $typeid = '' ) {
-		parent::__construct( '_tem' );
+		parent::__construct( self::TYPE_ID );
 	}
 
 	/**
@@ -162,7 +168,7 @@ class TemperatureValue extends NumberValue {
 			return $unit;
 		}
 
-		$units = $this->getPropertySpecificationLookup()->getDisplayUnitsFor(
+		$units = ApplicationFactory::getInstance()->getPropertySpecificationLookup()->getDisplayUnitsBy(
 			$this->getProperty()
 		);
 

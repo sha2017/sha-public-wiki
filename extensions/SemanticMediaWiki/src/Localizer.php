@@ -2,6 +2,7 @@
 
 namespace SMW;
 
+use SMW\ExtraneousLanguage\ExtraneousLanguage;
 use Language;
 use Title;
 
@@ -155,12 +156,30 @@ class Localizer {
 	/**
 	 * @since 2.1
 	 *
-	 * @param integer $namespaceId
+	 * @param integer $index
 	 *
 	 * @return string
 	 */
-	public function getNamespaceTextById( $namespaceId ) {
-		return $this->contentLanguage->getNsText( $namespaceId );
+	public function getNamespaceTextById( $index ) {
+		return str_replace( '_', ' ', $this->contentLanguage->getNsText( $index ) );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer $index
+	 *
+	 * @return string
+	 */
+	public function getCanonicalNamespaceTextById( $index ) {
+
+		$canonicalNames = NamespaceManager::getCanonicalNames();
+
+		if ( isset( $canonicalNames[$index] ) ) {
+			return $canonicalNames[$index];
+		}
+
+		return \MWNamespace::getCanonicalName( $index );
 	}
 
 	/**
@@ -207,6 +226,7 @@ class Localizer {
 	}
 
 	/**
+	 * @deprecated 2.5, use Localizer::getAnnotatedLanguageCodeFrom instead
 	 * @since 2.4
 	 *
 	 * @param string &$value
@@ -214,6 +234,51 @@ class Localizer {
 	 * @return string|false
 	 */
 	public static function getLanguageCodeFrom( &$value ) {
+		return self::getAnnotatedLanguageCodeFrom( $value );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer $index
+	 * @param string $text
+	 *
+	 * @return string
+	 */
+	public function createTextWithNamespacePrefix( $index, $text ) {
+		return $this->getNamespaceTextById( $index ) . ':' . $text;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer $ns
+	 * @param string $url
+	 *
+	 * @return string
+	 */
+	public function getCanonicalizedUrlByNamespace( $index, $url ) {
+
+		$namespace = $this->getNamespaceTextById( $index );
+
+		return str_replace(
+			array(
+				wfUrlencode( '/' . $namespace .':' ),
+				'/' . $namespace .':'
+			),
+			'/' . $this->getCanonicalNamespaceTextById( $index ) . ':',
+			$url
+		);
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @param string &$value
+	 *
+	 * @return string|false
+	 */
+	public static function getAnnotatedLanguageCodeFrom( &$value ) {
 
 		if ( strpos( $value, '@' ) === false ) {
 			return false;
@@ -224,8 +289,11 @@ class Localizer {
 		}
 
 		// Do we want to check here whether isSupportedLanguage or not?
+		if ( $langCode !== '' && ctype_alpha( str_replace( array( '-' ), '', $langCode ) ) ) {
+			return $langCode;
+		}
 
-		return $langCode !== '' ? $langCode : false;
+		return false;
 	}
 
 	/**

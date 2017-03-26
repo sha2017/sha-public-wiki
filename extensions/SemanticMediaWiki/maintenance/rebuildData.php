@@ -125,6 +125,7 @@ class RebuildData extends \Maintenance {
 		if ( $this->hasOption( 'no-cache' ) ) {
 			$maintenanceHelper->setGlobalToValue( 'wgMainCacheType', CACHE_NONE );
 			$maintenanceHelper->setGlobalToValue( 'smwgValueLookupCacheType', CACHE_NONE );
+			$maintenanceHelper->setGlobalToValue( 'smwgQueryResultCacheType', CACHE_NONE );
 		}
 
 		if ( $this->hasOption( 'debug' ) ) {
@@ -156,12 +157,12 @@ class RebuildData extends \Maintenance {
 		}
 
 		if ( $result && $this->hasOption( 'report-runtime' ) ) {
-			$this->reportMessage( "\n" . $maintenanceHelper->transformRuntimeValuesForOutput() . "\n" );
+			$this->reportMessage( "\n" . $maintenanceHelper->getFormattedRuntimeValues() . "\n" );
 		}
 
 		if ( $this->hasOption( 'with-maintenance-log' ) ) {
 			$maintenanceLogger = $maintenanceFactory->newMaintenanceLogger( 'RebuildDataLogger' );
-			$maintenanceLogger->log( $maintenanceHelper->transformRuntimeValuesForOutput() );
+			$maintenanceLogger->log( $maintenanceHelper->getFormattedRuntimeValues() );
 		}
 
 		$maintenanceHelper->reset();

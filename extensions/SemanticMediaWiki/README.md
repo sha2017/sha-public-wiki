@@ -8,7 +8,7 @@
 [![Dependency Status](https://www.versioneye.com/php/mediawiki:semantic-media-wiki/badge.png)](https://www.versioneye.com/php/mediawiki:semantic-media-wiki)
 
 Semantic MediaWiki (a.k.a. SMW) is a free, open-source extension to [MediaWiki]
-(https://semantic-mediawiki.org/wiki/MediaWiki) – the wiki software that
+(https://www.semantic-mediawiki.org/wiki/MediaWiki) – the wiki software that
 powers Wikipedia – that lets you store and query data within the wiki's pages.
 
 Semantic MediaWiki is also a full-fledged framework, in conjunction with
@@ -17,17 +17,17 @@ knowledge management system. All data created within SMW can easily be
 published via the [Semantic Web](https://www.semantic-mediawiki.org/wiki/Semantic_Web),
 allowing other systems to use this data seamlessly.
 
-For a better understanding of how SMW works, have a look at [Semantic MediaWiki deployed in 5 min](https://vimeo.com/82255034), using a [Sesame](https://vimeo.com/126392433) or [Fuseki ](https://vimeo.com/118614078) triplestore, or 
-browse the [smw.org@wiki](https://www.semantic-mediawiki.org) for a more comprehensive introduction.
+For a better understanding of how SMW works, have a look at [Semantic MediaWiki deployed in 5 min](https://vimeo.com/82255034), using a [Sesame](https://vimeo.com/126392433) or [Fuseki ](https://vimeo.com/118614078) triplestore, or
+browse the [SMW wiki](https://www.semantic-mediawiki.org) for a more comprehensive introduction.
 
 ## Requirements
 
-- PHP 5.3.2 or later
-- MediaWiki 1.19 or later
+- PHP 5.5 or later (5.6 or later recommended)
+- MediaWiki 1.23 or later (1.27 or later recommended)
 - MySQL 5+, SQLite 3+ or PostgreSQL 9.x
 
-A list of supported PHP versions, MediaWiki versions and databases per SMW release can be found
-in the [compatibility matrix](docs/COMPATIBILITY.md).
+A list of supported PHP versions, MediaWiki versions and database systems per Semantic MediaWiki
+release can be found in the [compatibility matrix](docs/COMPATIBILITY.md).
 
 ## Installation
 
@@ -38,7 +38,7 @@ the available [upgrade guide][smw-installation].
 ```json
 {
 	"require": {
-		"mediawiki/semantic-media-wiki": "~2.4@dev"
+		"mediawiki/semantic-media-wiki": "~2.5"
 	}
 }
 ```
@@ -48,8 +48,8 @@ the available [upgrade guide][smw-installation].
 Most of the documentation can be found on the [SMW wiki](https://www.semantic-mediawiki.org).
 A small core of documentation also comes bundled with the software itself. This documentation
 is minimalistic and less explanatory then what can be found on the SMW wiki. It is however
-always kept up to date, and applies to the version of the code it comes bundled with.
-The most important files are linked below.
+always kept up to date, and applies to the version of the code it comes bundled with. The
+most important files are linked below.
 
 * [User documentation overview](docs/README.md)
 * [Developer documentation overview](docs/technical/README.md)
@@ -67,7 +67,7 @@ The overview on [how to contribute](https://github.com/SemanticMediaWiki/Semanti
 provides information on the different ways available to do so.
 
 If you have remarks, questions, or suggestions, please send them to semediawiki-users@lists.sourceforge.net.
-You can subscribe to this list [here](http://sourceforge.net/mailarchive/forum.php?forum_name=semediawiki-user).
+You can subscribe to this list [here](https://sourceforge.net/p/semediawiki/mailman/semediawiki-user/).
 
 If you want to contribute work to the project please subscribe to the developers mailing list and
 have a look at the contribution guideline.

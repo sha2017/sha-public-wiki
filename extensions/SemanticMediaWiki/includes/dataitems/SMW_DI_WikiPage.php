@@ -4,6 +4,7 @@ namespace SMW;
 
 use SMWDataItem;
 use Title;
+use SMW\Exception\DataItemDeserializationException;
 
 /**
  * This class implements wiki page data items.
@@ -51,6 +52,16 @@ class DIWikiPage extends SMWDataItem {
 	private $contextReference = null;
 
 	/**
+	 * @var string
+	 */
+	private $pageLanguage = null;
+
+	/**
+	 * @var integer
+	 */
+	private $id = 0;
+
+	/**
 	 * Contructor. We do not bother with too much detailed validation here,
 	 * regarding the known namespaces, canonicity of the dbkey (namespace
 	 * exrtacted?), validity of interwiki prefix (known?), and general use
@@ -75,7 +86,7 @@ class DIWikiPage extends SMWDataItem {
 			list( $dbkey, $subobjectname ) = explode( '#', $dbkey );
 		}
 
-		$this->m_dbkey = $dbkey;
+		$this->m_dbkey = str_replace( ' ', '_', $dbkey );
 		$this->m_namespace = (int)$namespace; // really make this an integer
 		$this->m_interwiki = $interwiki;
 		$this->m_subobjectname = $subobjectname;
@@ -146,6 +157,44 @@ class DIWikiPage extends SMWDataItem {
 	}
 
 	/**
+	 * Returns the page content language
+	 *
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getPageLanguage() {
+
+		if ( $this->pageLanguage === null ) {
+			$this->pageLanguage = false;
+
+			if ( ( $title = $this->getTitle() ) !== null ) {
+				$this->pageLanguage = $title->getPageLanguage()->getCode();
+			}
+		}
+
+		return $this->pageLanguage;
+	}
+
+	/**
+	 * @since  2.5
+	 *
+	 * @param integer $id
+	 */
+	public function setId( $id ) {
+		$this->id = (int)$id;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getId() {
+		return $this->id;
+	}
+
+	/**
 	 * Create a MediaWiki Title object for this DIWikiPage. The result
 	 * can be null if an error occurred.
 	 *
@@ -200,7 +249,7 @@ class DIWikiPage extends SMWDataItem {
 	 * @param string $serialization
 	 *
 	 * @return DIWikiPage
-	 * @throws DataItemException
+	 * @throws DataItemDeserializationException
 	 */
 	public static function doUnserialize( $serialization ) {
 		$parts = explode( '#', $serialization, 4 );
@@ -210,7 +259,7 @@ class DIWikiPage extends SMWDataItem {
 		} elseif ( count( $parts ) == 4 ) {
 			return new self( $parts[0], intval( $parts[1] ), $parts[2], $parts[3] );
 		} else {
-			throw new DataItemException( "Unserialization failed: the string \"$serialization\" was not understood." );
+			throw new DataItemDeserializationException( "Unserialization failed: the string \"$serialization\" was not understood." );
 		}
 	}
 
@@ -238,10 +287,7 @@ class DIWikiPage extends SMWDataItem {
 	 * @return DIWikiPage
 	 */
 	public static function newFromText( $text, $namespace = NS_MAIN ) {
-		return new self(
-			str_replace( ' ', '_', $text ),
-			$namespace
-		);
+		return new self( $text, $namespace );
 	}
 
 	public function equals( SMWDataItem $di ) {

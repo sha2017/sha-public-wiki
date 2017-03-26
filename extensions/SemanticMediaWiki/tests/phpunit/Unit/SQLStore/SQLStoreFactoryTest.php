@@ -4,7 +4,9 @@ namespace SMW\Tests\SQLStore;
 
 use SMW\SQLStore\SQLStoreFactory;
 use SMW\Store;
+use SMW\Options;
 use SMWSQLStore3;
+use SMW\Tests\TestEnvironment;
 
 /**
  * @covers \SMW\SQLStore\SQLStoreFactory
@@ -18,9 +20,12 @@ use SMWSQLStore3;
 class SQLStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 
 	private $store;
+	private $testEnvironment;
 
 	protected function setUp() {
 		parent::setUp();
+
+		$this->testEnvironment = new TestEnvironment();
 
 		$this->store = $this->getMockBuilder( '\SMWSQLStore3' )
 			->disableOriginalConstructor()
@@ -40,7 +45,7 @@ class SQLStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 		$instance = new SQLStoreFactory( new SMWSQLStore3() );
 
 		$this->assertInstanceOf(
-			'\SMW\SQLStore\QueryEngine\QueryEngine',
+			'\SMW\QueryEngine',
 			$instance->newSlaveQueryEngine()
 		);
 	}
@@ -50,7 +55,7 @@ class SQLStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 		$instance = new SQLStoreFactory( new SMWSQLStore3() );
 
 		$this->assertInstanceOf(
-			'\SMW\SQLStore\QueryEngine\QueryEngine',
+			'\SMW\QueryEngine',
 			$instance->newMasterQueryEngine()
 		);
 	}
@@ -72,6 +77,16 @@ class SQLStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 		$this->assertInstanceOf(
 			'SMW\SQLStore\ConceptCache',
 			$instance->newSlaveConceptCache()
+		);
+	}
+
+	public function testCanConstractIdTableManager() {
+
+		$instance = new SQLStoreFactory( new SMWSQLStore3() );
+
+		$this->assertInstanceOf(
+			'SMWSql3SmwIds',
+			$instance->newIdTableManager()
 		);
 	}
 
@@ -139,13 +154,22 @@ class SQLStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanConstrucCachedValueLookupStore() {
+	public function testCanConstructEntityLookup() {
 
 		$instance = new SQLStoreFactory( $this->store );
 
+		$this->testEnvironment->addConfiguration( 'smwgValueLookupCacheType', CACHE_NONE );
+
 		$this->assertInstanceOf(
-			'SMW\SQLStore\Lookup\CachedValueLookupStore',
-			$instance->newCachedValueLookupStore()
+			'SMW\SQLStore\EntityStore\DirectEntityLookup',
+			$instance->newEntityLookup()
+		);
+
+		$this->testEnvironment->addConfiguration( 'smwgValueLookupCacheType', 'hash' );
+
+		$this->assertInstanceOf(
+			'SMW\SQLStore\EntityStore\CachedEntityLookup',
+			$instance->newEntityLookup()
 		);
 	}
 
@@ -159,6 +183,16 @@ class SQLStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
+	public function testCanConstructDataItemHandlerDispatcher() {
+
+		$instance = new SQLStoreFactory( $this->store );
+
+		$this->assertInstanceOf(
+			'SMW\SQLStore\EntityStore\DataItemHandlerDispatcher',
+			$instance->newDataItemHandlerDispatcher()
+		);
+	}
+
 	public function testCanConstructDeferredCachedListLookupUpdate() {
 
 		$instance = new SQLStoreFactory( $this->store );
@@ -166,6 +200,64 @@ class SQLStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 		$this->assertInstanceOf(
 			'SMW\DeferredCallableUpdate',
 			$instance->newDeferredCallableCachedListLookupUpdate()
+		);
+	}
+
+	public function testCanConstructInstaller() {
+
+		$connection = $this->getMockBuilder( '\DatabaseBase' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
+
+		$connection->expects( $this->any() )
+			->method( 'getType' )
+			->will( $this->returnValue( 'mysql' ) );
+
+		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$store->expects( $this->once() )
+			->method( 'getOptions' )
+			->will( $this->returnValue( new Options() ) );
+
+		$store->expects( $this->once() )
+			->method( 'getConnection' )
+			->will( $this->returnValue( $connection ) );
+
+		$instance = new SQLStoreFactory( $store );
+
+		$this->assertInstanceOf(
+			'SMW\SQLStore\Installer',
+			$instance->newInstaller()
+		);
+	}
+
+	public function testGetLogger() {
+
+		$instance = new SQLStoreFactory( $this->store );
+
+		$this->assertInstanceOf(
+			'\Psr\Log\LoggerInterface',
+			$instance->getLogger()
+		);
+	}
+
+	public function testCanConstrucPropertyStatisticsTable() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->store->expects( $this->once() )
+			->method( 'getConnection' )
+			->will( $this->returnValue( $connection ) );
+
+		$instance = new SQLStoreFactory( $this->store );
+
+		$this->assertInstanceOf(
+			'\SMW\SQLStore\PropertyStatisticsTable',
+			$instance->newPropertyStatisticsTable()
 		);
 	}
 

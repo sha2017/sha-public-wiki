@@ -5,13 +5,16 @@ namespace SMW\DataValues;
 use SMW\ApplicationFactory;
 use SMW\DataValueFactory;
 use SMW\DataValues\ValueFormatters\DataValueFormatter;
+use SMW\DataValues\ValueParsers\MonolingualTextValueParser;
 use SMW\DIProperty;
 use SMW\DIWikiPage;
 use SMW\Localizer;
+use SMW\StringCondition;
 use SMWContainerSemanticData as ContainerSemanticData;
 use SMWDataItem as DataItem;
 use SMWDataValue as DataValue;
 use SMWDIContainer as DIContainer;
+use SMWDIBlob as DIBlob;
 
 /**
  * MonolingualTextValue requires two components, a language code and a
@@ -32,7 +35,12 @@ use SMWDIContainer as DIContainer;
  *
  * @author mwjames
  */
-class MonolingualTextValue extends DataValue {
+class MonolingualTextValue extends AbstractMultiValue {
+
+	/**
+	 * DV identifier
+	 */
+	const TYPE_ID = '_mlt_rec';
 
 	/**
 	 * @var DIProperty[]|null
@@ -40,27 +48,16 @@ class MonolingualTextValue extends DataValue {
 	private static $properties = null;
 
 	/**
-	 * @var MonolingualTextValueParser
-	 */
-	private $monolingualTextValueParser = null;
-
-	/**
-	 * @var DataValueFactory
-	 */
-	private $dataValueFactory = null;
-
-	/**
 	 * @param string $typeid
 	 */
 	public function __construct( $typeid = '' ) {
-		parent::__construct( '_mlt_rec' );
-		$this->dataValueFactory = DataValueFactory::getInstance();
+		parent::__construct( self::TYPE_ID );
 	}
 
 	/**
-	 * @see RecordValue::setFieldProperties
+	 * @see AbstractMultiValue::setFieldProperties
 	 *
-	 * @param SMWDIProperty[] $properties
+	 * @param DIProperty[] $properties
 	 */
 	public function setFieldProperties( array $properties ) {
 		// Keep the interface while the properties for this type
@@ -68,10 +65,31 @@ class MonolingualTextValue extends DataValue {
 	}
 
 	/**
+	 * @see AbstractMultiValue::getProperties
+	 *
+	 * @param DIProperty[] $properties
+	 */
+	public function getProperties() {
+		self::$properties;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param $userValue
+	 * @param string $languageCode
+	 *
+	 * @return string
+	 */
+	public function getTextWithLanguageTag( $text, $languageCode ) {
+		return $text . '@' . Localizer::asBCP47FormattedLanguageCode( $languageCode );
+	}
+
+	/**
 	 * @see DataValue::parseUserValue
 	 * @note called by DataValue::setUserValue
 	 *
-	 * @param string $value
+	 * @param string $userValue
 	 */
 	protected function parseUserValue( $userValue ) {
 
@@ -102,12 +120,14 @@ class MonolingualTextValue extends DataValue {
 				$value = $languageCode;
 			}
 
-			$dataValue = $this->dataValueFactory->newDataValueByProperty(
+			$dataValue = DataValueFactory::getInstance()->newDataValueByProperty(
 				$property,
 				$value,
 				false,
 				$this->m_contextPage
 			);
+
+			$this->addError( $dataValue->getErrors() );
 
 			$dataValues[] = $dataValue;
 		}
@@ -121,6 +141,10 @@ class MonolingualTextValue extends DataValue {
 		}
 
 		$this->m_dataitem = new DIContainer( $containerSemanticData );
+
+		// Composite sortkey is to ensure that Store::getPropertyValues can
+		// apply sorting during value selection
+		$this->m_dataitem->setSortKey( implode( ';', array( $text, $languageCode ) ) );
 	}
 
 	/**
@@ -137,7 +161,7 @@ class MonolingualTextValue extends DataValue {
 	 * @return array
 	 */
 	public function getValuesFromString( $userValue ) {
-		return $this->getValueParser()->parse( $userValue );
+		return $this->dataValueServiceFactory->getValueParser( $this )->parse( $userValue );
 	}
 
 	/**
@@ -166,44 +190,44 @@ class MonolingualTextValue extends DataValue {
 	 * @see DataValue::getShortWikiText
 	 */
 	public function getShortWikiText( $linker = null ) {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::WIKI_SHORT, $linker );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::WIKI_SHORT, $linker );
 	}
 
 	/**
 	 * @see DataValue::getShortHTMLText
 	 */
 	public function getShortHTMLText( $linker = null ) {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::HTML_SHORT, $linker );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::HTML_SHORT, $linker );
 	}
 
 	/**
 	 * @see DataValue::getLongWikiText
 	 */
 	public function getLongWikiText( $linker = null ) {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::WIKI_LONG, $linker );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::WIKI_LONG, $linker );
 	}
 
 	/**
 	 * @see DataValue::getLongHTMLText
 	 */
 	public function getLongHTMLText( $linker = null ) {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::HTML_LONG, $linker );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::HTML_LONG, $linker );
 	}
 
 	/**
 	 * @see DataValue::getWikiValue
 	 */
 	public function getWikiValue() {
-		return $this->getDataValueFormatter()->format( DataValueFormatter::VALUE );
+		return $this->dataValueServiceFactory->getValueFormatter( $this )->format( DataValueFormatter::VALUE );
 	}
 
 	/**
 	 * @since 2.4
-	 * @note called by SMWResultArray::getNextDataValue
+	 * @note called by AbstractRecordValue::getPropertyDataItems
 	 *
 	 * @return DIProperty[]
 	 */
-	public static function getPropertyDataItems() {
+	public function getPropertyDataItems() {
 
 		if ( self::$properties !== null && self::$properties !== array() ) {
 			return self::$properties;
@@ -218,65 +242,91 @@ class MonolingualTextValue extends DataValue {
 
 	/**
 	 * @since 2.4
-	 * @note called by SMWResultArray::loadContent
 	 *
-	 * @return DataItem[]
+	 * {@inheritDoc}
 	 */
 	public function getDataItems() {
-
-		if ( !$this->isValid() ) {
-			return array();
-		}
-
-		$result = array();
-		$index = 0;
-
-		foreach ( $this->getPropertyDataItems() as $diProperty ) {
-			$values = $this->getDataItem()->getSemanticData()->getPropertyValues( $diProperty );
-			if ( count( $values ) > 0 ) {
-				$result[$index] = reset( $values );
-			} else {
-				$result[$index] = null;
-			}
-			$index += 1;
-		}
-
-		return $result;
+		return parent::getDataItems();
 	}
 
 	/**
 	 * @since 2.4
 	 *
+	 * @param string $languageCode
+	 *
 	 * @return DataValue|null
 	 */
 	public function getTextValueByLanguage( $languageCode ) {
 
-		if ( !$this->isValid() || $this->getDataItem() === array() ) {
+		if ( ( $list = $this->toArray() ) === array() ) {
 			return null;
 		}
 
-		$semanticData = $this->getDataItem()->getSemanticData();
-
-		$dataItems = $semanticData->getPropertyValues( new DIProperty( '_LCODE' ) );
-		$dataItem = reset( $dataItems );
-
-		if ( $dataItem === false || ( $dataItem->getString() !== Localizer::asBCP47FormattedLanguageCode( $languageCode ) ) ) {
+		if ( $list['_LCODE'] !== Localizer::asBCP47FormattedLanguageCode( $languageCode ) ) {
 			return null;
 		}
 
-		$dataItems = $semanticData->getPropertyValues( new DIProperty( '_TEXT' ) );
-		$dataItem = reset( $dataItems );
-
-		if ( $dataItem === false ) {
+		if ( $list['_TEXT'] === '' ) {
 			return null;
 		}
 
-		$dataValue = $this->dataValueFactory->newDataValueByItem(
-			$dataItem,
+		$dataValue = DataValueFactory::getInstance()->newDataValueByItem(
+			new DIBlob( $list['_TEXT'] ),
 			new DIProperty( '_TEXT' )
 		);
 
 		return $dataValue;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return array
+	 */
+	public function toArray() {
+
+		if ( !$this->isValid() || $this->getDataItem() === array() ) {
+			return array();
+		}
+
+		$semanticData = $this->getDataItem()->getSemanticData();
+
+		$list = array(
+			'_TEXT'  => '',
+			'_LCODE' => ''
+		);
+
+		$dataItems = $semanticData->getPropertyValues( new DIProperty( '_TEXT' ) );
+		$dataItem = reset( $dataItems );
+
+		if ( $dataItem !== false  ) {
+			$list['_TEXT'] = $dataItem->getString();
+		}
+
+		$dataItems = $semanticData->getPropertyValues( new DIProperty( '_LCODE' ) );
+		$dataItem = reset( $dataItems );
+
+		if ( $dataItem !== false ) {
+			$list['_LCODE'] = $dataItem->getString();
+		}
+
+		return $list;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function toString() {
+
+		if ( !$this->isValid() || $this->getDataItem() === array() ) {
+			return '';
+		}
+
+		$list = $this->toArray();
+
+		return $list['_TEXT'] . '@' . $list['_LCODE'];
 	}
 
 	private function newContainerSemanticData( $value ) {
@@ -311,15 +361,6 @@ class MonolingualTextValue extends DataValue {
 		$languageCodeValue->setUserValue( $languageCode );
 
 		return $languageCodeValue;
-	}
-
-	private function getValueParser() {
-
-		if ( $this->monolingualTextValueParser === null ) {
-			$this->monolingualTextValueParser = ValueParserFactory::getInstance()->newMonolingualTextValueParser();
-		}
-
-		return $this->monolingualTextValueParser;
 	}
 
 }

@@ -86,7 +86,7 @@
 	"smw_attribute_header": "Pajennoù a implij ar perzh « $1 »",
 	"smw_attributearticlecount": "Afficher {{PLURAL:$1|ar bajenn|an $1 pajenn}} a implij ar perzh-mañ.",
 	"smw_subproperty_header": "Isperzhioù",
-	"smw_subpropertyarticlecount": "Ar perzh he deus an {{PLURAL:$1||$1 }}is-perzh da-heul :",
+	"smw-subpropertylist-count": "Ar perzh he deus an {{PLURAL:$1||$1 }}is-perzh da-heul :",
 	"exportrdf": "Ezporzhiañ pajennoù en RDF",
 	"smw_exportrdf_lastdate": "Arabat ezporzhiañ ar pajennoù n'int ket bet kemmet abaoe ar c'houlz merket.",
 	"smw_exportrdf_submit": "Ezporzhiañ",
@@ -185,6 +185,5 @@
 	"smw_unknowntype": "Ar seurt roadennoù \"$1\" nann skoret a zo distroet d'an doareenn",
 	"smw_concept_header": "Pajennoù ar meizad « $1 »",
 	"smw_conceptarticlecount": "Diskouez {{PLURAL:$1|ar bajenn|ar $1 pajenn}} diazezet war ar meizad-se",
-	"smw-sp-admin-settings-title": "Arventennoù kefluniañ",
 	"smw-livepreview-loading": "O kargañ..."
 }

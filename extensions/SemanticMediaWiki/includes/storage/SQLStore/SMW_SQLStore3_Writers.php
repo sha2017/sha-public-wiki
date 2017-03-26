@@ -7,6 +7,8 @@ use SMW\MediaWiki\Jobs\UpdateJob;
 use SMW\SemanticData;
 use SMW\SQLStore\PropertyStatisticsTable;
 use SMW\SQLStore\PropertyTableRowDiffer;
+use SMW\SQLStore\EntityStore\EntitySubobjectListIterator;
+use SMW\SQLStore\TableBuilder\FieldType;
 
 /**
  * Class Handling all the write and update methods for SMWSQLStore3.
@@ -33,19 +35,31 @@ class SMWSQLStore3Writers {
 	protected $store;
 
 	/**
-	 * @var PropertyTableRowDiffer|null
+	 * @var SQLStoreFactory
 	 */
-	private $propertyTableRowDiffer = null;
+	private $factory;
 
 	/**
-	 * Constructor.
-	 *
-	 * @since 1.8
-	 * @param SMWSQLStore3 $parentStore
+	 * @var PropertyTableRowDiffer
 	 */
-	public function __construct( SMWSQLStore3 $parentStore ) {
+	private $propertyTableRowDiffer;
+
+	/**
+	 * @var EntitySubobjectListIterator
+	 */
+	private $entitySubobjectListIterator;
+
+	/**
+	 * @since 1.8
+	 *
+	 * @param SMWSQLStore3 $parentStore
+	 * @param SQLStoreFactory $factory
+	 */
+	public function __construct( SMWSQLStore3 $parentStore, $factory ) {
 		$this->store = $parentStore;
+		$this->factory = $factory;
 		$this->propertyTableRowDiffer = new PropertyTableRowDiffer( $this->store );
+		$this->entitySubobjectListIterator = new EntitySubobjectListIterator( $this->store, ApplicationFactory::getInstance()->getIteratorFactory() );
 	}
 
 	/**
@@ -70,16 +84,17 @@ class SMWSQLStore3Writers {
 		);
 
 		$subject = DIWikiPage::newFromTitle( $title );
+
 		$emptySemanticData = new SemanticData( $subject );
 
-		$subobjects = $this->getSubobjects(
+		$subobjects = $this->entitySubobjectListIterator->newListIteratorFor(
 			$emptySemanticData->getSubject()
 		);
 
 		$this->doDataUpdate( $emptySemanticData );
 
 		foreach ( $ids as $id ) {
-			$this->doDeleteFor( $id, $subject, $subobjects );
+			$this->doDelete( $id, $subject, $subobjects );
 		}
 
 		// @deprecated since 2.1, use 'SMW::SQLStore::AfterDeleteSubjectComplete'
@@ -88,7 +103,7 @@ class SMWSQLStore3Writers {
 		\Hooks::run( 'SMW::SQLStore::AfterDeleteSubjectComplete', array( $this->store, $title ) );
 	}
 
-	private function doDeleteFor( $id, $subject, $subobjects ) {
+	private function doDelete( $id, $subject, $subobjects ) {
 
 		if ( $subject->getNamespace() === SMW_NS_CONCEPT ) { // make sure to clear caches
 			$db = $this->store->getConnection();
@@ -107,16 +122,16 @@ class SMWSQLStore3Writers {
 		}
 
 		// Mark subject/subobjects with a special IW, the final removal is being
-		// triggered by the `ByIdDataRebuildDispatcher`
+		// triggered by the `EntityRebuildDispatcher`
 		$this->store->getObjectIds()->updateInterwikiField(
 			$id,
 			$subject,
 			SMW_SQL3_SMWDELETEIW
 		);
 
-		foreach( $subobjects as $smw_id => $subobject ) {
+		foreach( $subobjects as $subobject ) {
 			$this->store->getObjectIds()->updateInterwikiField(
-				$smw_id,
+				$subobject->getId(),
 				$subobject,
 				SMW_SQL3_SMWDELETEIW
 			);
@@ -134,6 +149,9 @@ class SMWSQLStore3Writers {
 
 		$subject = $semanticData->getSubject();
 
+		$subobjects = $this->entitySubobjectListIterator->newListIteratorFor(
+			$subject
+		);
 
 		// Reset diff before starting the update
 		$this->propertyTableRowDiffer->resetCompositePropertyTableDiff();
@@ -148,15 +166,13 @@ class SMWSQLStore3Writers {
 			$this->doFlatDataUpdate( $subobjectData );
 		}
 
-		// Delete data about other subobjects no longer used
-		$subobjects = $this->getSubobjects( $subject );
-
-		foreach( $subobjects as $smw_id => $subobject ) {
+		// Mark subobjects without reference to be deleted
+		foreach( $subobjects as $subobject ) {
 			if( !$semanticData->hasSubSemanticData( $subobject->getSubobjectName() ) ) {
 				$this->doFlatDataUpdate( new SMWSemanticData( $subobject ) );
 
 				$this->store->getObjectIds()->updateInterwikiField(
-					$smw_id,
+					$subobject->getId(),
 					$subobject,
 					SMW_SQL3_SMWDELETEIW
 				);
@@ -250,7 +266,7 @@ class SMWSQLStore3Writers {
 
 		if ( $redirects === array() && $subject->getSubobjectName() === ''  ) {
 
-			$dataItemFromId = $this->store->getObjectIds()->getDataItemForId( $sid );
+			$dataItemFromId = $this->store->getObjectIds()->getDataItemById( $sid );
 
 			// If for some reason the internal redirect marker is still set but no
 			// redirect annotations are known then do update the interwiki field
@@ -268,46 +284,6 @@ class SMWSQLStore3Writers {
 		// This can only be done here, since the $deleteRows/$insertRows
 		// alone do not have enough information to compute this later (sortkey
 		// and redirects may also change).
-	}
-
-	/**
-	 * Method to get all subobjects for a given subject.
-	 *
-	 * @since 1.8
-	 * @param SMWDIWikiPage $subject
-	 *
-	 * @return array of smw_id => SMWDIWikiPage
-	 */
-	protected function getSubobjects( SMWDIWikiPage $subject ) {
-
-		$db = $this->store->getConnection();
-
-		$res = $db->select(
-			$db->tablename( SMWSql3SmwIds::TABLE_NAME ),
-			'smw_id,smw_subobject,smw_sortkey',
-			'smw_title = ' . $db->addQuotes( $subject->getDBkey() ) . ' AND ' .
-			'smw_namespace = ' . $db->addQuotes( $subject->getNamespace() ) . ' AND ' .
-			'smw_iw = ' . $db->addQuotes( $subject->getInterwiki() ) . ' AND ' .
-			'smw_subobject != ' . $db->addQuotes( '' ), // The "!=" is why we cannot use MW array syntax here
-			__METHOD__
-		);
-
-		$diHandler = $this->store->getDataItemHandlerForDIType( SMWDataItem::TYPE_WIKIPAGE );
-
-		$subobjects = array();
-		foreach ( $res as $row ) {
-			$subobjects[$row->smw_id] = $diHandler->dataItemFromDBKeys( array(
-				$subject->getDBkey(),
-				$subject->getNamespace(),
-				$subject->getInterwiki(),
-				$row->smw_sortkey,
-				$row->smw_subobject
-			) );
-		}
-
-		$db->freeResult( $res );
-
-		return $subobjects;
 	}
 
 	/**
@@ -374,10 +350,8 @@ class SMWSQLStore3Writers {
 			$this->store->smwIds->setPropertyTableHashes( $sid, $newHashes );
 		}
 
-		$statsTable = new PropertyStatisticsTable(
-			$this->store->getConnection(),
-			SMWSQLStore3::PROPERTY_STATISTICS_TABLE
-		);
+		$statsTable = $this->factory->newPropertyStatisticsTable();
+		$statsTable->waitOnTransactionIdle();
 
 		$statsTable->addToUsageCounts( $propertyUseIncrements );
 	}
@@ -623,10 +597,8 @@ class SMWSQLStore3Writers {
 				$oldTitle->getNamespace()
 			);
 
-			$statsTable = new PropertyStatisticsTable(
-				$db,
-				SMWSQLStore3::PROPERTY_STATISTICS_TABLE
-			);
+			$statsTable = $this->factory->newPropertyStatisticsTable();
+			$statsTable->waitOnTransactionIdle();
 
 			$statsTable->addToUsageCount(
 				$this->store->getObjectIds()->getSMWPropertyID( new SMW\DIProperty( '_REDI' ) ),
@@ -642,9 +614,8 @@ class SMWSQLStore3Writers {
 		} else { // General move method: should always be correct
 			// (equality support respected when updating redirects)
 
-			// Delete any existing data (including redirects) from new title
-			// ($newtitle should not have data, but let's be sure)
-			$emptyNewSemanticData = new SMWSemanticData( SMWDIWikiPage::newFromTitle( $newTitle ) );
+			// Delete any existing data (including redirects) from old title
+			$emptyNewSemanticData = new SMWSemanticData( SMWDIWikiPage::newFromTitle( $oldTitle ) );
 			$this->doDataUpdate( $emptyNewSemanticData );
 
 			// Move all data of old title to new position:
@@ -843,13 +814,13 @@ class SMWSQLStore3Writers {
 						$db->freeResult( $res );
 					}
 
-					foreach ( $proptable->getFields( $this->store ) as $fieldname => $type ) {
-						if ( $type == 'p' ) {
+					foreach ( $proptable->getFields( $this->store ) as $fieldName => $fieldType ) {
+						if ( $fieldType === FieldType::FIELD_ID ) {
 
 							$res = $db->select(
 								$from,
 								$select,
-								array( $fieldname => $old_tid ),
+								array( $fieldName => $old_tid ),
 								__METHOD__
 							);
 
@@ -973,10 +944,8 @@ class SMWSQLStore3Writers {
 		unset( $this->store->m_sdstate[$old_tid] );
 
 		// *** Update reference count for _REDI property ***//
-		$statsTable = new PropertyStatisticsTable(
-			$db,
-			SMWSQLStore3::PROPERTY_STATISTICS_TABLE
-		);
+		$statsTable = $this->factory->newPropertyStatisticsTable();
+		$statsTable->waitOnTransactionIdle();
 
 		$statsTable->addToUsageCount(
 			$this->store->getObjectIds()->getSMWPropertyID( new SMW\DIProperty( '_REDI' ) ),
@@ -993,24 +962,20 @@ class SMWSQLStore3Writers {
 		if ( $redirectId != 0 ) {
 			$title = $oldTitle;
 			$deferredCallableUpdate = ApplicationFactory::getInstance()->newDeferredCallableUpdate( function() use( $title, $jobFactory ) {
-
-				wfDebugLog( 'smw', 'DeferredCallableUpdate on changeTitle for ' . $title->getPrefixedDBKey() );
-
 				$jobFactory->newUpdateJob( $title )->run();
 			} );
 
-			$deferredCallableUpdate->pushToDeferredUpdateList();
+			$deferredCallableUpdate->setOrigin( __METHOD__ . ' for ' . $title->getPrefixedDBKey() );
+			$deferredCallableUpdate->pushUpdate();
 		}
 
 		$title = $newTitle;
 		$deferredCallableUpdate = ApplicationFactory::getInstance()->newDeferredCallableUpdate( function() use( $title, $jobFactory ) {
-
-			wfDebugLog( 'smw', 'DeferredCallableUpdate on changeTitle for ' . $title->getPrefixedDBKey() );
-
 			$jobFactory->newUpdateJob( $title )->run();
 		} );
 
-		$deferredCallableUpdate->pushToDeferredUpdateList();
+		$deferredCallableUpdate->setOrigin( __METHOD__ . ' for ' . $title->getPrefixedDBKey() );
+		$deferredCallableUpdate->pushUpdate();
 	}
 
 }

@@ -65,11 +65,11 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanConstructQueryProfilerFactory() {
+	public function testCanConstructQuerySourceFactory() {
 
 		$this->assertInstanceOf(
-			'\SMW\Query\ProfileAnnotator\QueryProfileAnnotatorFactory',
-			$this->applicationFactory->newQueryProfileAnnotatorFactory()
+			'\SMW\Query\QuerySourceFactory',
+			$this->applicationFactory->getQuerySourceFactory()
 		);
 	}
 
@@ -105,19 +105,11 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanConstructPropertyAnnotatorFactory() {
+	public function testCanConstructPageUpdater() {
 
 		$this->assertInstanceOf(
-			'\SMW\PropertyAnnotatorFactory',
-			$this->applicationFactory->newPropertyAnnotatorFactory()
-		);
-	}
-
-	public function testCanConstructFactboxFactory() {
-
-		$this->assertInstanceOf(
-			'SMW\Factbox\FactboxFactory',
-			$this->applicationFactory->newFactboxFactory()
+			'\SMW\MediaWiki\PageUpdater',
+			$this->applicationFactory->newPageUpdater()
 		);
 	}
 
@@ -173,11 +165,11 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanConstructQueryParser() {
+	public function testCanConstructDataItemFactory() {
 
 		$this->assertInstanceOf(
-			'\SMWQueryParser',
-			$this->applicationFactory->newQueryParser()
+			'\SMW\DataItemFactory',
+			$this->applicationFactory->getDataItemFactory()
 		);
 	}
 
@@ -194,6 +186,22 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 		$this->assertInstanceOf(
 			'\SMW\CacheFactory',
 			$this->applicationFactory->newCacheFactory()
+		);
+	}
+
+	public function testCanConstructIteratorFactory() {
+
+		$this->assertInstanceOf(
+			'\SMW\IteratorFactory',
+			$this->applicationFactory->getIteratorFactory()
+		);
+	}
+
+	public function testCanConstructDataValueFactory() {
+
+		$this->assertInstanceOf(
+			'\SMW\DataValueFactory',
+			$this->applicationFactory->getDataValueFactory()
 		);
 	}
 
@@ -225,7 +233,15 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertInstanceOf(
 			'\SMW\QueryFactory',
-			$this->applicationFactory->newQueryFactory()
+			$this->applicationFactory->getQueryFactory()
+		);
+	}
+
+	public function testCanConstructPropertyLabelFinder() {
+
+		$this->assertInstanceOf(
+			'\SMW\PropertyLabelFinder',
+			$this->applicationFactory->getPropertyLabelFinder()
 		);
 	}
 
@@ -239,6 +255,42 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 			'\SMW\DeferredCallableUpdate',
 			$this->applicationFactory->newDeferredCallableUpdate( $callback )
 		);
+	}
+
+	/**
+	 * @dataProvider callbackContainerProvider
+	 */
+	public function testCanConstructFromCallbackContainer( $service, $arguments, $expected ) {
+
+		array_unshift( $arguments, $service );
+
+		$this->assertInstanceOf(
+			$expected,
+			call_user_func_array( array( $this->applicationFactory, 'create' ), $arguments )
+		);
+	}
+
+	public function callbackContainerProvider() {
+
+		$provider[] = array(
+			'CachedQueryResultPrefetcher',
+			array(),
+			'\SMW\Query\Result\CachedQueryResultPrefetcher'
+		);
+
+		$provider[] = array(
+			'FactboxFactory',
+			array(),
+			'SMW\Factbox\FactboxFactory'
+		);
+
+		$provider[] = array(
+			'PropertyAnnotatorFactory',
+			array(),
+			'SMW\PropertyAnnotatorFactory'
+		);
+
+		return $provider;
 	}
 
 }

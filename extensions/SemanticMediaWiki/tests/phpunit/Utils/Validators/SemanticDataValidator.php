@@ -199,8 +199,13 @@ class SemanticDataValidator extends \PHPUnit_Framework_Assert {
 		$runPropertiesAreSetAssert = false;
 		$properties = $semanticData->getProperties();
 
+		// Deprecated, use strictPropertyValueMatch
 		if ( isset( $expected['strict-mode-valuematch'] ) ) {
 			$this->setStrictModeForValueMatch( $expected['strict-mode-valuematch'] );
+		}
+
+		if ( isset( $expected['strictPropertyValueMatch'] ) ) {
+			$this->setStrictModeForValueMatch( $expected['strictPropertyValueMatch'] );
 		}
 
 		if ( isset( $expected['propertyCount'] ) ) {
@@ -306,6 +311,9 @@ class SemanticDataValidator extends \PHPUnit_Framework_Assert {
 	}
 
 	private function assertContainsPropertyKeys( $keys, DIProperty $property ) {
+
+		$keys = str_replace( " ", "_", $keys );
+
 		$this->assertContains(
 			$property->getKey(),
 			$keys,

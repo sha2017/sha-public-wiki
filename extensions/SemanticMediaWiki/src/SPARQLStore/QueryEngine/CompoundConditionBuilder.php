@@ -3,10 +3,11 @@
 namespace SMW\SPARQLStore\QueryEngine;
 
 use RuntimeException;
-use SMW\CircularReferenceGuard;
+use SMW\Utils\CircularReferenceGuard;
 use SMW\DataTypeRegistry;
 use SMW\DIProperty;
 use SMW\DIWikiPage;
+use SMW\Message;
 use SMW\PropertyHierarchyLookup;
 use SMW\Query\Language\Description;
 use SMW\Query\Language\SomeProperty;
@@ -15,20 +16,13 @@ use SMW\SPARQLStore\HierarchyFinder;
 use SMW\SPARQLStore\QueryEngine\Condition\Condition;
 use SMW\SPARQLStore\QueryEngine\Condition\SingletonCondition;
 use SMW\SPARQLStore\QueryEngine\Condition\TrueCondition;
-use SMW\SPARQLStore\QueryEngine\Interpreter\ClassDescriptionInterpreter;
-use SMW\SPARQLStore\QueryEngine\Interpreter\ConceptDescriptionInterpreter;
-use SMW\SPARQLStore\QueryEngine\Interpreter\ConjunctionInterpreter;
-use SMW\SPARQLStore\QueryEngine\Interpreter\DisjunctionInterpreter;
-use SMW\SPARQLStore\QueryEngine\Interpreter\DispatchingDescriptionInterpreter;
-use SMW\SPARQLStore\QueryEngine\Interpreter\NamespaceDescriptionInterpreter;
-use SMW\SPARQLStore\QueryEngine\Interpreter\SomePropertyInterpreter;
-use SMW\SPARQLStore\QueryEngine\Interpreter\ThingDescriptionInterpreter;
-use SMW\SPARQLStore\QueryEngine\Interpreter\ValueDescriptionInterpreter;
 use SMWDataItem as DataItem;
 use SMWExpElement as ExpElement;
 use SMWExpNsResource as ExpNsResource;
 use SMWExporter as Exporter;
 use SMWTurtleSerializer as TurtleSerializer;
+use SMW\Query\DescriptionFactory;
+use SMW\DataValues\PropertyChainValue;
 
 /**
  * Build an internal representation for a SPARQL condition from individual query
@@ -45,22 +39,27 @@ class CompoundConditionBuilder {
 	/**
 	 * @var EngineOptions
 	 */
-	private $engineOptions = null;
+	private $engineOptions;
 
 	/**
 	 * @var DispatchingDescriptionInterpreter
 	 */
-	private $dispatchingDescriptionInterpreter = null;
+	private $dispatchingDescriptionInterpreter;
 
 	/**
 	 * @var CircularReferenceGuard
 	 */
-	private $circularReferenceGuard = null;
+	private $circularReferenceGuard;
 
 	/**
 	 * @var PropertyHierarchyLookup
 	 */
-	private $propertyHierarchyLookup = null;
+	private $propertyHierarchyLookup;
+
+	/**
+	 * @var DescriptionFactory
+	 */
+	private $descriptionFactory;
 
 	/**
 	 * @var array
@@ -74,10 +73,10 @@ class CompoundConditionBuilder {
 	private $variableCounter = 0;
 
 	/**
-	 * Sortkeys that are being used while building the query conditions
+	 * sortKeys that are being used while building the query conditions
 	 * @var array
 	 */
-	private $sortkeys = array();
+	private $sortKeys = array();
 
 	/**
 	 * The name of the SPARQL variable that represents the query result
@@ -103,25 +102,18 @@ class CompoundConditionBuilder {
 	/**
 	 * @since 2.2
 	 *
+	 * @param DescriptionInterpreterFactory $descriptionInterpreterFactory
 	 * @param EngineOptions|null $engineOptions
 	 */
-	public function __construct( EngineOptions $engineOptions = null ) {
+	public function __construct( DescriptionInterpreterFactory $descriptionInterpreterFactory, EngineOptions $engineOptions = null ) {
+		$this->dispatchingDescriptionInterpreter = $descriptionInterpreterFactory->newDispatchingDescriptionInterpreter( $this );
 		$this->engineOptions = $engineOptions;
 
 		if ( $this->engineOptions === null ) {
 			$this->engineOptions = new EngineOptions();
 		}
 
-		$this->dispatchingDescriptionInterpreter = new DispatchingDescriptionInterpreter();
-		$this->dispatchingDescriptionInterpreter->addDefaultInterpreter( new ThingDescriptionInterpreter( $this ) );
-
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new SomePropertyInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new ConjunctionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new DisjunctionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new NamespaceDescriptionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new ClassDescriptionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new ValueDescriptionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new ConceptDescriptionInterpreter( $this ) );
+		$this->descriptionFactory = new DescriptionFactory();
 	}
 
 	/**
@@ -146,10 +138,10 @@ class CompoundConditionBuilder {
 	/**
 	 * @since 2.0
 	 *
-	 * @param array $sortkeys
+	 * @param array $sortKeys
 	 */
-	public function setSortKeys( $sortkeys ) {
-		$this->sortkeys = $sortkeys;
+	public function setSortKeys( $sortKeys ) {
+		$this->sortKeys = $sortKeys;
 		return $this;
 	}
 
@@ -159,7 +151,7 @@ class CompoundConditionBuilder {
 	 * @return array
 	 */
 	public function getSortKeys() {
-		return $this->sortkeys;
+		return $this->sortKeys;
 	}
 
 	/**
@@ -176,8 +168,8 @@ class CompoundConditionBuilder {
 	 *
 	 * @param string $error
 	 */
-	public function addError( $error ) {
-		$this->errors[] = $error;
+	public function addError( $error, $type = Message::TEXT ) {
+		$this->errors[Message::getHash( $error, $type )] = Message::encode( $error, $type );
 	}
 
 	/**
@@ -264,13 +256,13 @@ class CompoundConditionBuilder {
 	 *
 	 * If property value variables should be recorded for ordering results
 	 * later on, the keys of the respective properties need to be given in
-	 * sortkeys earlier.
+	 * sortKeys earlier.
 	 *
 	 * @param Description $description
 	 *
 	 * @return Condition
 	 */
-	public function buildCondition( Description $description ) {
+	public function getConditionFrom( Description $description ) {
 		$this->variableCounter = 0;
 
 		$this->setJoinVariable( $this->resultVariable );
@@ -383,7 +375,7 @@ class CompoundConditionBuilder {
 		$redirectExpElement = Exporter::getInstance()->getResourceElementForWikiPage( $dataItem );
 
 		// If the resource was matched to an imported vocab then no redirect is required
-		if ( isset( $redirectExpElement->wasMatchedToImportVocab ) && $redirectExpElement->wasMatchedToImportVocab ) {
+		if ( $redirectExpElement->isImported() ) {
 			return null;
 		}
 
@@ -428,7 +420,7 @@ class CompoundConditionBuilder {
 			$canUse = $this->engineOptions->get( 'smwgQSubcategoryDepth' ) > 0;
 		}
 
-		return $this->engineOptions->get( 'smwgSparqlQFeatures' ) === ( $this->engineOptions->get( 'smwgSparqlQFeatures' ) | $queryFeatureFlag ) && $canUse;
+		return $this->engineOptions->get( 'smwgSparqlQFeatures' ) === ( (int)$this->engineOptions->get( 'smwgSparqlQFeatures' ) | (int)$queryFeatureFlag ) && $canUse;
 	}
 
 	/**
@@ -479,13 +471,13 @@ class CompoundConditionBuilder {
 	/**
 	 * Extend the given Condition with additional conditions to
 	 * ensure that it can be ordered by all requested properties. After
-	 * this operation, every key in sortkeys is assigned to a query
+	 * this operation, every key in sortKeys is assigned to a query
 	 * variable by $sparqlCondition->orderVariables.
 	 *
 	 * @param Condition $condition condition to modify
 	 */
 	protected function addMissingOrderByConditions( Condition &$condition ) {
-		foreach ( $this->sortkeys as $propertyKey => $order ) {
+		foreach ( $this->sortKeys as $propertyKey => $order ) {
 
 			if ( !is_string( $propertyKey ) ) {
 				throw new RuntimeException( "Expected a string value as sortkey" );
@@ -496,12 +488,12 @@ class CompoundConditionBuilder {
 			}
 
 			if ( !array_key_exists( $propertyKey, $condition->orderVariables ) ) { // Find missing property to sort by.
-				$this->addOrderForUnknownPropertyKey( $condition, $propertyKey );
+				$this->addOrderForUnknownPropertyKey( $condition, $propertyKey, $order );
 			}
 		}
 	}
 
-	private function addOrderForUnknownPropertyKey( Condition &$condition, $propertyKey ) {
+	private function addOrderForUnknownPropertyKey( Condition &$condition, $propertyKey, $order ) {
 
 		if ( $propertyKey === '' || $propertyKey === '#' ) { // order by result page sortkey
 
@@ -513,12 +505,41 @@ class CompoundConditionBuilder {
 
 			$condition->orderVariables[$propertyKey] = $condition->orderByVariable;
 			return;
-		}
+		} elseif ( PropertyChainValue::isChained( $propertyKey ) ) { // Try to extend query.
+			$propertyChainValue = new PropertyChainValue();
+			$propertyChainValue->setUserValue( $propertyKey );
 
-		$auxDescription = new SomeProperty(
-			new DIProperty( $propertyKey ),
-			new ThingDescription()
-		);
+			if ( !$propertyChainValue->isValid() ) {
+				return $description;
+			}
+
+			$lastDataItem = $propertyChainValue->getLastPropertyChainValue()->getDataItem();
+
+			$description = $this->descriptionFactory->newSomeProperty(
+				$lastDataItem,
+				$this->descriptionFactory->newThingDescription()
+			);
+
+			foreach ( $propertyChainValue->getPropertyChainValues() as $val ) {
+				$description = $this->descriptionFactory->newSomeProperty(
+					$val->getDataItem(),
+					$description
+				);
+			}
+
+			// Add and replace Foo.Bar=asc with Bar=asc as we ultimately only
+			// order to the result of the last element
+			$this->sortKeys[$lastDataItem->getKey()] = $order;
+			unset( $this->sortKeys[$propertyKey] );
+			$propertyKey = $lastDataItem->getKey();
+
+			$auxDescription = $description;
+		} else {
+			$auxDescription = $this->descriptionFactory->newSomeProperty(
+				new DIProperty( $propertyKey ),
+				$this->descriptionFactory->newThingDescription()
+			);
+		}
 
 		$this->setJoinVariable( $this->resultVariable );
 		$this->setOrderByProperty( null );

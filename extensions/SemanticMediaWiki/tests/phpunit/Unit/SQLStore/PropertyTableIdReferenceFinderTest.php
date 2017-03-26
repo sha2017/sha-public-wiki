@@ -115,6 +115,18 @@ class PropertyTableIdReferenceFinderTest extends \PHPUnit_Framework_TestCase {
 
 	public function testHasResidualReferenceFor() {
 
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$connection->expects( $this->any() )
+			->method( 'selectRow' )
+			->will( $this->returnValue( false ) );
+
+		$this->store->expects( $this->any() )
+			->method( 'getConnection' )
+			->will( $this->returnValue( $connection ) );
+
 		$this->store->expects( $this->any() )
 			->method( 'getPropertyTables' )
 			->will( $this->returnValue( array() ) );
@@ -125,7 +137,35 @@ class PropertyTableIdReferenceFinderTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertInternalType(
 			'boolean',
-			$instance->hasResidualReferenceFor( 42 )
+			$instance->hasResidualReferenceForId( 42 )
+		);
+	}
+
+	public function testSearchAllTablesToFindAtLeastOneReferenceById() {
+
+		$connection = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$connection->expects( $this->any() )
+			->method( 'selectRow' )
+			->will( $this->returnValue( false ) );
+
+		$this->store->expects( $this->any() )
+			->method( 'getConnection' )
+			->will( $this->returnValue( $connection ) );
+
+		$this->store->expects( $this->any() )
+			->method( 'getPropertyTables' )
+			->will( $this->returnValue( array() ) );
+
+		$instance = new PropertyTableIdReferenceFinder(
+			$this->store
+		);
+
+		$this->assertInternalType(
+			'array',
+			$instance->searchAllTablesToFindAtLeastOneReferenceById( 42 )
 		);
 	}
 
@@ -136,7 +176,7 @@ class PropertyTableIdReferenceFinderTest extends \PHPUnit_Framework_TestCase {
 		);
 
 		$this->assertTrue(
-			$instance->hasResidualReferenceFor( SQLStore::FIXED_PROPERTY_ID_UPPERBOUND )
+			$instance->hasResidualReferenceForId( SQLStore::FIXED_PROPERTY_ID_UPPERBOUND )
 		);
 	}
 

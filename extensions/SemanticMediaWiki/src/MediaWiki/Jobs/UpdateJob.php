@@ -6,6 +6,7 @@ use LinkCache;
 use ParserOutput;
 use SMW\ApplicationFactory;
 use SMW\DIWikiPage;
+use SMW\DIProperty;
 use SMW\EventHandler;
 use Title;
 
@@ -45,6 +46,10 @@ class UpdateJob extends JobBase {
 	function __construct( Title $title, $params = array() ) {
 		parent::__construct( 'SMW\UpdateJob', $title, $params );
 		$this->removeDuplicates = true;
+
+		$this->isEnabledJobQueue(
+			ApplicationFactory::getInstance()->getSettings()->get( 'smwgEnableUpdateJobs' )
+		);
 	}
 
 	/**
@@ -56,24 +61,12 @@ class UpdateJob extends JobBase {
 		return $this->doUpdate();
 	}
 
-	/**
-	 * @see Job::insert
-	 *
-	 * This actually files the job. This is prevented if the configuration of SMW
-	 * disables jobs.
-	 *
-	 * @note Any method that inserts jobs with Job::batchInsert or otherwise must
-	 * implement this check individually. The below is not called in these cases.
-	 *
-	 * @codeCoverageIgnore
-	 */
-	public function insert() {
-		if ( ApplicationFactory::getInstance()->getSettings()->get( 'smwgEnableUpdateJobs' ) ) {
-			parent::insert();
-		}
-	}
-
 	private function doUpdate() {
+
+		// #2199 ("Invalid or virtual namespace -1 given")
+		if ( $this->getTitle()->isSpecialPage() ) {
+			return true;
+		}
 
 		LinkCache::singleton()->clear();
 
@@ -100,13 +93,14 @@ class UpdateJob extends JobBase {
 			return false;
 		}
 
-		$lastModified = $this->applicationFactory->getStore()->getWikiPageLastModifiedTimestamp(
+		$lastModified = $this->getWikiPageLastModifiedTimestamp(
 			DIWikiPage::newFromTitle( $title )
 		);
 
 		if ( $lastModified === \WikiPage::factory( $title )->getTimestamp() ) {
-			$pageUpdater = $this->applicationFactory->newMwCollaboratorFactory()->newPageUpdater();
+			$pageUpdater = $this->applicationFactory->newPageUpdater();
 			$pageUpdater->addPage( $title );
+			$pageUpdater->waitOnTransactionIdle();
 			$pageUpdater->doPurgeParserCache();
 			return true;
 		}
@@ -131,7 +125,6 @@ class UpdateJob extends JobBase {
 			);
 		}
 
-		$contentParser->forceToUseParser();
 		$contentParser->parse();
 
 		if ( !( $contentParser->getOutput() instanceof ParserOutput ) ) {
@@ -167,10 +160,39 @@ class UpdateJob extends JobBase {
 		// TODO
 		// Rebuild the factbox
 
+		// Signal to succeeding processes that the update was
+		// run from the CommandLine/JobQueue
+		$this->applicationFactory->getStore()->getOptions()->set(
+			'isCommandLineMode',
+			true
+		);
+
+		$this->applicationFactory->getStore()->getOptions()->set(
+			'isFromJob',
+			true
+		);
+
+		$parserData->setOrigin( 'UpdateJob' );
+
 		$parserData->disableBackgroundUpdateJobs();
 		$parserData->updateStore();
 
 		return true;
+	}
+
+	/**
+	 * Convenience method to find last modified MW timestamp for a subject that
+	 * has been added using the storage-engine.
+	 */
+	private function getWikiPageLastModifiedTimestamp( DIWikiPage $wikiPage ) {
+
+		$dataItems = $this->applicationFactory->getStore()->getPropertyValues( $wikiPage, new DIProperty( '_MDAT' ) );
+
+		if ( $dataItems !== array() ) {
+			return end( $dataItems )->getMwTimestamp( TS_MW );
+		}
+
+		return 0;
 	}
 
 }

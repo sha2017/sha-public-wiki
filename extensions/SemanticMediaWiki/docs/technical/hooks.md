@@ -39,7 +39,56 @@ Implementing a hook should be made in consideration of the expected performance 
 
 - `SMW::FileUpload::BeforeUpdate` to add extra annotations before the store update is triggered
 
-For implementation details and examples, see the [integration test](https://github.com/SemanticMediaWiki/SemanticMediaWiki/blob/master/tests/phpunit/Integration/SemanticMediaWikiProvidedHookInterfaceIntegrationTest.php).
+## 2.5
+
+### SMW::Job::AfterUpdateDispatcherJobComplete
+
+Hook allows to add extra jobs after `UpdateDispatcherJob` has been processed.
+
+<pre>
+\Hooks::register( 'SMW::Job::AfterUpdateDispatcherJobComplete', function( $job  ) {
+
+	// Find related dependencies
+	$title = $job->getTitle();
+
+	return true;
+} );
+</pre>
+
+### SMW::SQLStore::Installer::AfterCreateTablesComplete
+
+Hook allows to add extra tables after the creation process as been finalized.
+
+<pre>
+\Hooks::register( 'SMW::SQLStore::Installer::AfterCreateTablesComplete', function( $tableBuilder, $messageReporter ) {
+
+	// Output details on the activity
+	$messageReporter->reportMessage( '...' );
+
+	// See documentation in the available TableBuilder interface
+	$tableBuilder->create( ... );
+
+	return true;
+} );
+</pre>
+
+### SMW::SQLStore::Installer::AfterDropTablesComplete
+
+Hook allows to remove extra tables after the drop process as been finalized.
+
+<pre>
+\Hooks::register( 'SMW::SQLStore::Installer::AfterDropTablesComplete', function( $tableBuilder, $messageReporter ) {
+
+	// Output details on the activity
+	$messageReporter->reportMessage( '...' );
+
+	// See documentation in the available TableBuilder interface
+	$tableBuilder->drop( ... );
+
+	return true;
+} );
+</pre>
+
 
 ## Other available hooks
 
@@ -49,11 +98,6 @@ Subsequent hooks should be renamed to follow a common naming practice that help 
 * `SMWParamFormat`, SMWResultFormat
 * `\SMW\Store`, SMWStore::updateDataBefore (SMW::Store::BeforeDataUpdateComplete)
 * `\SMW\Store`, SMWStore::updateDataAfter (SMW::Store::AfterDataUpdateComplete)
-* `\SMW\Store`, smwInitializeTables (SMW::Store::initTables)
-* `SMWSQLStore3SetupHandlers`, SMWCustomSQLStoreFieldType
-* `SMWSQLStore3SetupHandlers`, smwRefreshDataJobs (SMW::SQLStore::AfterRefreshDataJob)
 * `SMWSQLStore3Writers`, SMWSQLStore3::updateDataBefore (SMW::SQLStore::BeforeDataUpdateComplete)
-* `SMWSetupScript`, smwDropTables (SMW::Store::dropTables)
-* `SMW_refreshData`, smwDropTables (SMW::Store::dropTables)
 
 [hooks]: https://www.mediawiki.org/wiki/Hooks "Manual:Hooks"

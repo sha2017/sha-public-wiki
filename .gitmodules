@@ -1,0 +1,27 @@
+[submodule "extensions/AdminLinks"]
+	path = extensions/AdminLinks
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/AdminLinks
+[submodule "extensions/Arrays"]
+	path = extensions/Arrays
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/Arrays
+[submodule "extensions/MyVariables"]
+	path = extensions/MyVariables
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/MyVariables
+[submodule "extensions/PageImages"]
+	path = extensions/PageImages
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/PageImages
+[submodule "extensions/Popups"]
+	path = extensions/Popups
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/Popups
+[submodule "extensions/TextExtracts"]
+	path = extensions/TextExtracts
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/TextExtracts
+[submodule "extensions/UserMerge"]
+	path = extensions/UserMerge
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/UserMerge
+[submodule "extensions/Widgets"]
+	path = extensions/Widgets
+	url = https://gerrit.wikimedia.org/r/p/mediawiki/extensions/Widgets
+[submodule "extensions/SimpleSamlAuth"]
+	path = extensions/SimpleSamlAuth
+	url = https://github.com/sha2017/mwSimpleSamlAuth.git

@@ -19,6 +19,11 @@ use SMWPropertyValue;
  */
 class DataValueFactoryTest extends \PHPUnit_Framework_TestCase {
 
+	protected function tearDown() {
+		DataValueFactory::getInstance()->clear();
+		parent::tearDown();
+	}
+
 	public function testCanConstruct() {
 
 		$this->assertInstanceOf(
@@ -254,11 +259,20 @@ class DataValueFactoryTest extends \PHPUnit_Framework_TestCase {
 
 	public function testNewPropertyValueByLabel() {
 
-		$dataValue = DataValueFactory::getInstance()->newPropertyValueByLabel( 'Foo' );
+		$dataValue = DataValueFactory::getInstance()->newPropertyValueByLabel(
+			'Foo',
+			'Bar',
+			new DIWikiPage( 'Foobar', SMW_NS_PROPERTY )
+		);
 
 		$this->assertInstanceOf(
 			'\SMWPropertyValue',
 			$dataValue
+		);
+
+		$this->assertSame(
+			'Bar',
+			$dataValue->getCaption()
 		);
 	}
 

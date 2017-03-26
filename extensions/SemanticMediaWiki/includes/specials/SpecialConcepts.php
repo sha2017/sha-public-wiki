@@ -45,7 +45,24 @@ class SpecialConcepts extends SpecialPage {
 	public function getResults( $limit, $from, $until ) {
 		$description = new NamespaceDescription( SMW_NS_CONCEPT );
 		$query = SMWPageLister::getQuery( $description, $limit, $from, $until );
-		return $this->getStore()->getQueryResult( $query )->getResults();
+
+		$results = $this->getStore()->getQueryResult( $query )->getResults();
+
+		foreach ( $results as $key => $subject ) {
+
+			// Don't display subobjects like _QUERY... on the list
+			if ( $subject->getSubobjectName() !== '' ) {
+				unset( $results[$key] );
+			}
+
+			// Avoid concepts that are mentioned in a query but doesn't
+			// exist as real page
+			if ( !$subject->getTitle()->exists() ) {
+				unset( $results[$key] );
+			}
+		}
+
+		return array_values( $results );
 	}
 
 	/**
@@ -99,6 +116,7 @@ class SpecialConcepts extends SpecialPage {
 	 * @param array $param
 	 */
 	public function execute( $param ) {
+		$this->setHeaders();
 
 		$this->getOutput()->setPageTitle( $this->msg( 'concepts' )->text() );
 

@@ -342,7 +342,7 @@ class Factbox {
 
 		// Do exclude some tags from processing otherwise the display
 		// can become distorted due to unresolved/open tags (see Bug 23185)
-		$excluded = array( 'table', 'tr', 'th', 'td', 'dl', 'dd', 'ul', 'li', 'ol', 'b', 'sup', 'sub' );
+		$excluded = array( 'table', 'tr', 'th', 'td', 'dl', 'dd', 'ul', 'li', 'ol', 'b', 'sub' );
 		$attributes = array();
 
 		foreach ( $semanticData->getProperties() as $propertyDi ) {
@@ -358,7 +358,6 @@ class Factbox {
 				$attributes['property'] = array( 'class' => 'smwpropname' );
 				$attributes['values'] = array( 'class' => 'smwprops' );
 			} elseif ( $propertyDv->isVisible() ) {
-				$propertyDv->setCaption( $propertyDi->getLabel() );
 				// Predefined property
 				$attributes['property'] = array( 'class' => 'smwspecname' );
 				$attributes['values'] = array( 'class' => 'smwspecs' );
@@ -374,7 +373,7 @@ class Factbox {
 
 				$dataValue = $this->dataValueFactory->newDataValueByItem( $dataItem, $propertyDi );
 				$dataValue->setOutputFormat( 'LOCL' );
-				$dataValue->disableServiceLinks();
+				$dataValue->setOption( $dataValue::OPT_DISABLE_INFOLINKS, true );
 
 				if ( $dataValue->isValid() ) {
 					$valuesHtml[] = Sanitizer::removeHTMLtags(

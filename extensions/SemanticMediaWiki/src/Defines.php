@@ -116,6 +116,7 @@ define( 'SMW_PREC_Y', 0 );
 define( 'SMW_PREC_YM', 1 );
 define( 'SMW_PREC_YMD', 2 );
 define( 'SMW_PREC_YMDT', 3 );
+define( 'SMW_PREC_YMDTZ', 4 ); // with time zone
 /**@}*/
 
 /**@{
@@ -145,14 +146,58 @@ define( 'SMW_UJ_PM_CLASTMDATE', 4 ); // compare last modified
 /**@}*/
 
 /**@{
+  * Constants for DeferredRequestDispatchManager update modes
+  */
+define( 'SMW_HTTP_DEFERRED_ASYNC', true );
+define( 'SMW_HTTP_DEFERRED_SYNC_JOB', 4 );
+/**@}*/
+
+/**@{
   * Constants DV features
   */
 define( 'SMW_DV_NONE', 0 );
 define( 'SMW_DV_PROV_REDI', 2 );  // PropertyValue to follow a property redirect target
 define( 'SMW_DV_MLTV_LCODE', 4 );  // MonolingualTextValue requires language code
+define( 'SMW_DV_NUMV_USPACE', 8 );  // Preserve spaces in unit labels
 define( 'SMW_DV_PVAP', 16 );  // Allows pattern
 define( 'SMW_DV_WPV_DTITLE', 32 );  // WikiPageValue to use an explicit display title
 define( 'SMW_DV_PROV_DTITLE', 64 );  // PropertyValue allow to find a property using the display title
 define( 'SMW_DV_PVUC', 128 );  // Delcares a uniqueness constraint
 define( 'SMW_DV_TIMEV_CM', 256 );  // TimeValue to indicate calendar model
+define( 'SMW_DV_PPLB', 512 );  // Preferred property label
+define( 'SMW_DV_PROV_LHNT', 1024 );  // PropertyValue to output a hint in case of a preferred label usage
+/**@}*/
+
+/**@{
+  * Constants for Fulltext types
+  */
+define( 'SMW_FT_NONE', 0 );
+define( 'SMW_FT_BLOB', 2 ); // DataItem::TYPE_BLOB
+define( 'SMW_FT_URI', 4 ); // DataItem::TYPE_URI
+define( 'SMW_FT_WIKIPAGE', 8 ); // DataItem::TYPE_WIKIPAGE
+/**@}*/
+
+/**@{
+  * Constants for admin features
+  */
+define( 'SMW_ADM_NONE', 0 );
+define( 'SMW_ADM_REFRESH', 2 ); // RefreshStore
+define( 'SMW_ADM_DISPOSAL', 4 ); // IDDisposal
+define( 'SMW_ADM_SETUP', 8 ); // SetupStore
+define( 'SMW_ADM_PSTATS', 16 ); // Property statistics update
+define( 'SMW_ADM_FULLT', 32 ); // Fulltext update
+/**@}*/
+
+/**@{
+  * Constants for LinksInValue features
+  */
+define( 'SMW_LINV_PCRE', 2 ); // Using the PCRE approach
+define( 'SMW_LINV_OBFU', 4 ); // Using the Obfuscator approach
+/**@}*/
+
+/**@{
+  * Constants for ResultPrinter
+  */
+define( 'SMW_RF_NONE', 0 );
+define( 'SMW_RF_TEMPLATE_OUTSEP', 2 ); // #2022 Enable 2.5 behaviour for template handling
 /**@}*/

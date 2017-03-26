@@ -9,8 +9,6 @@
  */
 use SMW\ApplicationFactory;
 use SMW\DataValues\InfoLinksProvider;
-use SMW\DataValues\ValueFormatterRegistry;
-use SMW\DataValues\ValueValidatorRegistry;
 use SMW\Deserializers\DVDescriptionDeserializerRegistry;
 use SMW\Localizer;
 use SMW\Message;
@@ -47,8 +45,33 @@ use SMW\Query\QueryComparator;
  */
 abstract class SMWDataValue {
 
+	/**
+	 * Contains the user language a user operates in.
+	 */
 	const OPT_USER_LANGUAGE = 'user.language';
+
+	/**
+	 * Contains either the global "site" content language or a specified page
+	 * content language invoked by the context page.
+	 */
 	const OPT_CONTENT_LANGUAGE = 'content.language';
+
+	/**
+	 * Describes a state where a DataValue is part of a query condition and may
+	 * (or not) require a different treatment.
+	 */
+	const OPT_QUERY_CONTEXT = 'query.context';
+
+	/**
+	 * Describes a state where a DataValue is part of a query condition and
+	 * contains a comparator.
+	 */
+	const OPT_QUERY_COMP_CONTEXT = 'query.comparator.context';
+
+	/**
+	 * Option to disable an infolinks highlight/tooltip
+	 */
+	const OPT_DISABLE_INFOLINKS = 'disable.infolinks';
 
 	/**
 	 * Associated data item. This is the reference to the immutable object
@@ -115,26 +138,19 @@ abstract class SMWDataValue {
 	private $mHasErrors = false;
 
 	/**
-	 * Extraneous services and object container
-	 *
-	 * @var array
-	 */
-	private $extraneousFunctions = array();
-
-	/**
 	 * @var Options
 	 */
 	private $options;
 
 	/**
-	 * @var boolean
-	 */
-	protected $approximateValue = false;
-
-	/**
 	 * @var InfoLinksProvider
 	 */
 	private $infoLinksProvider = null;
+
+	/**
+	 * @var DataValueServiceFactory
+	 */
+	protected $dataValueServiceFactory;
 
 	/**
 	 * Constructor.
@@ -152,21 +168,15 @@ abstract class SMWDataValue {
 	 * The given value is a string as supplied by some user. An alternative
 	 * label for printout might also be specified.
 	 *
-	 * The third argument was added in SMW 1.9 and should not be used from outside SMW.
-	 *
 	 * @param string $value
 	 * @param mixed $caption
-	 * @param boolean $approximateValue
 	 */
-	public function setUserValue( $value, $caption = false, $approximateValue = false ) {
+	public function setUserValue( $value, $caption = false ) {
 
 		$this->m_dataitem = null;
 		$this->mErrors = array(); // clear errors
 		$this->mHasErrors = false;
-		$this->getInfoLinksProvider()->init();
 		$this->m_caption = is_string( $caption ) ? trim( $caption ) : false;
-		$this->approximateValue = $approximateValue;
-
 
 		$this->parseUserValue( $value ); // may set caption if not set yet, depending on datavalue
 
@@ -178,13 +188,12 @@ abstract class SMWDataValue {
 		// just fails, even if parseUserValue() above might not have noticed this issue.
 		// Note: \x07 was used in MediaWiki 1.11.0, \x7f is used now (backwards compatiblity, b/c)
 		if ( ( strpos( $value, "\x7f" ) !== false ) || ( strpos( $value, "\x07" ) !== false ) ) {
-			$this->addError( wfMessage( 'smw_parseerror' )->inContentLanguage()->text() );
+			$this->addErrorMsg( array( 'smw-datavalue-stripmarker-parse-error', $value ) );
 		}
 
-		if ( $this->isValid() && !$approximateValue ) {
+		if ( $this->isValid() && !$this->getOption( self::OPT_QUERY_CONTEXT ) ) {
 			$this->checkAllowedValues();
 		}
-
 	}
 
 	/**
@@ -202,11 +211,19 @@ abstract class SMWDataValue {
 	 * @return boolean
 	 */
 	public function setDataItem( SMWDataItem $dataItem ) {
-		$this->getInfoLinksProvider()->init();
 		$this->m_dataitem = null;
 		$this->mErrors = array();
 		$this->mHasErrors = $this->m_caption = false;
 		return $this->loadDataItem( $dataItem );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param DataValueServiceFactory $dataValueServiceFactory
+	 */
+	public function setDataValueServiceFactory( $dataValueServiceFactory ) {
+		$this->dataValueServiceFactory = $dataValueServiceFactory;
 	}
 
 	/**
@@ -263,9 +280,14 @@ abstract class SMWDataValue {
 	/**
 	 * @since 2.4
 	 *
-	 * @return Options $options
+	 * @return Options|null $options
 	 */
-	public function setOptions( Options $options ) {
+	public function setOptions( Options $options = null ) {
+
+		if ( $options === null ) {
+			return;
+		}
+
 		foreach ( $options->getOptions() as $key => $value ) {
 			$this->setOption( $key, $value );
 		}
@@ -293,7 +315,7 @@ abstract class SMWDataValue {
 	 *
 	 * @return mixed|false
 	 */
-	public function getOptionValueFor( $key ) {
+	public function getOption( $key ) {
 
 		if ( $this->options !== null && $this->options->has( $key ) ) {
 			return $this->options->get( $key );
@@ -310,7 +332,7 @@ abstract class SMWDataValue {
 	 * @return boolean
 	 */
 	public function isEnabledFeature( $feature ) {
-		return ( $this->getOptionValueFor( 'smwgDVFeatures' ) & $feature ) != 0;
+		return ( (int)$this->getOption( 'smwgDVFeatures' ) & $feature ) != 0;
 	}
 
 	/**
@@ -343,15 +365,6 @@ abstract class SMWDataValue {
 	 */
 	public function getPreferredCaption() {
 		return $this->m_caption;
-	}
-
-	/**
-	 * Adds a single SMWInfolink object to the m_infolinks array.
-	 *
-	 * @param SMWInfolink $link
-	 */
-	public function addInfolink( SMWInfolink $link ) {
-		$this->getInfoLinksProvider()->addInfolink( $link );
 	}
 
 	/**
@@ -404,14 +417,20 @@ abstract class SMWDataValue {
 	}
 
 	/**
+	 * Messages are not resolved until the output and instead will be kept with the
+	 * message and argument keys (e.g. `[2,"smw_baduri","~*0123*"]`). This allows to
+	 * switch the a representation without requiring language context by the object
+	 * that reports an error.
+	 *
 	 * @since 2.4
 	 *
 	 * @param $parameters
 	 * @param integer|null $type
 	 * @param integer|null $language
 	 */
-	public function addErrorMsg( $parameters, $type = null, $language = null ) {
-		$this->addError( Message::get( $parameters, $type, $language ) );
+	public function addErrorMsg( $parameters, $type = null ) {
+		$this->mErrors[Message::getHash( $parameters, $type )] = Message::encode( $parameters, $type );
+		$this->mHasErrors = true;
 	}
 
 	/**
@@ -456,6 +475,8 @@ abstract class SMWDataValue {
 ///// Query support /////
 
 	/**
+	 * FIXME 3.0, allow NULL as value
+	 *
 	 * @see DataValueDescriptionDeserializer::deserialize
 	 *
 	 * @note Descriptions of values need to know their property to be able to
@@ -469,7 +490,7 @@ abstract class SMWDataValue {
 	 */
 	public function getQueryDescription( $value ) {
 
-		$descriptionDeserializer = DVDescriptionDeserializerRegistry::getInstance()->getDescriptionDeserializerFor( $this );
+		$descriptionDeserializer = DVDescriptionDeserializerRegistry::getInstance()->getDescriptionDeserializerBy( $this );
 		$description = $descriptionDeserializer->deserialize( $value );
 
 		foreach ( $descriptionDeserializer->getErrors() as $error ) {
@@ -477,27 +498,6 @@ abstract class SMWDataValue {
 		}
 
 		return $description;
-	}
-
-	/**
-	 * Returns a DataValueFormatter that was matched and dispatched for the current
-	 * DV instance.
-	 *
-	 * @since 2.4
-	 *
-	 * @return DataValueFormatter
-	 */
-	public function getDataValueFormatter() {
-		return ValueFormatterRegistry::getInstance()->getDataValueFormatterFor( $this );
-	}
-
-	/**
-	 * @since 2.4
-	 *
-	 * @return PropertySpecificationLookup
-	 */
-	public function getPropertySpecificationLookup() {
-		return ApplicationFactory::getInstance()->getPropertySpecificationLookup();
 	}
 
 	/**
@@ -641,7 +641,16 @@ abstract class SMWDataValue {
 	 * @return string
 	 */
 	public function getInfolinkText( $outputformat, $linker = null ) {
-		return $this->getInfoLinksProvider()->getInfolinkText( $outputformat, $linker );
+
+		if ( $this->infoLinksProvider === null ) {
+			$this->infoLinksProvider = $this->dataValueServiceFactory->newInfoLinksProvider( $this );
+		}
+
+		if ( $this->getOption( self::OPT_DISABLE_INFOLINKS ) === true ) {
+			$this->infoLinksProvider->disableServiceLinks();
+		}
+
+		return $this->infoLinksProvider->getInfolinkText( $outputformat, $linker );
 	}
 
 	/**
@@ -663,13 +672,6 @@ abstract class SMWDataValue {
 	}
 
 	/**
-	 * @since 2.1
-	 */
-	public function disableServiceLinks() {
-		$this->getInfoLinksProvider()->disableServiceLinks();
-	}
-
-	/**
 	 * Return an array of SMWLink objects that provide additional resources
 	 * for the given value. Captions can contain some HTML markup which is
 	 * admissible for wiki text, but no more. Result might have no entries
@@ -677,11 +679,15 @@ abstract class SMWDataValue {
 	 */
 	public function getInfolinks() {
 
-		$this->getInfoLinksProvider()->setServiceLinkParameters(
+		if ( $this->infoLinksProvider === null ) {
+			$this->infoLinksProvider = $this->dataValueServiceFactory->newInfoLinksProvider( $this );
+		}
+
+		$this->infoLinksProvider->setServiceLinkParameters(
 			$this->getServiceLinkParams()
 		);
 
-		return $this->getInfoLinksProvider()->createInfoLinks();
+		return $this->infoLinksProvider->createInfoLinks();
 	}
 
 	/**
@@ -746,17 +752,6 @@ abstract class SMWDataValue {
 	}
 
 	/**
-	 * @note Normally set by the DataValueFactory, or during tests
-	 *
-	 * @since 2.3
-	 *
-	 * @param array
-	 */
-	public function setExtraneousFunctions( array $extraneousFunctions ) {
-		$this->extraneousFunctions = $extraneousFunctions;
-	}
-
-	/**
 	 * @since 2.3
 	 *
 	 * @param string $name
@@ -766,12 +761,7 @@ abstract class SMWDataValue {
 	 * @throws RuntimeException
 	 */
 	public function getExtraneousFunctionFor( $name, array $parameters = array() ) {
-
-		if ( isset( $this->extraneousFunctions[$name] ) && is_callable( $this->extraneousFunctions[$name] ) ) {
-			return call_user_func_array( $this->extraneousFunctions[$name], $parameters );
-		}
-
-		throw new RuntimeException( "$name is not registered as extraneous function." );
+		return $this->dataValueServiceFactory->newExtraneousFunctionByName( $name, $parameters );
 	}
 
 	/**
@@ -799,27 +789,21 @@ abstract class SMWDataValue {
 	 * Creates an error if the value is illegal.
 	 */
 	protected function checkAllowedValues() {
-		ValueValidatorRegistry::getInstance()->getConstraintValueValidator()->validate( $this );
+
+		if ( $this->dataValueServiceFactory === null ) {
+			return;
+		}
+
+		$this->dataValueServiceFactory->getConstraintValueValidator()->validate( $this );
 	}
 
 	/**
-	 * @since 2.4
+	 * @since 2.5
 	 *
-	 * @param string $value
-	 *
-	 * @return string
+	 * @return Options
 	 */
-	protected function convertDoubleWidth( $value ) {
-		return Localizer::convertDoubleWidth( $value );
-	}
-
-	private function getInfoLinksProvider() {
-
-		if ( $this->infoLinksProvider === null ) {
-			$this->infoLinksProvider = new InfoLinksProvider( $this );
-		}
-
-		return $this->infoLinksProvider;
+	protected function getOptions() {
+		return $this->options;
 	}
 
 }

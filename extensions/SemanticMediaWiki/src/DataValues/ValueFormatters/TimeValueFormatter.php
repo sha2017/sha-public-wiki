@@ -121,7 +121,7 @@ class TimeValueFormatter extends DataValueFormatter {
 		$precision = $dataItem->getPrecision();
 
 		$language = Localizer::getInstance()->getLanguage(
-			$this->dataValue->getOptionValueFor( 'user.language' )
+			$this->dataValue->getOption( DataValue::OPT_USER_LANGUAGE )
 		);
 
 		$year = $dataItem->getYear();
@@ -247,7 +247,7 @@ class TimeValueFormatter extends DataValueFormatter {
 	public function getCaptionFromFreeFormat( DITime $dataItem = null ) {
 
 		$language = Localizer::getInstance()->getLanguage(
-			$this->dataValue->getOptionValueFor( 'user.language' )
+			$this->dataValue->getOption( DataValue::OPT_USER_LANGUAGE )
 		);
 
 		// Prehistory dates are not supported when using this output format
@@ -282,23 +282,44 @@ class TimeValueFormatter extends DataValueFormatter {
 	 */
 	public function getLocalizedFormat( DITime $dataItem = null ) {
 
-		$language = Localizer::getInstance()->getLanguage(
-			$this->dataValue->getOptionValueFor( 'user.language' )
-		);
-
-		if ( $dataItem !== null && $dataItem->getYear() > DITime::PREHISTORY ) {
-
-			$intlTimeFormatter = new IntlTimeFormatter(
-				$dataItem,
-				$language
-			);
-
-			return $intlTimeFormatter->getLocalizedFormat() . $this->hintCalendarModel( $dataItem );
+		if ( $dataItem === null ) {
+			return '';
 		}
 
-		return $this->getISO8601Date();
-	}
+		if ( $dataItem->getYear() < DITime::PREHISTORY ) {
+			return $this->getISO8601Date();
+		}
 
+		$outputFormat = $this->dataValue->getOutputFormat();
+		$formatFlag = IntlTimeFormatter::LOCL_DEFAULT;
+
+		if ( strpos( $outputFormat, 'TZ' ) !== false ) {
+			$formatFlag = IntlTimeFormatter::LOCL_TIMEZONE;
+			$outputFormat = str_replace( '#TZ', '', $outputFormat );
+		}
+
+		if ( ( $language = Localizer::getInstance()->getLanguageCodeFrom( $outputFormat ) ) === false ) {
+			$language = $this->dataValue->getOption( DataValue::OPT_USER_LANGUAGE );
+		}
+
+		$language = Localizer::getInstance()->getLanguage( $language );
+
+		$intlTimeFormatter = new IntlTimeFormatter(
+			$dataItem,
+			$language
+		);
+
+		// Avoid an exception on "DateTime::__construct(): Failed to parse time
+		// string (2147483647-01-01 00:00:0.0000000) at position 17 (0): Double
+		// time specification" for an annotation like [[Date::Jan 10000000000]]
+		try {
+			$localizedFormat = $intlTimeFormatter->getLocalizedFormat( $formatFlag ) . $this->hintCalendarModel( $dataItem );
+		} catch ( \Exception $e ) {
+			$localizedFormat = $this->getISO8601Date();
+		}
+
+		return $localizedFormat;
+	}
 
 	/**
 	 * Compute a suitable string to display this date, taking into account the
@@ -337,7 +358,7 @@ class TimeValueFormatter extends DataValueFormatter {
 
 		if ( strpos( $format, '-F[' ) !== false ) {
 			return $this->getCaptionFromFreeFormat( $this->dataValue->getDataItemForCalendarModel( $model ) );
-		} elseif ( $format == 'LOCL' ) {
+		} elseif ( strpos( $format, 'LOCL' ) !== false ) {
 			return $this->getLocalizedFormat( $this->dataValue->getDataItemForCalendarModel( $model ) );
 		} elseif ( $dataItem->getYear() > TimeValue::PREHISTORY && $dataItem->getPrecision() >= DITime::PREC_YM ) {
 			// Do not convert between Gregorian and Julian if only

@@ -28,36 +28,22 @@ class PropertySpecificationChangeNotifier {
 	private $semanticData;
 
 	/**
+	 * @var array
+	 */
+	private $propertyList = array();
+
+	/**
 	 * @var boolean
 	 */
 	private $hasDiff = false;
 
 	/**
-	 * @var array
-	 */
-	private $propertiesToCompare =  array();
-
-	/**
 	 * @since 1.9
 	 *
 	 * @param Store $store
-	 * @param SemanticData $semanticData
 	 */
-	public function __construct( Store $store, SemanticData $semanticData ) {
+	public function __construct( Store $store ) {
 		$this->store = $store;
-		$this->semanticData = $semanticData;
-	}
-
-	/**
-	 * Invoke properties (e.g '_PLIST', see $smwgDeclarationProperties ) to
-	 * compare and find a possible specification change
-	 *
-	 * @since 2.2
-	 *
-	 * @param array $declarationProperties
-	 */
-	public function setPropertiesToCompare( array $propertiesToCompare ) {
-		$this->propertiesToCompare = $propertiesToCompare;
 	}
 
 	/**
@@ -70,29 +56,65 @@ class PropertySpecificationChangeNotifier {
 	}
 
 	/**
-	 * Compare and compute the difference between invoked semantic data
-	 * and the current store data
+	 * @since 2.5
+	 */
+	public function notify() {
+
+		if ( !$this->hasDiff() || $this->semanticData === null ) {
+			return false;
+		}
+
+		$dispatchContext = EventHandler::getInstance()->newDispatchContext();
+		$dispatchContext->set( 'subject', $this->semanticData->getSubject() );
+
+		EventHandler::getInstance()->getEventDispatcher()->dispatch(
+			'property.specification.change',
+			$dispatchContext
+		);
+
+		return true;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param array $propertyList
+	 */
+	public function setPropertyList( array $propertyList ) {
+		$this->propertyList = $propertyList;
+	}
+
+	/**
+	 * Compare and detect differences between the invoked semantic data
+	 * and the current stored data
+	 *
+	 * @note Compare on extra properties from `smwgDeclarationProperties`
+	 * (e.g '_PLIST') to find a possible specification change
 	 *
 	 * @since 1.9
+	 *
+	 * @param SemanticData $semanticData
 	 */
-	public function compareForListedSpecification() {
+	public function detectChangesOn( SemanticData $semanticData ) {
+
+		$this->semanticData = $semanticData;
 
 		if ( $this->semanticData->getSubject()->getNamespace() !== SMW_NS_PROPERTY ) {
 			return;
 		}
 
-		$this->compareFor( '_TYPE' );
-		$this->compareFor( '_CONV' );
-		$this->compareFor( '_UNIT' );
-		$this->compareFor( '_PREC' );
-		$this->compareFor( '_PDESC' );
+		$this->doCompare( '_TYPE' );
+		$this->doCompare( '_CONV' );
+		$this->doCompare( '_UNIT' );
+		$this->doCompare( '_PREC' );
+		$this->doCompare( '_PDESC' );
 
-		foreach ( $this->propertiesToCompare as $propertyKey ) {
-			$this->compareFor( $propertyKey );
+		foreach ( $this->propertyList as $property ) {
+			$this->doCompare( $property );
 		}
 	}
 
-	private function compareFor( $propertyKey ) {
+	private function doCompare( $propertyKey ) {
 
 		if ( $this->hasDiff() ) {
 			return;
@@ -107,20 +129,11 @@ class PropertySpecificationChangeNotifier {
 			$property
 		);
 
-		$this->notifyDispatcher( !$this->isEqual( $oldValues, $newValues ) );
+		$this->setDiff( !$this->isEqual( $oldValues, $newValues ) );
 	}
 
-	private function notifyDispatcher( $addJob = true ) {
+	private function setDiff( $addJob = true ) {
 		if ( $addJob && !$this->hasDiff ) {
-
-			$dispatchContext = EventHandler::getInstance()->newDispatchContext();
-			$dispatchContext->set( 'subject', $this->semanticData->getSubject() );
-
-			EventHandler::getInstance()->getEventDispatcher()->dispatch(
-				'property.spec.change',
-				$dispatchContext
-			);
-
 			$this->hasDiff = true;
 		}
 	}

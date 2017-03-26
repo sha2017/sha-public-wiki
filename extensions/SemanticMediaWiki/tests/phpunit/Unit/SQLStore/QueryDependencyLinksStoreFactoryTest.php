@@ -29,7 +29,7 @@ class QueryDependencyLinksStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertInstanceOf(
 			'\SMW\SQLStore\QueryDependency\QueryResultDependencyListResolver',
-			$instance->newQueryResultDependencyListResolver( '' )
+			$instance->newQueryResultDependencyListResolver()
 		);
 	}
 
@@ -62,6 +62,20 @@ class QueryDependencyLinksStoreFactoryTest extends \PHPUnit_Framework_TestCase {
 		$this->assertInstanceOf(
 			'\SMW\SQLStore\QueryDependency\EntityIdListRelevanceDetectionFilter',
 			$instance->newEntityIdListRelevanceDetectionFilter( $store, $compositePropertyTableDiffIterator )
+		);
+	}
+
+	public function testCanConstructQueryReferenceBacklinks() {
+
+		$store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
+
+		$instance = new QueryDependencyLinksStoreFactory();
+
+		$this->assertInstanceOf(
+			'\SMW\SQLStore\QueryDependency\QueryReferenceBacklinks',
+			$instance->newQueryReferenceBacklinks( $store )
 		);
 	}
 

@@ -16,9 +16,22 @@ use Title;
  */
 class DeleteSubjectTest extends \PHPUnit_Framework_TestCase {
 
+	private $factory;
 	private $store;
 
 	protected function setUp() {
+
+		$propertyStatisticsTable = $this->getMockBuilder( '\SMW\SQLStore\PropertyStatisticsTable' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->factory = $this->getMockBuilder( '\SMW\SQLStore\SQLStoreFactory' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->factory->expects( $this->any() )
+			->method( 'newPropertyStatisticsTable' )
+			->will( $this->returnValue( $propertyStatisticsTable ) );
 
 		$propertyTableInfoFetcher = $this->getMockBuilder( '\SMW\SQLStore\PropertyTableInfoFetcher' )
 			->disableOriginalConstructor()
@@ -37,7 +50,7 @@ class DeleteSubjectTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertInstanceOf(
 			'\SMWSQLStore3Writers',
-			new SMWSQLStore3Writers( $this->store )
+			new SMWSQLStore3Writers( $this->store, $this->factory )
 		);
 	}
 
@@ -81,7 +94,11 @@ class DeleteSubjectTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getPropertyTables' )
 			->will( $this->returnValue( array() ) );
 
-		$instance = new SMWSQLStore3Writers( $this->store );
+		$this->store->expects( $this->any() )
+			->method( 'getOptions' )
+			->will( $this->returnValue( new \SMW\Options() ) );
+
+		$instance = new SMWSQLStore3Writers( $this->store, $this->factory );
 		$instance->deleteSubject( $title );
 	}
 
@@ -134,7 +151,11 @@ class DeleteSubjectTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getPropertyTables' )
 			->will( $this->returnValue( array() ) );
 
-		$instance = new SMWSQLStore3Writers( $this->store );
+		$this->store->expects( $this->any() )
+			->method( 'getOptions' )
+			->will( $this->returnValue( new \SMW\Options() ) );
+
+		$instance = new SMWSQLStore3Writers( $this->store, $this->factory );
 		$instance->deleteSubject( $title );
 	}
 

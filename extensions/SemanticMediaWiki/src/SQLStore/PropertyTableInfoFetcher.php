@@ -15,6 +15,11 @@ use SMWDataItem as DataItem;
 class PropertyTableInfoFetcher {
 
 	/**
+	 * @var PropertyTypeFinder
+	 */
+	private $propertyTypeFinder;
+
+	/**
 	 * Array for keeping property table table data, indexed by table id.
 	 * Access this only by calling getPropertyTables().
 	 *
@@ -51,9 +56,9 @@ class PropertyTableInfoFetcher {
 	 */
 	private $fixedSpecialProperties = array(
 		// property declarations
-		'_TYPE', '_UNIT', '_CONV', '_PVAL', '_LIST', '_SERV', '_PREC',
+		'_TYPE', '_UNIT', '_CONV', '_PVAL', '_LIST', '_SERV', '_PREC', '_PPLB',
 		// query statistics (very frequently used)
-		'_ASK', '_ASKDE', '_ASKSI', '_ASKFO', '_ASKST', '_ASKDU',
+		'_ASK', '_ASKDE', '_ASKSI', '_ASKFO', '_ASKST', '_ASKDU', '_ASKPA',
 		// subproperties, classes, and instances
 		'_SUBP', '_SUBC', '_INST',
 		// redirects
@@ -90,6 +95,15 @@ class PropertyTableInfoFetcher {
 		DataItem::TYPE_WIKIPAGE   => 'smw_di_wikipage',
 		//DataItem::TYPE_CONCEPT    => '', // _CONC is the only property of this type
 	);
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param PropertyTypeFinder $propertyTypeFinder
+	 */
+	public function __construct( PropertyTypeFinder $propertyTypeFinder ) {
+		$this->propertyTypeFinder = $propertyTypeFinder;
+	}
 
 	/**
 	 * @since 2.2
@@ -144,6 +158,22 @@ class PropertyTableInfoFetcher {
 		}
 
 		return '';
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param DIProperty $property
+	 *
+	 * @return boolean
+	 */
+	public function isFixedTableProperty( DIProperty $property ) {
+
+		if ( $this->fixedPropertyTableIds === null ) {
+			$this->buildDefinitionsForPropertyTables();
+		}
+
+		return array_key_exists( $property->getKey(), $this->fixedPropertyTableIds );
 	}
 
 	/**
@@ -212,12 +242,14 @@ class PropertyTableInfoFetcher {
 		}
 
 		$definitionBuilder = new PropertyTableDefinitionBuilder(
+			$this->propertyTypeFinder
+		);
+
+		$definitionBuilder->doBuild(
 			$this->defaultDiTypeTableIdMap,
 			$enabledSpecialProperties,
 			$this->customFixedPropertyList
 		);
-
-		$definitionBuilder->doBuild();
 
 		$this->propertyTableDefinitions = $definitionBuilder->getTableDefinitions();
 		$this->fixedPropertyTableIds = $definitionBuilder->getFixedPropertyTableIds();

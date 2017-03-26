@@ -326,7 +326,7 @@ class SemanticDataTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new SemanticData( DIWikiPage::newFromTitle( Title::newFromText( __METHOD__ ) ) );
 
-		$this->setExpectedException( 'MWException' );
+		$this->setExpectedException( '\SMW\Exception\SubSemanticDataException' );
 
 		$instance->addSubSemanticData(
 			new SemanticData( DIWikiPage::newFromTitle( Title::newFromText( 'addSubSemanticData' ) ) )
@@ -337,7 +337,7 @@ class SemanticDataTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new SemanticData( DIWikiPage::newFromTitle( Title::newFromText( __METHOD__ ) ) );
 
-		$this->setExpectedException( 'MWException' );
+		$this->setExpectedException( '\SMW\Exception\SubSemanticDataException' );
 		$instance->addSubobject( $this->newSubobject( Title::newFromText( 'addSubSemanticData' ) ) );
 	}
 
@@ -345,7 +345,7 @@ class SemanticDataTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new SemanticData( DIWikiPage::newFromTitle( Title::newFromText( __METHOD__ ) ) );
 
-		$this->setExpectedException( 'MWException' );
+		$this->setExpectedException( '\SMW\Exception\SemanticDataImportException' );
 
 		$instance->importDataFrom(
 			new SemanticData( DIWikiPage::newFromTitle( Title::newFromText( 'importDataFrom' ) ) )
@@ -404,22 +404,11 @@ class SemanticDataTest extends \PHPUnit_Framework_TestCase {
 			new DIWikiPage( 'Foo', NS_MAIN )
 		);
 
-		$instance->setLastModified( 1001 );
+		$instance->setOption( SemanticData::OPT_LAST_MODIFIED, 1001 );
 
 		$this->assertEquals(
 			1001,
-			$instance->getLastModified()
-		);
-	}
-
-	public function testGetLastModifiedForEmptyModificationDate() {
-
-		$instance = new SemanticData(
-			new DIWikiPage( 'Foo', NS_MAIN )
-		);
-
-		$this->assertNull(
-			$instance->getLastModified()
+			$instance->getOption( SemanticData::OPT_LAST_MODIFIED )
 		);
 	}
 
@@ -436,7 +425,7 @@ class SemanticDataTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(
 			1272508903,
-			$instance->getLastModified()
+			$instance->getOption( SemanticData::OPT_LAST_MODIFIED )
 		);
 	}
 
@@ -474,6 +463,27 @@ class SemanticDataTest extends \PHPUnit_Framework_TestCase {
 
 		$instance->removePropertyObjectValue( $property, $dataItem );
 		$this->assertTrue( $instance->isEmpty() );
+	}
+
+	public function testRemoveProperty() {
+
+		$property = new DIProperty( 'Foo' );
+		$instance = new SemanticData( DIWikiPage::newFromText( __METHOD__ ) );
+
+		$instance->addPropertyObjectValue(
+			$property,
+			new DIWikiPage( 'Bar', NS_MAIN, '', 'Foobar' )
+		);
+
+		$this->assertTrue(
+			$instance->hasProperty( $property )
+		);
+
+		$instance->removeProperty( $property );
+
+		$this->assertFalse(
+			$instance->hasProperty( $property )
+		);
 	}
 
 	public function testClear() {

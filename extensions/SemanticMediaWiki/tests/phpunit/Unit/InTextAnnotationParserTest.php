@@ -4,14 +4,13 @@ namespace SMW\Tests;
 
 use ParserOutput;
 use ReflectionClass;
-use SMW\ApplicationFactory;
 use SMW\DIProperty;
 use SMW\InTextAnnotationParser;
+use SMW\Parser\LinksProcessor;
 use SMW\MediaWiki\MagicWordsFinder;
 use SMW\MediaWiki\RedirectTargetFinder;
 use SMW\ParserData;
-use SMW\Settings;
-use SMW\Tests\Utils\Validators\SemanticDataValidator;
+use SMW\Tests\TestEnvironment;
 use Title;
 
 /**
@@ -26,24 +25,26 @@ use Title;
 class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 
 	private $semanticDataValidator;
-	private $applicationFactory;
+	private $testEnvironment;
+	private $linksProcessor;
 
 	protected function setUp() {
 		parent::setUp();
 
-		$this->semanticDataValidator = new SemanticDataValidator();
-		$this->applicationFactory = ApplicationFactory::getInstance();
+		$this->testEnvironment = new TestEnvironment();
+		$this->semanticDataValidator = $this->testEnvironment->getUtilityFactory()->newValidatorFactory()->newSemanticDataValidator();
 
 		$store = $this->getMockBuilder( '\SMW\Store' )
 			->disableOriginalConstructor()
 			->getMockForAbstractClass();
 
-		$this->applicationFactory->registerObject( 'Store', $store );
+		$this->testEnvironment->registerObject( 'Store', $store );
+
+		$this->LinksProcessor = new LinksProcessor();
 	}
 
 	protected function tearDown() {
-		$this->applicationFactory->clear();
-
+		$this->testEnvironment->tearDown();
 		parent::tearDown();
 	}
 
@@ -64,6 +65,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 
 		$instance =	new InTextAnnotationParser(
 			new ParserData( $title, $parserOutput ),
+			$this->LinksProcessor,
 			new MagicWordsFinder(),
 			$redirectTargetFinder
 		);
@@ -88,6 +90,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new InTextAnnotationParser(
 			$parserData,
+			$this->LinksProcessor,
 			$magicWordsFinder,
 			new RedirectTargetFinder()
 		);
@@ -110,19 +113,23 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 			new ParserOutput()
 		);
 
+		$this->LinksProcessor->isStrictMode(
+			isset( $settings['smwgEnabledInTextAnnotationParserStrictMode'] ) ? $settings['smwgEnabledInTextAnnotationParserStrictMode'] : true
+		);
+
 		$instance = new InTextAnnotationParser(
 			$parserData,
+			$this->LinksProcessor,
 			new MagicWordsFinder(),
 			new RedirectTargetFinder()
 		);
 
-		$instance->setStrictModeState(
-			isset( $settings['smwgEnabledInTextAnnotationParserStrictMode'] ) ? $settings['smwgEnabledInTextAnnotationParserStrictMode'] : true
+		$instance->enabledLinksInValues(
+			isset( $settings['smwgLinksInValues'] ) ? $settings['smwgLinksInValues'] : true
 		);
 
-		$this->applicationFactory->registerObject(
-			'Settings',
-			Settings::newFromArray( $settings )
+		$this->testEnvironment->withConfiguration(
+			$settings
 		);
 
 		$instance->parse( $text );
@@ -155,10 +162,8 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 			'smwgInlineErrors'  => true,
 		);
 
-
-		$this->applicationFactory->registerObject(
-			'Settings',
-			Settings::newFromArray( $settings )
+		$this->testEnvironment->withConfiguration(
+			$settings
 		);
 
 		$parserData = new ParserData(
@@ -170,6 +175,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new InTextAnnotationParser(
 			$parserData,
+			$this->LinksProcessor,
 			new MagicWordsFinder(),
 			$redirectTargetFinder
 		);
@@ -200,9 +206,8 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 			'smwgInlineErrors'  => true,
 		);
 
-		$this->applicationFactory->registerObject(
-			'Settings',
-			Settings::newFromArray( $settings )
+		$this->testEnvironment->withConfiguration(
+			$settings
 		);
 
 		$parserData = new ParserData(
@@ -214,6 +219,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new InTextAnnotationParser(
 			$parserData,
+			$this->LinksProcessor,
 			new MagicWordsFinder(),
 			$redirectTargetFinder
 		);
@@ -236,6 +242,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new InTextAnnotationParser(
 			$parserData,
+			$this->LinksProcessor,
 			new MagicWordsFinder(),
 			new RedirectTargetFinder()
 		);
@@ -259,7 +266,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
-	 * @dataProvider textWithAnnotationProvider
+	 * @dataProvider stripTextWithAnnotationProvider
 	 */
 	public function testStrip( $text, $expectedRemoval, $expectedObscuration ) {
 
@@ -270,48 +277,18 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(
 			$expectedObscuration,
-			InTextAnnotationParser::obscureAnnotation( $text )
+			InTextAnnotationParser::obfuscateAnnotation( $text )
 		);
 	}
 
-	public function textWithAnnotationProvider() {
+	public function stripTextWithAnnotationProvider() {
 
 		$provider = array();
 
 		$provider[] = array(
 			'Suspendisse [[Bar::tincidunt semper|abc]] facilisi',
 			'Suspendisse abc facilisi',
-			'Suspendisse &#x005B;&#x005B;Bar::tincidunt semper|abc]] facilisi'
-		);
-
-		$provider[] = array(
-			'Suspendisse [[Bar::tincidunt semper]] facilisi',
-			'Suspendisse tincidunt semper facilisi',
-			'Suspendisse &#x005B;&#x005B;Bar::tincidunt semper]] facilisi'
-		);
-
-		$provider[] = array(
-			'Suspendisse [[:Tincidunt semper|tincidunt semper]]',
-			'Suspendisse [[:Tincidunt semper|tincidunt semper]]',
-			'Suspendisse [[:Tincidunt semper|tincidunt semper]]'
-		);
-
-		$provider[] = array(
-			'[[Foo::Foobar::テスト]] [[Bar:::ABC|DEF]] [[Foo:::0049 30 12345678/::Foo]]',
-			'Foobar::テスト DEF :0049 30 12345678/::Foo',
-			'&#x005B;&#x005B;Foo::Foobar::テスト]] &#x005B;&#x005B;Bar:::ABC|DEF]] &#x005B;&#x005B;Foo:::0049 30 12345678/::Foo]]'
-		);
-
-		$provider[] = array(
-			'%5B%5BFoo%20Bar::foobaz%5D%5D',
-			'foobaz',
-			'&#x005B;&#x005B;Foo%20Bar::foobaz]]'
-		);
-
-		$provider[] = array(
-			'Suspendisse tincidunt semper facilisi',
-			'Suspendisse tincidunt semper facilisi',
-			'Suspendisse tincidunt semper facilisi'
+			'Suspendisse &#91;&#91;Bar::tincidunt semper|abc]] facilisi'
 		);
 
 		return $provider;
@@ -319,6 +296,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 
 	public function textDataProvider() {
 
+		$testEnvironment = new TestEnvironment();
 		$provider = array();
 
 		// #0 NS_MAIN; [[FooBar...]] with a different caption
@@ -349,7 +327,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 			NS_MAIN,
 			array(
 				'smwgNamespacesWithSemanticLinks' => array( NS_MAIN => true ),
-				'smwgLinksInValues' => true,
+				'smwgLinksInValues' => SMW_LINV_PCRE,
 				'smwgInlineErrors'  => true,
 			),
 			'Lorem ipsum dolor sit &$% consectetuer auctor at quis' .
@@ -383,7 +361,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 			' Aliquam {{volutpat}} arcu ultrices eu Ut quis [[foo::9001]] et Donec.',
 			array(
 				'resultText'     => 'class="smw-highlighter" data-type="4" data-state="inline"',
-				'strict-mode-valuematch' => false,
+				'strictPropertyValueMatch' => false,
 				'propertyCount'  => 3,
 				'propertyKeys' => array( 'Foo', 'Bar', '_ERRC' ),
 				'propertyValues' => array( 'Tincidunt semper', '9001' )
@@ -407,7 +385,7 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 					' 軽い cursus. Nisl sit condimentum Quisque facilisis' .
 					' Suspendisse [[:Tincidunt semper|tincidunt semper]] facilisi dolor Aenean. Ut' .
 					' Aliquam {{volutpat}} arcu ultrices eu Ut quis [[:9001|9001]] et Donec.',
-				'strict-mode-valuematch' => false,
+				'strictPropertyValueMatch' => false,
 				'propertyCount'  => 3,
 				'propertyKeys  ' => array( 'Foo', 'Bar', '_ERRC' ),
 				'propertyValues' => array( 'Tincidunt semper', '9001' )
@@ -543,6 +521,74 @@ class InTextAnnotationParserTest extends \PHPUnit_Framework_TestCase {
 				'propertyCount'  => 4,
 				'propertyLabels' => array( 'Foo', 'Bar:', 'Foobar', ':0049 30 12345678/' ),
 				'propertyValues' => array( 'Foobar', 'Foo', 'ABC', 'テスト' )
+			)
+		);
+
+		#11 #1747 (left pipe)
+		$provider[] = array(
+			NS_MAIN,
+			array(
+				'smwgNamespacesWithSemanticLinks' => array( NS_MAIN => true ),
+				'smwgLinksInValues' => false,
+				'smwgInlineErrors'  => true,
+				'smwgEnabledInTextAnnotationParserStrictMode' => false
+			),
+			'[[Foo|Bar::Foobar]] [[File:Example.png|alt=Bar::Foobar|Caption]] [[File:Example.png|Bar::Foobar|link=Foo]]',
+			array(
+				'resultText'     => '[[Foo|Bar::Foobar]] [[File:Example.png|alt=Bar::Foobar|Caption]] [[File:Example.png|Bar::Foobar|link=Foo]]',
+				'propertyCount'  => 0,
+			)
+		);
+
+		#12 #1747 (left pipe + including one annotation)
+		$provider[] = array(
+			NS_MAIN,
+			array(
+				'smwgNamespacesWithSemanticLinks' => array( NS_MAIN => true ),
+				'smwgLinksInValues' => false,
+				'smwgInlineErrors'  => true,
+				'smwgEnabledInTextAnnotationParserStrictMode' => true
+			),
+			'[[Foo|Bar::Foobar]] [[File:Example.png|alt=Bar::Foobar|Caption]] [[Foo::Foobar::テスト]] [[File:Example.png|Bar::Foobar|link=Foo]]',
+			array(
+				'resultText'     => '[[Foo|Bar::Foobar]] [[File:Example.png|alt=Bar::Foobar|Caption]] [[:Foobar::テスト|Foobar::テスト]] [[File:Example.png|Bar::Foobar|link=Foo]]',
+				'propertyCount'  => 1,
+				'propertyLabels' => array( 'Foo' ),
+				'propertyValues' => array( 'Foobar::テスト' )
+			)
+		);
+
+		#13 @@@ syntax
+		$provider[] = array(
+			NS_MAIN,
+			array(
+				'smwgNamespacesWithSemanticLinks' => array( NS_MAIN => true ),
+				'smwgLinksInValues' => false,
+				'smwgInlineErrors'  => true,
+				'smwgEnabledInTextAnnotationParserStrictMode' => true
+			),
+			'[[Foo::@@@]] [[Bar::@@@en|Foobar]]',
+			array(
+				'resultText'     => $testEnvironment->getLocalizedTextByNamespace( SMW_NS_PROPERTY, '[[:Property:Foo|Foo]] [[:Property:Bar|Foobar]]' ),
+				'propertyCount'  => 0
+			)
+		);
+
+		#14 [ ... ] in-text link
+		$provider[] = array(
+			NS_MAIN,
+			array(
+				'smwgNamespacesWithSemanticLinks' => array( NS_MAIN => true ),
+				'smwgLinksInValues' => SMW_LINV_OBFU,
+				'smwgInlineErrors'  => true,
+				'smwgEnabledInTextAnnotationParserStrictMode' => true
+			),
+			'[[Text::Bar [http://example.org/Foo Foo]]] [[Code::Foo[1] Foobar]]',
+			array(
+				'resultText'     => 'Bar [http://example.org/Foo Foo] <div class="smwpre">Foo&#91;1]&#160;Foobar</div>',
+				'propertyCount'  => 2,
+				'propertyLabels' => array( 'Text', 'Code' ),
+				'propertyValues' => array( 'Bar [http://example.org/Foo Foo]', 'Foo[1] Foobar' )
 			)
 		);
 

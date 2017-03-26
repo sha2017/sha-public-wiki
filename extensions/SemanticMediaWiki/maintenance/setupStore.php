@@ -114,8 +114,6 @@ class SetupStore extends \Maintenance {
 			$this->error( "\nError: There is no backend class \"$storeClass\". Aborting.", 1 );
 		}
 
-		$this->output( "\nSelected storage \"$smwgDefaultStore\" for update!\n\n" );
-
 		return StoreFactory::getStore();
 	}
 
@@ -130,16 +128,13 @@ class SetupStore extends \Maintenance {
 
 		$store->drop( !$this->isQuiet() );
 
-		// TODO: this hook should be run on all calls to SMWStore::drop
-		\Hooks::run( 'smwDropTables' );
-
 		// be sure to have some buffer, otherwise some PHPs complain
 		while ( ob_get_level() > 0 ) {
 			ob_end_flush();
 		}
 
-		$this->output( "\nAll storage structures for $storeName have been deleted." );
-		$this->output( "You can recreate them with this script followed by the use of the rebuildData.php script to rebuild their contents.\n\n");
+		$this->output( "\nYou can recreate them with this script followed by the use\n");
+		$this->output( "of the rebuildData.php script to rebuild their contents.\n");
 	}
 
 	/**

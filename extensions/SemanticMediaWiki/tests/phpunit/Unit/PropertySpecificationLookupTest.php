@@ -5,6 +5,7 @@ namespace SMW\Tests;
 use SMW\DataItemFactory;
 use SMW\PropertySpecificationLookup;
 use SMWContainerSemanticData as ContainerSemanticData;
+use SMWDataItem as DataItem;
 
 /**
  * @covers \SMW\PropertySpecificationLookup
@@ -21,11 +22,16 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 	private $dataItemFactory;
 	private $testEnvironment;
 	private $cachedPropertyValuesPrefetcher;
+	private $intermediaryMemoryCache;
 
 	protected function setUp() {
 		parent::setUp();
 
 		$this->cachedPropertyValuesPrefetcher = $this->getMockBuilder( '\SMW\CachedPropertyValuesPrefetcher' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->intermediaryMemoryCache = $this->getMockBuilder( '\Onoi\Cache\Cache' )
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -35,15 +41,96 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 
 		$this->dataItemFactory = new DataItemFactory();
 		$this->testEnvironment = new TestEnvironment();
-
-		$this->testEnvironment->resetPoolCacheFor( PropertySpecificationLookup::POOLCACHE_ID );
 	}
 
 	public function testCanConstruct() {
 
 		$this->assertInstanceOf(
 			'\SMW\PropertySpecificationLookup',
-			new PropertySpecificationLookup( $this->cachedPropertyValuesPrefetcher )
+			new PropertySpecificationLookup( $this->cachedPropertyValuesPrefetcher, $this->intermediaryMemoryCache )
+		);
+	}
+
+	public function testGetSpecification() {
+
+		$property = $this->dataItemFactory->newDIProperty( 'Foo' );
+
+		$this->cachedPropertyValuesPrefetcher->expects( $this->once() )
+			->method( 'getPropertyValues' )
+			->with(
+				$this->equalTo( $property->getDiWikiPage() ),
+				$this->equalTo( $this->dataItemFactory->newDIProperty( 'Bar' ) ),
+				$this->anything() );
+
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
+		$instance = new PropertySpecificationLookup(
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
+		);
+
+		$instance->getSpecification(
+			$property,
+			$this->dataItemFactory->newDIProperty( 'Bar' )
+		);
+	}
+
+	public function testGetFieldList() {
+
+		$property = $this->dataItemFactory->newDIProperty( 'RecordProperty' );
+
+		$this->cachedPropertyValuesPrefetcher->expects( $this->once() )
+			->method( 'getPropertyValues' )
+			->with(
+				$this->equalTo( $property->getDiWikiPage() ),
+				$this->equalTo( $this->dataItemFactory->newDIProperty( '_LIST' ) ),
+				$this->anything() )
+			->will(
+				$this->returnValue( array(
+					$this->dataItemFactory->newDIBlob( 'Foo' ),
+					$this->dataItemFactory->newDIBlob( 'abc;123' ) ) ) );
+
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
+		$instance = new PropertySpecificationLookup(
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
+		);
+
+		$this->assertEquals(
+			'abc;123',
+			$instance->getFieldListBy( $property )
+		);
+	}
+
+	public function testGetPreferredPropertyLabel() {
+
+		$property = $this->dataItemFactory->newDIProperty( 'SomeProperty' );
+		$property->setPropertyTypeId( '_mlt_rec' );
+
+		$this->cachedPropertyValuesPrefetcher->expects( $this->once() )
+			->method( 'getPropertyValues' )
+			->with(
+				$this->equalTo( $property->getDiWikiPage() ),
+				$this->equalTo( $this->dataItemFactory->newDIProperty( '_PPLB' ) ),
+				$this->anything() );
+
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
+		$instance = new PropertySpecificationLookup(
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
+		);
+
+		$this->assertEquals(
+			'',
+			$instance->getPreferredPropertyLabelBy( $property )
 		);
 	}
 
@@ -56,7 +143,8 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( array( $this->dataItemFactory->newDIWikiPage( 'Foo' ) ) ) );
 
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
 
 		$this->assertEquals(
@@ -77,12 +165,44 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 				$this->anything() )
 			->will( $this->returnValue( array( $this->dataItemFactory->newDIBoolean( true ) ) ) );
 
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
 
 		$this->assertTrue(
-			$instance->hasUniquenessConstraintFor( $property )
+			$instance->hasUniquenessConstraintBy( $property )
+		);
+	}
+
+	public function testGetExternalFormatterUri() {
+
+		$property = $this->dataItemFactory->newDIProperty( 'Foo' );
+
+		$this->cachedPropertyValuesPrefetcher->expects( $this->once() )
+			->method( 'getPropertyValues' )
+			->with(
+				$this->equalTo( $property->getDiWikiPage() ),
+				$this->equalTo( $this->dataItemFactory->newDIProperty( '_PEFU' ) ),
+				$this->anything() )
+			->will( $this->returnValue( array( $this->dataItemFactory->newDIUri( 'http', 'example.org/$1' ) ) ) );
+
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
+		$instance = new PropertySpecificationLookup(
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
+		);
+
+		$this->assertInstanceOf(
+			DataItem::class,
+			$instance->getExternalFormatterUriBy( $property )
 		);
 	}
 
@@ -99,13 +219,46 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 			->will(
 				$this->returnValue( array( $this->dataItemFactory->newDIBlob( 'IPv4' ) ) ) );
 
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
 
 		$this->assertEquals(
 			'IPv4',
-			$instance->getAllowedPatternFor( $property )
+			$instance->getAllowedPatternBy( $property )
+		);
+	}
+
+	public function testGetAllowedListValueBy() {
+
+		$property = $this->dataItemFactory->newDIProperty( 'Has list' );
+
+		$this->cachedPropertyValuesPrefetcher->expects( $this->once() )
+			->method( 'getPropertyValues' )
+			->with(
+				$this->equalTo( $property->getDiWikiPage() ),
+				$this->equalTo( $this->dataItemFactory->newDIProperty( '_PVALI' ) ),
+				$this->anything() )
+			->will(
+				$this->returnValue( array( $this->dataItemFactory->newDIBlob( 'Foo' ) ) ) );
+
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
+		$instance = new PropertySpecificationLookup(
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
+		);
+
+		$this->assertEquals(
+			array( 'Foo' ),
+			$instance->getAllowedListValueBy( $property )
 		);
 	}
 
@@ -126,13 +279,18 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 				$this->anything() )
 			->will( $this->returnValue( $expected ) );
 
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
 
 		$this->assertEquals(
 			$expected,
-			$instance->getAllowedValuesFor( $property )
+			$instance->getAllowedValuesBy( $property )
 		);
 	}
 
@@ -148,13 +306,18 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 				$this->anything() )
 			->will( $this->returnValue( array( $this->dataItemFactory->newDINumber( -2.3 ) ) ) );
 
+		$this->intermediaryMemoryCache->expects( $this->once() )
+			->method( 'fetch' )
+			->will( $this->returnValue( false ) );
+
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
 
 		$this->assertEquals(
 			2,
-			$instance->getDisplayPrecisionFor( $property )
+			$instance->getDisplayPrecisionBy( $property )
 		);
 	}
 
@@ -173,12 +336,13 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 				$this->dataItemFactory->newDIBlob( '123' ) ) ) );
 
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
 
 		$this->assertEquals(
 			array( 'abc', 'def', '123' ),
-			$instance->getDisplayUnitsFor( $property )
+			$instance->getDisplayUnitsBy( $property )
 		);
 	}
 
@@ -199,12 +363,13 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( $this->blobStore ) );
 
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
 
 		$this->assertInternalType(
 			'string',
-			$instance->getPropertyDescriptionFor( $property )
+			$instance->getPropertyDescriptionBy( $property )
 		);
 	}
 
@@ -234,20 +399,22 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( $this->blobStore ) );
 
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
-
-		$instance->setLanguageCode( 'en' );
 
 		$this->assertEquals(
 			1001,
-			$instance->getPropertyDescriptionFor( $property )
+			$instance->getPropertyDescriptionBy( $property, 'en' )
 		);
 	}
 
 	public function testTryToGetLocalPropertyDescriptionForUserdefinedProperty() {
 
 		$property = $this->dataItemFactory->newDIProperty( 'Foo' );
+
+		$pdesc = $this->dataItemFactory->newDIProperty( '_PDESC' );
+		$pdesc->setPropertyTypeId( '_mlt_rec' );
 
 		$container = $this->getMockBuilder( '\Onoi\BlobStore\Container' )
 			->disableOriginalConstructor()
@@ -261,22 +428,23 @@ class PropertySpecificationLookupTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getPropertyValues' )
 			->with(
 				$this->equalTo( $property->getDiWikiPage() ),
-				$this->equalTo( $this->dataItemFactory->newDIProperty( '_PDESC' ) ),
+				$this->anything(),
 				$this->anything() )
 			->will( $this->returnValue( array(
-				 $this->dataItemFactory->newDIContainer( ContainerSemanticData::makeAnonymousContainer() ) ) ) );
+				$this->dataItemFactory->newDIContainer( ContainerSemanticData::makeAnonymousContainer() ) ) ) );
 
 		$this->cachedPropertyValuesPrefetcher->expects( $this->once() )
 			->method( 'getBlobStore' )
 			->will( $this->returnValue( $this->blobStore ) );
 
 		$instance = new PropertySpecificationLookup(
-			$this->cachedPropertyValuesPrefetcher
+			$this->cachedPropertyValuesPrefetcher,
+			$this->intermediaryMemoryCache
 		);
 
 		$this->assertInternalType(
 			'string',
-			$instance->getPropertyDescriptionFor( $property )
+			$instance->getPropertyDescriptionBy( $property )
 		);
 	}
 

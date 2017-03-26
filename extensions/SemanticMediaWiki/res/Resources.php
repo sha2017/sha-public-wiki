@@ -33,9 +33,6 @@ return array(
 		'styles' => array(
 			'smw/ext.smw.css'
 		),
-		'dependencies' => array(
-			'ext.smw.tooltip.styles'
-		),
 		'position' => 'top',
 		'targets' => array( 'mobile', 'desktop' )
 	),
@@ -131,19 +128,19 @@ return array(
 	// Tooltip qtip2 resources
 	'ext.jquery.qtip' => $moduleTemplate + array(
 		'scripts' => 'jquery/jquery.qtip.js',
-		'dependencies' => array(
-			'ext.jquery.qtip.styles'
-		),
 		'targets' => array( 'mobile', 'desktop' )
 	),
 
 	// Tooltip
 	'ext.smw.tooltip.styles' => $moduleTemplate + array(
-		'styles' => 'smw/util/ext.smw.util.tooltip.css',
-		'position' => 'top',
-		'dependencies' => array(
-			'ext.jquery.qtip.styles'
+		'styles' => array(
+			// Style dependencies don't work
+			// therefore make sure to load it
+			// together
+			'jquery/jquery.qtip.css',
+			'smw/util/ext.smw.util.tooltip.css'
 		),
+		'position' => 'top',
 		'targets' => array( 'mobile', 'desktop' )
 	),
 
@@ -178,7 +175,8 @@ return array(
 	// Autocomplete resources
 	'ext.smw.autocomplete' => $moduleTemplate + array(
 		'scripts' => 'smw/util/ext.smw.util.autocomplete.js',
-		'dependencies' => 'jquery.ui.autocomplete'
+		'dependencies' => 'jquery.ui.autocomplete',
+		'targets' => array( 'mobile', 'desktop' )
 	),
 	// Special:Ask
 	'ext.smw.ask' => $moduleTemplate + array(
@@ -199,8 +197,33 @@ return array(
 	'ext.smw.browse' => $moduleTemplate + array(
 		'scripts' => 'smw/special/ext.smw.special.browse.js',
 		'dependencies' => array(
+			'mediawiki.api',
 			'ext.smw.style',
 			'ext.smw.autocomplete'
+		),
+		'position' => 'top',
+		'messages' => array(
+			'smw-browse-api-subject-serialization-invalid'
+		),
+		'targets' => array(
+			'mobile',
+			'desktop'
+		)
+	),
+
+	// Special:Admin/SemanticMediaWiki
+	'ext.smw.admin' => $moduleTemplate + array(
+		'scripts' => 'smw/special/ext.smw.special.admin.js',
+		'dependencies' => array(
+			'mediawiki.api'
+		),
+		'messages' => array(
+			'smw-no-data-available'
+		),
+		'position' => 'top',
+		'targets' => array(
+			'mobile',
+			'desktop'
 		)
 	),
 
@@ -210,7 +233,7 @@ return array(
 		'dependencies' => array(
 			'mediawiki.util',
 			'ext.jquery.autocomplete'
-			),
+		),
 		'position' => 'bottom',
 		'targets' => array( 'mobile', 'desktop' )
 	)

@@ -120,16 +120,47 @@ class DITimeTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
+	/**
+	 * @dataProvider jdProvider
+	 */
+	public function testNewFromJD( $jd, $expected ) {
+
+		$this->assertEquals(
+			DITime::doUnserialize( $expected ),
+			DITime::newFromJD( $jd )
+		);
+	}
+
 	public function testTryToDeserializeOnNonNumericElementsThrowsException() {
 
-		$this->setExpectedException( '\SMW\DataItemException' );
+		$this->setExpectedException( '\SMW\Exception\DataItemException' );
 		DITime::doUnserialize( '1/2013/0/2/0/foo' );
 	}
 
 	public function testTryToDeserializeOnInvalidCountOfElementsThrowsException() {
 
-		$this->setExpectedException( '\SMW\DataItemException' );
+		$this->setExpectedException( '\SMW\Exception\DataItemException' );
 		DITime::doUnserialize( '1' );
+	}
+
+	public function jdProvider() {
+
+		$provider[] = array(
+			'2488345.500000',
+			'1/2100/10/04'
+		);
+
+		$provider[] = array(
+			'2488346.0804977',
+			'1/2100/10/4/13/55/55'
+		);
+
+		$provider[] = array(
+			'1',
+			'2/-4713/01/02/12'
+		);
+
+		return $provider;
 	}
 
 }

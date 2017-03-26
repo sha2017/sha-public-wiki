@@ -4,6 +4,7 @@ use SMW\ApplicationFactory;
 use SMW\DIProperty;
 use SMW\DIWikiPage;
 use SMW\HashBuilder;
+use SMW\RequestOptions;
 use SMW\SQLStore\IdToDataItemMatchFinder;
 use SMW\SQLStore\PropertyStatisticsTable;
 use SMW\SQLStore\RedirectInfoStore;
@@ -179,6 +180,7 @@ class SMWSql3SmwIds {
 		'_INST' => 4,
 		'_UNIT' => 7,
 		'_IMPO' => 8,
+		'_PPLB' => 9,
 		'_PDESC' => 10,
 		'_PREC' => 11,
 		'_CONV' => 12,
@@ -209,7 +211,8 @@ class SMWSql3SmwIds {
 		'_ASKFO' =>  35,
 		'_ASKSI' =>  36,
 		'_ASKDE' =>  37,
-//		'_ASKDU' =>  38,
+		'_ASKPA' =>  38,
+		'_ASKSC' =>  39,
 		'_LCODE' =>  40,
 		'_TEXT'  =>  41,
 	);
@@ -220,20 +223,18 @@ class SMWSql3SmwIds {
 	 * @since 1.8
 	 * @param SMWSQLStore3 $store
 	 */
-	public function __construct( SMWSQLStore3 $store ) {
+	public function __construct( SMWSQLStore3 $store, IdToDataItemMatchFinder $idToDataItemMatchFinder ) {
 		$this->store = $store;
 		// Yes, this is a hack, but we only use it for convenient debugging:
 		self::$singleton_debug = $this;
 
-		$this->idToDataItemMatchFinder = new IdToDataItemMatchFinder(
-			$this->store->getConnection( 'mw.db' )
-		);
+		$this->idToDataItemMatchFinder = $idToDataItemMatchFinder;
 
 		$this->redirectInfoStore = new RedirectInfoStore(
 			$this->store->getConnection( 'mw.db' )
 		);
 
-		$this->intermediaryIdCache = ApplicationFactory::getInstance()->getInMemoryPoolCache()->getPoolCacheFor( self::POOLCACHE_ID );
+		$this->intermediaryIdCache = ApplicationFactory::getInstance()->getInMemoryPoolCache()->getPoolCacheById( self::POOLCACHE_ID );
 	}
 
 	/**
@@ -499,14 +500,14 @@ class SMWSql3SmwIds {
 	 *
 	 * @param boolean
 	 */
-	public function hasIDFor( DIWikiPage $subject ) {
+	public function exists( DIWikiPage $subject ) {
 		return $this->getIDFor( $subject ) > 0;
 	}
 
 	/**
 	 * @note SMWSql3SmwIds::getSMWPageID has some issues with the cache as it returned
-	 * 0 even though an object was matchable but since I'm too busy to investigate, using
-	 * this method is safer then trying to encipher getSMWPageID related methods.
+	 * 0 even though an object was matchable, using this method is safer then trying
+	 * to encipher getSMWPageID related methods.
 	 *
 	 * It uses the PoolCache which means Lru is in place to avoid memory leakage.
 	 *
@@ -518,11 +519,29 @@ class SMWSql3SmwIds {
 	 */
 	public function getIDFor( DIWikiPage $subject ) {
 
+		// Try to match a predefined property
+		if ( $subject->getNamespace() === SMW_NS_PROPERTY && $subject->getInterWiki() === '' ) {
+			$property = DIProperty::newFromUserLabel( $subject->getDBKey() );
+			$key = $property->getKey();
+
+			// Has a fixed ID?
+			if ( isset( self::$special_ids[$key] ) ) {
+				return self::$special_ids[$key];
+			}
+
+			// Switch title for fixed properties without a fixed ID (e.g. _MIME is the smw_title)
+			if ( !$property->isUserDefined() ) {
+				$subject = new DIWikiPage( $key, SMW_NS_PROPERTY );
+			}
+		}
+
 		$hash = HashBuilder::getHashIdForDiWikiPage( $subject );
 
-		if ( ( $id = $this->intermediaryIdCache->fetch( $hash ) ) > 0 ) {
+		if ( ( $id = $this->intermediaryIdCache->fetch( $hash ) ) !== false ) {
 			return $id;
 		}
+
+		$id = 0;
 
 		$row = $this->store->getConnection( 'mw.db' )->selectRow(
 			self::TABLE_NAME,
@@ -536,19 +555,8 @@ class SMWSql3SmwIds {
 			__METHOD__
 		);
 
-		// Try to match a predefined property
-		if ( $subject->getNamespace() === SMW_NS_PROPERTY && $subject->getInterWiki() === '' ) {
-			$property = DIProperty::newFromUserLabel( $subject->getDBKey() );
-
-			if ( isset( self::$special_ids[$property->getKey()] ) ) {
-				$row = new \stdClass;
-				$row->smw_id = self::$special_ids[$property->getKey()];
-			}
-		}
-
-		if ( $row === false ) {
-			wfDebugLog( 'smw', __METHOD__  . " $hash was a cache miss" );
-			return 0;
+		if ( $row !== false ) {
+			$id = $row->smw_id;
 		}
 
 		// Legacy
@@ -557,11 +565,11 @@ class SMWSql3SmwIds {
 			$subject->getNamespace(),
 			$subject->getInterWiki(),
 			$subject->getSubobjectName(),
-			$row->smw_id,
+			$id,
 			$subject->getSortKey()
 		);
 
-		return $row->smw_id;
+		return $id;
 	}
 
 	/**
@@ -942,11 +950,12 @@ class SMWSql3SmwIds {
 	 * @param string $sortkey
 	 */
 	public function setCache( $title, $namespace, $interwiki, $subobject, $id, $sortkey ) {
+
 		if ( strpos( $title, ' ' ) !== false ) {
-			throw new MWException("Somebody tried to use spaces in a cache title! ($title)");
+			throw new RuntimeException( "Somebody tried to use spaces in a cache title! ($title)");
 		}
 
-		$hashKey = HashBuilder::createHashIdFromSegments( $title, $namespace, $interwiki, $subobject );
+		$hashKey = HashBuilder::createFromSegments( $title, $namespace, $interwiki, $subobject );
 
 		if ( $namespace == SMW_NS_PROPERTY && $interwiki === '' && $subobject === '' ) {
 			$this->checkPropertySizeLimit();
@@ -973,19 +982,20 @@ class SMWSql3SmwIds {
 	 *
 	 * @return DIWikiPage|null
 	 */
-	public function getDataItemForId( $id ) {
-		return $this->idToDataItemMatchFinder->getDataItemForId( $id );
+	public function getDataItemById( $id ) {
+		return $this->idToDataItemMatchFinder->getDataItemById( $id );
 	}
 
 	/**
 	 * @since 2.3
 	 *
 	 * @param integer $id
+	 * @param RequestOptions|null $requestOptions
 	 *
 	 * @return string[]
 	 */
-	public function getDataItemPoolHashListFor( array $idlist ) {
-		return $this->idToDataItemMatchFinder->getDataItemPoolHashListFor( $idlist );
+	public function getDataItemPoolHashListFor( array $idlist, RequestOptions $requestOptions = null ) {
+		return $this->idToDataItemMatchFinder->getDataItemsFromList( $idlist, $requestOptions );
 	}
 
 	/**
@@ -1008,7 +1018,7 @@ class SMWSql3SmwIds {
 				return false;
 			}
 		} else {
-			$hashKey = HashBuilder::createHashIdFromSegments( $title, $namespace, $interwiki, $subobject );
+			$hashKey = HashBuilder::createFromSegments( $title, $namespace, $interwiki, $subobject );
 			if ( array_key_exists( $hashKey, $this->regular_ids ) ) {
 				$this->reghit_debug++;
 				return (int)$this->regular_ids[$hashKey];
@@ -1037,7 +1047,7 @@ class SMWSql3SmwIds {
 				return false;
 			}
 		} else {
-			$hashKey = HashBuilder::createHashIdFromSegments( $title, $namespace, $interwiki, $subobject );
+			$hashKey = HashBuilder::createFromSegments( $title, $namespace, $interwiki, $subobject );
 			if ( array_key_exists( $hashKey, $this->regular_sortkeys ) ) {
 				return $this->regular_sortkeys[$hashKey];
 			} else {
@@ -1059,7 +1069,7 @@ class SMWSql3SmwIds {
 	 */
 	public function deleteCache( $title, $namespace, $interwiki, $subobject ) {
 
-		$hashKey = HashBuilder::createHashIdFromSegments( $title, $namespace, $interwiki, $subobject );
+		$hashKey = HashBuilder::createFromSegments( $title, $namespace, $interwiki, $subobject );
 
 		if ( $namespace == SMW_NS_PROPERTY && $interwiki === '' && $subobject === '' ) {
 			$id =  isset( $this->prop_ids[$title] ) ?  $this->prop_ids[$title] : 0;

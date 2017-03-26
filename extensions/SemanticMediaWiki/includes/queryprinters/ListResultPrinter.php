@@ -223,19 +223,28 @@ class ListResultPrinter extends ResultPrinter {
 			$this->rowend = '';
 		}
 
-		// Define separators for list items
-		if ( $this->params['format'] !== 'template' ){
-			if ( $this->params['format'] === 'list' && $this->params['sep'] === ',' ){
-				// Make default list ", , , and "
-				$this->listsep = ', ';
-				$this->finallistsep = $this->getContext()->msg( 'smw_finallistconjunct' )->inContentLanguage()->text() . ' ';
-			} else {
-				// Allow "_" for encoding spaces, as documented
-				$this->listsep = str_replace( '_', ' ', $this->params['sep'] );
-				$this->finallistsep = $this->listsep;
-			}
+		// #2022, #2090 The system defines no default sep in order for it to decide
+		// how to apply a separator and avoiding a regression for users who did
+		// not choose a sep in the first place, if no separator is selected then
+		// the list, ul, ol will use , as default
+		if ( $this->params['format'] === 'list' && $this->params['sep'] === ',' ) {
+			// Make default list ", , , and "
+			$this->listsep = ', ';
+			$this->finallistsep = $this->getContext()->msg( 'smw_finallistconjunct' )->inContentLanguage()->text() . ' ';
+		} elseif ( $this->params['format'] !== 'template' && $this->params['sep'] === '' ) {
+			$this->listsep = ', ';
+			$this->finallistsep = $this->listsep;
+		} elseif ( $this->params['sep'] !== '' ) {
+			// Allow "_" for encoding spaces, as documented
+			$this->listsep = str_replace( '_', ' ', $this->params['sep'] );
+			$this->finallistsep = $this->listsep;
 		} else {
-			// No default separators for format "template"
+			$this->listsep = '';
+			$this->finallistsep = '';
+		}
+
+		// #2329
+		if ( $this->params['format'] === 'template' && !$this->isEnabledFeature( SMW_RF_TEMPLATE_OUTSEP ) ) {
 			$this->listsep = '';
 			$this->finallistsep = '';
 		}
@@ -332,9 +341,12 @@ class ListResultPrinter extends ResultPrinter {
 	 * @return string
 	 */
 	protected function getRowListContent( array $row ) {
+
 		$firstField = true; // is this the first entry in this row?
 		$extraFields = false; // has anything but the first field been printed?
+
 		$result = '';
+		$excluded = array( 'table', 'tr', 'th', 'td', 'dl', 'dd', 'ul', 'li', 'ol' );
 
 		foreach ( $row as $field ) {
 			$firstValue = true; // is this the first value in this field?
@@ -365,17 +377,9 @@ class ListResultPrinter extends ResultPrinter {
 					}
 				}
 
-				// Display the text with tags for all non-list type outputs and
-				// where the property is of type _qty (to ensure the highlighter
-				// is displayed) but for others remove tags so that lists are
-				// not distorted by unresolved in-text tags
-				// FIXME This is a hack that limits extendibility of SMW datatypes
-				// by giving _qty a special status that no other type can have.
-				if ( $dataValue->getTypeID() === '_qty' || $this->isPlainlist() ) {
-					$result .=  $text;
-				} else {
-					$result .= Sanitizer::stripAllTags( $text );
-				}
+				// Remove seleted tags to avoid lists are distorted by unresolved
+				// in-text tags
+				$result .= $this->isPlainlist() ? $text : Sanitizer::removeHTMLtags( $text, null, array(), array(), $excluded );
 			}
 
 			$firstField = false;
@@ -398,21 +402,31 @@ class ListResultPrinter extends ResultPrinter {
 	 */
 	protected function addTemplateContentFields( $row ) {
 
+		// In case the sep is used as outer sep, switch to the valuesep
+		$sep = $this->isEnabledFeature( SMW_RF_TEMPLATE_OUTSEP ) && $this->mFormat === 'template' ? $this->params['valuesep'] : $this->params['sep'];
+
 		foreach ( $row as $i => $field ) {
 
 			$value = '';
 			$fieldName = '';
 
-			if ( $this->mNamedArgs ) {
+			// {{{?Foo}}}
+			if ( $this->mNamedArgs || $this->params['template arguments'] === 'legacy'  ) {
 				$fieldName = '?' . $field->getPrintRequest()->getLabel();
 			}
 
-			if ( $fieldName === '' || $fieldName === '?' ) {
-				$fieldName = $fieldName . $i + 1;
+			// {{{Foo}}}
+			if ( $fieldName === '' && $this->params['template arguments'] === 'named' ) {
+				$fieldName = $field->getPrintRequest()->getLabel();
+			}
+
+			// {{{1}}}
+			if ( $fieldName === '' || $fieldName === '?' || $this->params['template arguments'] === 'numbered' ) {
+				$fieldName = intval( $i + 1 );
 			}
 
 			while ( ( $text = $field->getNextText( SMW_OUTPUT_WIKI, $this->getLinker( $i == 0 ) ) ) !== false ) {
-				$value .= $value === '' ? $text : $this->params['sep'] . ' ' . $text;
+				$value .= $value === '' ? $text : $sep . ' ' . $text;
 			}
 
 			$this->templateRenderer->addField( $fieldName, $value );
@@ -467,12 +481,25 @@ class ListResultPrinter extends ResultPrinter {
 
 		$params['sep'] = array(
 			'message' => 'smw-paramdesc-sep',
-			'default' => ',',
+			'default' => '',
 		);
+
+		if ( $this->mFormat === 'template' && $this->isEnabledFeature( SMW_RF_TEMPLATE_OUTSEP ) ) {
+			$params['valuesep'] = array(
+				'message' => 'smw-paramdesc-sep',
+				'default' => '',
+			);
+		}
 
 		$params['template'] = array(
 			'message' => 'smw-paramdesc-template',
 			'default' => '',
+		);
+
+		$params['template arguments'] = array(
+			'message' => 'smw-paramdesc-template-arguments',
+			'default' => '',
+			'values' => array( 'numbered', 'named', 'legacy' ),
 		);
 
 		$params['named args'] = array(

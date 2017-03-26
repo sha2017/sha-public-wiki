@@ -98,17 +98,19 @@ class TitleMoveComplete {
 
 		$dispatchContext = $eventHandler->newDispatchContext();
 		$dispatchContext->set( 'title', $this->oldTitle );
+		$dispatchContext->set( 'context', 'ArticleMove' );
 
 		$eventHandler->getEventDispatcher()->dispatch(
-			'cached.propertyvalues.prefetcher.reset',
+			'cached.prefetcher.reset',
 			$dispatchContext
 		);
 
 		$dispatchContext = $eventHandler->newDispatchContext();
 		$dispatchContext->set( 'title', $this->newTitle );
+		$dispatchContext->set( 'context', 'ArticleMove' );
 
 		$eventHandler->getEventDispatcher()->dispatch(
-			'cached.propertyvalues.prefetcher.reset',
+			'cached.prefetcher.reset',
 			$dispatchContext
 		);
 

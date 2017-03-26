@@ -216,6 +216,7 @@
 					eventPrefs = mw.user.options.get( 'smw-prefs-tooltip-option-click' ) ? 'click' : undefined,
 					state      = $this.data( 'state' ),
 					title      = $this.data( 'title' ),
+					content    = $this.data( 'content' ),
 					type       = $this.data( 'type' );
 
 				// Assign sub-class
@@ -223,10 +224,14 @@
 				// Persistent extends interactions for service links, info, and error messages
 				$this.addClass( state === 'inline' ? 'smwttinline' : 'smwttpersist' );
 
+				// Remove title content which is supposed to be used when nojs is enabled
+				// and the "real" tooltip cannot show the ccontent
+				$this.removeAttr( "title" );
+
 				// Call instance
 				self.show( {
 					context: $this,
-					content: $this.find( '.smwttcontent' ),
+					content: content !== undefined ? content : $this.find( '.smwttcontent' ),
 					title  : title !== undefined ? title : mw.msg( self.getTitleMsg( type ) ),
 					event  : eventPrefs,
 					button : type === 'warning' || state === 'inline' ? false /* false = no close button */ : true
@@ -236,16 +241,63 @@
 	};
 
 	/**
+	 * @since 2.5
+	 * @method
+	 *
+	 * @param {Object} context
+	 */
+	smw.util.tooltip.prototype.initFromContext = function( context ) {
+		this.render( context.find( '.smw-highlighter' ) );
+	};
+
+	/**
+	 * @since 2.5
+	 * @method
+	 */
+	smw.util.tooltip.prototype.registerEventListeners = function() {
+
+		var self = this;
+
+		// Listen to the Special:Browse event
+		mw.hook( 'smw.browse.apiparsecomplete' ).add( function( context ) {
+			 self.initFromContext( context );
+		} );
+
+		// SemanticForms/PageForms instance trigger
+		mw.hook( 'sf.addTemplateInstance' ).add( function( context ) {
+			self.initFromContext( context );
+		} );
+
+		mw.hook( 'pf.addTemplateInstance' ).add( function( context ) {
+			self.initFromContext( context );
+		} );
+
+		return self;
+	};
+
+	/**
+	 * Factory
+	 * @since 2.5
+	 */
+	var Factory = {
+		newTooltip: function() {
+			return new smw.util.tooltip();
+		}
+	}
+
+	// Register addEventListeners early on
+	var instance = Factory.newTooltip().registerEventListeners();
+
+	/**
 	 * Implementation of a tooltip instance
 	 * @since 1.8
 	 * @ignore
 	 */
 	$( document ).ready( function() {
-		var tooltip = new smw.util.tooltip();
-
-		tooltip.render(
-			$( '.smw-highlighter' )
-		);
+		instance.initFromContext( $( this ) );
 	} );
+
+	smw.Factory = smw.Factory || {};
+	smw.Factory = $.extend( smw.Factory, Factory );
 
 } )( jQuery, mediaWiki, semanticMediaWiki );

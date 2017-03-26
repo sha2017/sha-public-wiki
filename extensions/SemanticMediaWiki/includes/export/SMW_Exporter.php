@@ -4,13 +4,16 @@ use SMW\ApplicationFactory;
 use SMW\DataTypeRegistry;
 use SMW\DataValueFactory;
 use SMW\DIProperty;
+use SMW\Localizer;
+use SMW\NamespaceUriFinder;
 use SMW\Exporter\DataItemByExpElementMatchFinder;
-use SMW\Exporter\DataItemToElementEncoder;
+use SMW\Exporter\ElementFactory;
 use SMW\Exporter\DataItemToExpResourceEncoder;
 use SMW\Exporter\Element\ExpElement;
 use SMW\Exporter\Element\ExpLiteral;
 use SMW\Exporter\Element\ExpNsResource;
 use SMW\Exporter\Escaper;
+use SMW\Exporter\ResourceBuilders\DispatchingResourceBuilder;
 
 /**
  * SMWExporter is a class for converting internal page-based data (SMWSemanticData) into
@@ -20,6 +23,8 @@ use SMW\Exporter\Escaper;
  * @ingroup SMW
  */
 class SMWExporter {
+
+	const POOLCACHE_ID = 'exporter.shared';
 
 	/**
 	 * @var SMWExporter
@@ -32,14 +37,19 @@ class SMWExporter {
 	private static $dataItemToExpResourceEncoder = null;
 
 	/**
-	 * @var DataItemToElementEncoder
+	 * @var ElementFactory
 	 */
-	private static $dataItemToElementEncoder = null;
+	private static $elementFactory = null;
 
 	/**
 	 * @var DataItemByExpElementMatchFinder
 	 */
 	private static $dataItemByExpElementMatchFinder = null;
+
+	/**
+	 * @var DispatchingResourceBuilder
+	 */
+	private static $dispatchingResourceBuilder = null;
 
 	static protected $m_exporturl = false;
 	static protected $m_ent_wiki = false;
@@ -61,9 +71,14 @@ class SMWExporter {
 
 			$applicationFactory = ApplicationFactory::getInstance();
 
+			$poolCache = $applicationFactory->getInMemoryPoolCache();
+			$poolCache->resetPoolCacheById( self::POOLCACHE_ID );
+
 			// FIXME with 3.x
 			// There is no better way of getting around the static use without BC
-			self::$dataItemToElementEncoder = new DataItemToElementEncoder();
+			self::$elementFactory = new ElementFactory();
+
+			self::$dispatchingResourceBuilder = new DispatchingResourceBuilder();
 
 			self::$dataItemToExpResourceEncoder = new DataItemToExpResourceEncoder(
 				$applicationFactory->getStore()
@@ -95,8 +110,8 @@ class SMWExporter {
 	/**
 	 * @since 2.2
 	 */
-	public function resetCacheFor( SMWDIWikiPage $diWikiPage ) {
-		self::$dataItemToExpResourceEncoder->resetCacheFor( $diWikiPage );
+	public function resetCacheBy( SMWDIWikiPage $diWikiPage ) {
+		self::$dataItemToExpResourceEncoder->resetCacheBy( $diWikiPage );
 	}
 
 	/**
@@ -110,11 +125,11 @@ class SMWExporter {
 
 		global $smwgNamespace; // complete namespace for URIs (with protocol, usually http://)
 
+		$resolver = Title::makeTitle( NS_SPECIAL, 'URIResolver' );
+
 		if ( '' == $smwgNamespace ) {
-			$resolver = SpecialPage::getTitleFor( 'URIResolver' );
 			$smwgNamespace = $resolver->getFullURL() . '/';
 		} elseif ( $smwgNamespace[0] == '.' ) {
-			$resolver = SpecialPage::getTitleFor( 'URIResolver' );
 			$smwgNamespace = "http://" . substr( $smwgNamespace, 1 ) . $resolver->getLocalURL() . '/';
 		}
 
@@ -128,8 +143,19 @@ class SMWExporter {
 		self::$m_ent_property = self::$m_ent_wiki . Escaper::encodeUri( $property . ':' );
 		self::$m_ent_category = self::$m_ent_wiki . Escaper::encodeUri( $category . ':' );
 
-		$title = SpecialPage::getTitleFor( 'ExportRDF' );
+		$title = Title::makeTitle( NS_SPECIAL, 'ExportRDF' );
 		self::$m_exporturl    = self::$m_ent_wikiurl . $title->getPrefixedURL();
+
+		// Canonical form, the title object always contains a wgContLang reference
+		// therefore replace it
+		if ( !$GLOBALS['smwgExportBCNonCanonicalFormUse'] ) {
+			$localizer = Localizer::getInstance();
+
+			self::$m_ent_property = $localizer->getCanonicalizedUrlByNamespace( NS_SPECIAL, self::$m_ent_property );
+			self::$m_ent_category = $localizer->getCanonicalizedUrlByNamespace( NS_SPECIAL, self::$m_ent_category );
+			self::$m_ent_wiki = $localizer->getCanonicalizedUrlByNamespace( NS_SPECIAL, self::$m_ent_wiki );
+			self::$m_exporturl = $localizer->getCanonicalizedUrlByNamespace( NS_SPECIAL, self::$m_exporturl );
+		}
 	}
 
 	/**
@@ -230,7 +256,8 @@ class SMWExporter {
 			} else {
 				$prefixedSubjectTitle = $pageTitle;
 			}
-			$prefixedSubjectUrl = wfUrlencode( str_replace( ' ', '_', $prefixedSubjectTitle ) );
+
+			$prefixedSubjectUrl = Escaper::encodeUri( str_replace( ' ', '_', $prefixedSubjectTitle ) );
 
 			switch ( $diWikiPage->getNamespace() ) {
 				case NS_CATEGORY: case SMW_NS_CONCEPT:
@@ -252,10 +279,10 @@ class SMWExporter {
 			if ( !$wikiPageExpElement->isBlankNode() ) {
 				$ed = new ExpLiteral( $displayTitle !== '' ? $displayTitle : $label );
 				$result->addPropertyObjectValue( self::getSpecialNsResource( 'rdfs', 'label' ), $ed );
-				$ed = new SMWExpResource( self::getNamespaceUri( 'wikiurl' ) . $prefixedSubjectUrl );
-				$result->addPropertyObjectValue( self::getSpecialNsResource( 'swivt', 'page' ), $ed );
 				$ed = new SMWExpResource( self::$m_exporturl . '/' . $prefixedSubjectUrl );
 				$result->addPropertyObjectValue( self::getSpecialNsResource( 'rdfs', 'isDefinedBy' ), $ed );
+				$ed = new SMWExpResource( self::getNamespaceUri( 'wikiurl' ) . $prefixedSubjectUrl );
+				$result->addPropertyObjectValue( self::getSpecialNsResource( 'swivt', 'page' ), $ed );
 				$ed = new ExpLiteral( strval( $diWikiPage->getNamespace() ), 'http://www.w3.org/2001/XMLSchema#integer' );
 				$result->addPropertyObjectValue( self::getSpecialNsResource( 'swivt', 'wikiNamespace' ), $ed );
 
@@ -264,6 +291,13 @@ class SMWExporter {
 					// this is set during parsing
 					$defaultSortkey = new ExpLiteral( $diWikiPage->getSortKey() );
 					$result->addPropertyObjectValue( self::getSpecialPropertyResource( '_SKEY' ), $defaultSortkey );
+				}
+
+				if ( $diWikiPage->getPageLanguage() ) {
+					$result->addPropertyObjectValue(
+						self::getSpecialNsResource( 'swivt', 'wikiPageContentLanguage' ),
+						new ExpLiteral( strval( $diWikiPage->getPageLanguage() ), 'http://www.w3.org/2001/XMLSchema#string' )
+					);
 				}
 
 				if ( $diWikiPage->getNamespace() === NS_FILE ) {
@@ -295,20 +329,11 @@ class SMWExporter {
 	 */
 	static public function addPropertyValues( SMWDIProperty $property, array $dataItems, SMWExpData &$expData ) {
 
+		$resourceBuilder = self::$dispatchingResourceBuilder->findResourceBuilder( $property );
+
 		if ( $property->isUserDefined() ) {
-			$pe = self::getResourceElementForProperty( $property );
-			$peHelper = self::getResourceElementForProperty( $property, true );
-
 			foreach ( $dataItems as $dataItem ) {
-				$ed = self::getDataItemExpElement( $dataItem );
-				if ( !is_null( $ed ) ) {
-					$expData->addPropertyObjectValue( $pe, $ed );
-				}
-
-				$edHelper = self::getDataItemHelperExpElement( $dataItem );
-				if ( !is_null( $edHelper ) ) {
-					$expData->addPropertyObjectValue( $peHelper, $edHelper );
-				}
+				$resourceBuilder->addResourceValue( $expData, $property, $dataItem );
 			}
 		} else { // pre-defined property, only exported if known
 			$diSubject = $expData->getSubject()->getDataItem();
@@ -335,57 +360,7 @@ class SMWExporter {
 					continue;
 				}
 
-				$ed = self::getDataItemExpElement( $dataItem );
-
-				if ( !is_null( $ed ) ) {
-					if ( $property->getKey() == '_CONC' &&
-						$expData->getSubject()->getUri() !== '' ) {
-						// equivalent to anonymous class -> simplify description
-						foreach ( $ed->getProperties() as $subp ) {
-							if ( $subp->getUri() != self::getSpecialNsResource( 'rdf', 'type' )->getUri() ) {
-								foreach ( $ed->getValues( $subp ) as $subval ) {
-									$expData->addPropertyObjectValue( $subp, $subval );
-								}
-							}
-						}
-					} elseif ( $property->getKey() == '_IMPO' ) {
-
-						$dataValue = DataValueFactory::getInstance()->newDataValueByItem(
-							$dataItem,
-							$property
-						);
-
-						if ( !$dataValue instanceof \SMWImportValue ) {
-							continue;
-						}
-
-						$expData->addPropertyObjectValue(
-							$pe,
-							self::getDataItemExpElement( new SMWDIBlob( $dataValue->getImportReference() ) )
-						);
-
-					} elseif ( $property->getKey() == '_REDI' ) {
-						$expData->addPropertyObjectValue( $pe, $ed );
-
-						$expData->addPropertyObjectValue(
-							self::getSpecialPropertyResource( '_URI' ),
-							$ed
-						);
-					} elseif ( !$property->isUserDefined() && !self::hasSpecialPropertyResource( $property ) ) {
-						$expData->addPropertyObjectValue(
-							self::getResourceElementForProperty( $property, true ),
-							$ed
-						);
-					} else {
-						$expData->addPropertyObjectValue( $pe, $ed );
-					}
-				}
-
-				$edHelper = self::getDataItemHelperExpElement( $dataItem );
-
-				if ( $edHelper !== null ) {
-					$expData->addPropertyObjectValue( $peHelper, $edHelper );
-				}
+				$resourceBuilder->addResourceValue( $expData, $property, $dataItem );
 			}
 		}
 	}
@@ -393,8 +368,8 @@ class SMWExporter {
 	/**
 	 * @see DataItemToExpResourceEncoder::mapPropertyToResourceElement
 	 */
-	static public function getResourceElementForProperty( SMWDIProperty $diProperty, $helperProperty = false ) {
-		return self::$dataItemToExpResourceEncoder->mapPropertyToResourceElement( $diProperty, $helperProperty );
+	static public function getResourceElementForProperty( SMWDIProperty $diProperty, $helperProperty = false, $seekImportVocabulary = true ) {
+		return self::$dataItemToExpResourceEncoder->mapPropertyToResourceElement( $diProperty, $helperProperty, $seekImportVocabulary );
 	}
 
 	/**
@@ -548,6 +523,11 @@ class SMWExporter {
 	 */
 	static public function getNamespaceUri( $shortName ) {
 		self::initBaseURIs();
+
+		if ( ( $uri = NamespaceUriFinder::getUri( $shortName ) ) !== false ) {
+			return $uri;
+		}
+
 		switch ( $shortName ) {
 			case 'wiki':
 			return self::$m_ent_wiki;
@@ -595,10 +575,10 @@ class SMWExporter {
 	}
 
 	/**
-	 * @see DataItemToElementEncoder::mapDataItemToElement
+	 * @see ElementFactory::mapDataItemToElement
 	 */
 	static public function getDataItemExpElement( SMWDataItem $dataItem ) {
-		return self::$dataItemToElementEncoder->mapDataItemToElement( $dataItem );
+		return self::$elementFactory->newByDataItem( $dataItem );
 	}
 
 	/**

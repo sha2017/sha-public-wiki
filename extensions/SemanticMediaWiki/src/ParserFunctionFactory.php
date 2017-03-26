@@ -2,6 +2,15 @@
 
 namespace SMW;
 
+// Fatal error: Cannot use SMW\ParserFunctions\SubobjectParserFunction as SubobjectParserFunction because the name is already in use
+use SMW\ParserFunctions\SubobjectParserFunction as SubobjectParserFunc;
+use SMW\ParserFunctions\RecurringEventsParserFunction as RecurringEventsParserFunc;
+use SMW\ParserFunctions\AskParserFunction;
+use SMW\ParserFunctions\ShowParserFunction;
+use SMW\ParserFunctions\SetParserFunction;
+use SMW\ParserFunctions\ConceptParserFunction;
+use SMW\ParserFunctions\DeclareParserFunction;
+use SMW\Utils\CircularReferenceGuard;
 use Parser;
 
 /**
@@ -22,9 +31,9 @@ class ParserFunctionFactory {
 	/**
 	 * @since 1.9
 	 *
-	 * @param Parser $parser
+	 * @param Parser|null $parser
 	 */
-	public function __construct( Parser $parser ) {
+	public function __construct( Parser $parser = null ) {
 		$this->parser = $parser;
 	}
 
@@ -72,6 +81,10 @@ class ParserFunctionFactory {
 			$parser->getOutput()
 		);
 
+		if ( isset( $parser->getOptions()->smwAskNoDependencyTracking ) ) {
+			$parserData->setOption( $parserData::NO_QUERY_DEP_TRACE, $parser->getOptions()->smwAskNoDependencyTracking );
+		}
+
 		$messageFormatter = new MessageFormatter(
 			$parser->getTargetLanguage()
 		);
@@ -101,6 +114,10 @@ class ParserFunctionFactory {
 			$parser->getTitle(),
 			$parser->getOutput()
 		);
+
+		if ( isset( $parser->getOptions()->smwAskNoDependencyTracking ) ) {
+			$parserData->setOption( $parserData::NO_QUERY_DEP_TRACE, $parser->getOptions()->smwAskNoDependencyTracking );
+		}
 
 		$messageFormatter = new MessageFormatter(
 			$parser->getTargetLanguage()
@@ -192,10 +209,14 @@ class ParserFunctionFactory {
 			$parser->getTargetLanguage()
 		);
 
-		$subobjectParserFunction = new SubobjectParserFunction(
+		$subobjectParserFunction = new SubobjectParserFunc(
 			$parserData,
 			$subobject,
 			$messageFormatter
+		);
+
+		$subobjectParserFunction->isCapitalLinks(
+			$GLOBALS['wgCapitalLinks']
 		);
 
 		return $subobjectParserFunction;
@@ -221,7 +242,7 @@ class ParserFunctionFactory {
 			$parser->getTargetLanguage()
 		);
 
-		$recurringEventsParserFunction = new RecurringEventsParserFunction(
+		$recurringEventsParserFunction = new RecurringEventsParserFunc(
 			$parserData,
 			$subobject,
 			$messageFormatter,

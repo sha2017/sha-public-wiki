@@ -8,6 +8,7 @@ use SMW\Query\Language\NamespaceDescription;
 use SMW\Query\Language\SomeProperty;
 use SMW\Query\Language\ThingDescription;
 use SMW\Query\Language\ValueDescription;
+use SMW\Query\Language\Conjunction;
 
 /**
  * @covers \SMW\Query\Language\SomeProperty
@@ -49,18 +50,61 @@ class SomePropertyTest extends \PHPUnit_Framework_TestCase {
 
 		$instance = new SomeProperty( $property, $description );
 
-		$this->assertEquals( $expected['property'], $instance->getProperty() );
-		$this->assertEquals( $expected['description'], $instance->getDescription() );
+		$this->assertEquals(
+			$expected['property'],
+			$instance->getProperty()
+		);
 
-		$this->assertEquals( $expected['queryString'], $instance->getQueryString() );
-		$this->assertEquals( $expected['queryStringAsValue'], $instance->getQueryString( true ) );
+		$this->assertEquals(
+			$expected['description'],
+			$instance->getDescription()
+		);
 
-		$this->assertEquals( $expected['isSingleton'], $instance->isSingleton() );
-		$this->assertEquals( array(), $instance->getPrintRequests() );
+		$this->assertEquals(
+			$expected['queryString'],
+			$instance->getQueryString()
+		);
 
-		$this->assertEquals( $expected['size'], $instance->getSize() );
-		$this->assertEquals( $expected['depth'], $instance->getDepth() );
-		$this->assertEquals( $expected['queryFeatures'], $instance->getQueryFeatures() );
+		$this->assertEquals(
+			$expected['queryStringAsValue'],
+			$instance->getQueryString( true )
+		);
+
+		$this->assertEquals(
+			$expected['isSingleton'],
+			$instance->isSingleton()
+		);
+
+		$this->assertEquals(
+			array(),
+			$instance->getPrintRequests()
+		);
+
+		$this->assertEquals(
+			$expected['size'],
+			$instance->getSize()
+		);
+
+		$this->assertEquals(
+			$expected['depth'],
+			$instance->getDepth()
+		);
+
+		$this->assertEquals(
+			$expected['queryFeatures'],
+			$instance->getQueryFeatures()
+		);
+	}
+
+	/**
+	 * @dataProvider comparativeHashProvider
+	 */
+	public function testGetFingerprint( $description, $compareTo, $expected ) {
+
+		$this->assertEquals(
+			$expected,
+			$description->getFingerprint() === $compareTo->getFingerprint()
+		);
 	}
 
 	public function somePropertyProvider() {
@@ -220,6 +264,152 @@ class SomePropertyTest extends \PHPUnit_Framework_TestCase {
 			new ThingDescription(),
 			$instance->prune( $maxsize, $maxDepth, $log )
 		);
+	}
+
+	public function comparativeHashProvider() {
+
+		// Same property, different description === different hash
+		$provider[] = array(
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new NamespaceDescription( NS_HELP )
+			),
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new NamespaceDescription( NS_MAIN )
+			),
+			false
+		);
+
+		// Inverse property, same description === different hash
+		$provider[] = array(
+			new SomeProperty(
+				new DIProperty( 'Foo', true ),
+				new NamespaceDescription( NS_MAIN )
+			),
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new NamespaceDescription( NS_MAIN )
+			),
+			false
+		);
+
+		// Same property, different description === different hash
+		$provider[] = array(
+			new SomeProperty(
+				new DIProperty( 'Foo', true ),
+				new NamespaceDescription( NS_MAIN )
+			),
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new ThingDescription()
+			),
+			false
+		);
+
+		// Property.chain, different description === different hash
+		$provider[] = array(
+			new SomeProperty(
+				new DIProperty( 'Foo', true ),
+				new ThingDescription()
+			),
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new SomeProperty(
+					new DIProperty( 'Foo' ),
+					new ThingDescription()
+				)
+			),
+			false
+		);
+
+		// Property.chain, same description === same hash
+		$provider[] = array(
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new SomeProperty(
+					new DIProperty( 'Foo' ),
+					new ThingDescription()
+				)
+			),
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new SomeProperty(
+					new DIProperty( 'Foo' ),
+					new ThingDescription()
+				)
+			),
+			true
+		);
+
+		// Property.chain, different description (inverse prop) === different hash
+		$provider[] = array(
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new SomeProperty(
+					new DIProperty( 'Foo' ),
+					new ThingDescription()
+				)
+			),
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new SomeProperty(
+					new DIProperty( 'Foo', true ),
+					new ThingDescription()
+				)
+			),
+			false
+		);
+
+		// Property.chain, different description === different hash
+		$provider[] = array(
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new ThingDescription()
+			),
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new SomeProperty(
+					new DIProperty( 'Foo' ),
+					new SomeProperty(
+						new DIProperty( 'Foo' ),
+						new ThingDescription()
+					)
+				)
+			),
+			false
+		);
+
+		// Property.chain, different description === different hash
+		// "[[Foo.Foo::Foo]]" !== "[[Foo.Foo.Foo::Foo]]"
+		$provider[] = array(
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new SomeProperty(
+					new DIProperty( 'Foo' ),
+					new SomeProperty(
+						new DIProperty( 'Foo' ),
+						new ValueDescription( new DIWikiPage( 'Foo', NS_MAIN ) )
+					)
+				)
+			),
+			new SomeProperty(
+				new DIProperty( 'Foo' ),
+				new SomeProperty(
+					new DIProperty( 'Foo' ),
+					new SomeProperty(
+						new DIProperty( 'Foo' ),
+						new SomeProperty(
+							new DIProperty( 'Foo' ),
+							new ValueDescription( new DIWikiPage( 'Foo', NS_MAIN ) )
+						)
+					)
+				)
+			),
+			false
+		);
+
+		return $provider;
 	}
 
 }

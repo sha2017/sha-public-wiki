@@ -59,18 +59,28 @@ class RequestOptions {
 	/**
 	 * An array of string conditions that are applied if the result has a
 	 * string label that can be subject to those patterns.
+	 *
+	 * @var StringCondition[]
 	 */
 	private $stringConditions = array();
+
+	/**
+	 * Contains extra conditions which a consumer is being allowed to interpret
+	 * freely to modify a search condition.
+	 *
+	 * @var array
+	 */
+	private $extraConditions = array();
 
 	/**
 	 * @since 1.0
 	 *
 	 * @param string $string to match
 	 * @param integer $condition one of STRCOND_PRE, STRCOND_POST, STRCOND_MID
-	 * @param boolean $asDisjunctiveCondition
+	 * @param boolean $isDisjunctiveCondition
 	 */
-	public function addStringCondition( $string, $condition, $asDisjunctiveCondition = false ) {
-		$this->stringConditions[] = new StringCondition( $string, $condition, $asDisjunctiveCondition );
+	public function addStringCondition( $string, $condition, $isDisjunctiveCondition = false ) {
+		$this->stringConditions[] = new StringCondition( $string, $condition, $isDisjunctiveCondition );
 	}
 
 	/**
@@ -82,6 +92,60 @@ class RequestOptions {
 	 */
 	public function getStringConditions() {
 		return $this->stringConditions;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param mixed $extraCondition
+	 */
+	public function addExtraCondition( $extraCondition ) {
+		$this->extraConditions[] = $extraCondition;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param array
+	 */
+	public function getExtraConditions() {
+		return $this->extraConditions;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer $limit
+	 */
+	public function setLimit( $limit ) {
+		$this->limit = $limit;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return integer
+	 */
+	public function getLimit() {
+		return $this->limit;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer $offset
+	 */
+	public function setOffset( $offset ) {
+		$this->offset = $offset;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return integer
+	 */
+	public function getOffset() {
+		return $this->offset;
 	}
 
 	/**
@@ -97,13 +161,16 @@ class RequestOptions {
 			$stringConditions .= $stringCondition->getHash();
 		}
 
-		return $this->limit . '#' .
-			$this->offset . '#' .
-			$this->sort . '#' .
-			$this->ascending . '#' .
-			$this->boundary . '#' .
-			$this->include_boundary .
-			( $stringConditions !== '' ? '|' . $stringConditions : '' );
+		return json_encode( array(
+			$this->limit,
+			$this->offset,
+			$this->sort,
+			$this->ascending,
+			$this->boundary,
+			$this->include_boundary,
+			$stringConditions,
+			$this->extraConditions
+		) );
 	}
 
 }

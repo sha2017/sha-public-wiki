@@ -5,6 +5,7 @@ use SMW\DIProperty;
 use SMW\DIWikiPage;
 use SMW\Query\PrintRequest;
 use SMW\SemanticData;
+use SMW\Exporter\Escaper;
 
 /**
  * File holding the SMWExportController class that provides basic functions for
@@ -191,7 +192,7 @@ class SMWExportController {
 				$inprops = \SMW\StoreFactory::getStore()->getInProperties( $diWikiPage );
 
 				foreach ( $inprops as $inprop ) {
-					$propWikiPage = $inprop->getDiWikiPage();
+					$propWikiPage = $inprop->getCanonicalDiWikiPage();
 
 					if ( !is_null( $propWikiPage ) ) {
 						$this->queuePage( $propWikiPage, 0 ); // no real recursion along properties
@@ -444,7 +445,7 @@ class SMWExportController {
 		$this->serializer->startSerialization();
 
 		if ( count( $pages ) == 1 ) { // ensure that ontologies that are retrieved as linked data are not confused with their subject!
-			$ontologyuri = SMWExporter::getInstance()->expandURI( '&export;' ) . '/' . urlencode( end( $pages ) );
+			$ontologyuri = SMWExporter::getInstance()->expandURI( '&export;' ) . '/' . Escaper::encodeUri( end( $pages ) );
 		} else { // use empty URI, i.e. "location" as URI otherwise
 			$ontologyuri = '';
 		}

@@ -3,7 +3,7 @@
 use SMW\HashBuilder;
 use SMW\Query\PrintRequest;
 use SMW\Query\QueryLinker;
-use SMW\Query\TemporaryEntityListAccumulator;
+use SMW\Query\Result\EntityListAccumulator;
 use SMW\SerializerFactory;
 
 /**
@@ -71,9 +71,9 @@ class SMWQueryResult {
 	private $isFromCache = false;
 
 	/**
-	 * @var TemporaryEntityListAccumulator
+	 * @var EntityListAccumulator
 	 */
-	private $temporaryEntityListAccumulator;
+	private $entityListAccumulator;
 
 	/**
 	 * Initialise the object with an array of SMWPrintRequest objects, which
@@ -94,16 +94,16 @@ class SMWQueryResult {
 		$this->mFurtherResults = $furtherRes;
 		$this->mQuery = $query;
 		$this->mStore = $store;
-		$this->temporaryEntityListAccumulator = new TemporaryEntityListAccumulator( $query );
+		$this->entityListAccumulator = new EntityListAccumulator( $query );
 	}
 
 	/**
 	 * @since  2.4
 	 *
-	 * @return TemporaryEntityListAccumulator
+	 * @return EntityListAccumulator
 	 */
 	public function getEntityListAccumulator() {
-		return $this->temporaryEntityListAccumulator;
+		return $this->entityListAccumulator;
 	}
 
 	/**
@@ -151,7 +151,8 @@ class SMWQueryResult {
 
 		foreach ( $this->mPrintRequests as $p ) {
 			$resultArray = new SMWResultArray( $page, $p, $this->mStore );
-			$resultArray->setEntityListAccumulator( $this->temporaryEntityListAccumulator );
+			$resultArray->setEntityListAccumulator( $this->entityListAccumulator );
+			$resultArray->setQueryToken( $this->mQuery->getQueryToken() );
 			$row[] = $resultArray;
 		}
 
@@ -295,6 +296,8 @@ class SMWQueryResult {
 	}
 
 	/**
+	 * @deprecated since 2.5, use QueryResult::getQueryLink
+	 *
 	 * Returns an SMWInfolink object with the QueryResults print requests as parameters.
 	 *
 	 * @since 1.8
@@ -302,20 +305,7 @@ class SMWQueryResult {
 	 * @return SMWInfolink
 	 */
 	public function getLink() {
-		$params = array( trim( $this->mQuery->getQueryString() ) );
-
-		foreach ( $this->mQuery->getExtraPrintouts() as $printout ) {
-			$serialization = $printout->getSerialisation();
-
-			// TODO: this is a hack to get rid of the mainlabel param in case it was automatically added
-			// by SMWQueryProcessor::addThisPrintout. Should be done nicer when this link creation gets redone.
-			if ( $serialization !== '?#' ) {
-				$params[] = $serialization;
-			}
-		}
-
-		// Note: the initial : prevents SMW from reparsing :: in the query string.
-		return SMWInfolink::newInternalLink( '', ':Special:Ask', false, $params );
+		return $this->getQueryLink();
 	}
 
 	/**
@@ -357,7 +347,7 @@ class SMWQueryResult {
 
 		return array_merge( $serializeArray, array(
 			'meta'=> array(
-				'hash'   => HashBuilder::createHashIdForContent( $serializeArray ),
+				'hash'   => HashBuilder::createFromContent( $serializeArray ),
 				'count'  => $this->getCount(),
 				'offset' => $this->mQuery->getOffset(),
 				'source' => $this->mQuery->getQuerySource(),
@@ -375,7 +365,7 @@ class SMWQueryResult {
 	 * @return string
 	 */
 	public function getHash() {
-		return HashBuilder::createHashIdForContent( $this->serializeToArray() );
+		return HashBuilder::createFromContent( $this->serializeToArray() );
 	}
 
 }

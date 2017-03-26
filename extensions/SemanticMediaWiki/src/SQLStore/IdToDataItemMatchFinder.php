@@ -4,8 +4,10 @@ namespace SMW\SQLStore;
 
 use SMW\DIWikiPage;
 use SMW\HashBuilder;
-use SMW\InMemoryPoolCache;
+use SMW\ApplicationFactory;
 use SMW\MediaWiki\Database;
+use SMW\IteratorFactory;
+use SMW\RequestOptions;
 
 /**
  * @license GNU GPL v2+
@@ -23,6 +25,11 @@ class IdToDataItemMatchFinder {
 	private $connection = null;
 
 	/**
+	 * @var IteratorFactory
+	 */
+	private $iteratorFactory;
+
+	/**
 	 * @var InMemoryPoolCache
 	 */
 	private $inMemoryPoolCache;
@@ -31,10 +38,12 @@ class IdToDataItemMatchFinder {
 	 * @since 2.1
 	 *
 	 * @param Database $connection
+	 * @param IteratorFactory $iteratorFactory
 	 */
-	public function __construct( Database $connection ) {
+	public function __construct( Database $connection, IteratorFactory $iteratorFactory ) {
 		$this->connection = $connection;
-		$this->inMemoryPoolCache = InMemoryPoolCache::getInstance();
+		$this->iteratorFactory = $iteratorFactory;
+		$this->inMemoryPoolCache = ApplicationFactory::getInstance()->getInMemoryPoolCache();
 	}
 
 	/**
@@ -44,7 +53,7 @@ class IdToDataItemMatchFinder {
 	 * @param string $hash
 	 */
 	public function saveToCache( $id, $hash ) {
-		$this->inMemoryPoolCache->getPoolCacheFor( self::POOLCACHE_ID  )->save( $id, $hash );
+		$this->inMemoryPoolCache->getPoolCacheById( self::POOLCACHE_ID  )->save( $id, $hash );
 	}
 
 	/**
@@ -53,24 +62,35 @@ class IdToDataItemMatchFinder {
 	 * @param string $id
 	 */
 	public function deleteFromCache( $id ) {
-		$this->inMemoryPoolCache->getPoolCacheFor( self::POOLCACHE_ID )->delete( $id );
+		$this->inMemoryPoolCache->getPoolCacheById( self::POOLCACHE_ID )->delete( $id );
 	}
 
 	/**
 	 * @since 2.1
 	 */
 	public function clear() {
-		$this->inMemoryPoolCache->resetPoolCacheFor( self::POOLCACHE_ID );
+		$this->inMemoryPoolCache->resetPoolCacheById( self::POOLCACHE_ID );
 	}
 
 	/**
 	 * @since 2.3
 	 *
 	 * @param array $idList
+	 * @param RequestOptions|null $requestOptions
 	 *
 	 * @return DIWikiPage[]
 	 */
-	public function getDataItemPoolHashListFor( array $idList ) {
+	public function getDataItemsFromList( array $idList, RequestOptions $requestOptions = null ) {
+
+		$conditions = array(
+			'smw_id' => $idList,
+		);
+
+		if ( $requestOptions !== null ) {
+			foreach ( $requestOptions->getExtraConditions() as $extraCondition ) {
+				$conditions[] = $extraCondition;
+			}
+		}
 
 		$rows = $this->connection->select(
 			\SMWSQLStore3::ID_TABLE,
@@ -80,22 +100,22 @@ class IdToDataItemMatchFinder {
 				'smw_iw',
 				'smw_subobject'
 			),
-			array( 'smw_id' => $idList ),
+			$conditions,
 			__METHOD__
 		);
 
-		$dataItemPoolHashList = array();
+		$resultIterator = $this->iteratorFactory->newResultIterator( $rows );
 
-		foreach ( $rows as $row ) {
-			$dataItemPoolHashList[] = HashBuilder::createHashIdFromSegments(
+		$mappingIterator = $this->iteratorFactory->newMappingIterator( $resultIterator, function( $row ) {
+			return HashBuilder::createHashIdFromSegments(
 				$row->smw_title,
 				$row->smw_namespace,
 				$row->smw_iw,
 				$row->smw_subobject
 			);
-		}
+		} );
 
-		return $dataItemPoolHashList;
+		return $mappingIterator;
 	}
 
 	/**
@@ -105,41 +125,51 @@ class IdToDataItemMatchFinder {
 	 *
 	 * @return DIWikiPage|null
 	 */
-	public function getDataItemForId( $id ) {
+	public function getDataItemById( $id ) {
 
-		$poolCache = $this->inMemoryPoolCache->getPoolCacheFor( self::POOLCACHE_ID );
+		$poolCache = $this->inMemoryPoolCache->getPoolCacheById( self::POOLCACHE_ID );
 
-		if ( !$poolCache->contains( $id ) ) {
-
-			$row = $this->connection->selectRow(
-				\SMWSQLStore3::ID_TABLE,
-				array(
-					'smw_title',
-					'smw_namespace',
-					'smw_iw',
-					'smw_subobject'
-				),
-				array( 'smw_id' => $id ),
-				__METHOD__
-			);
-
-			if ( $row === false ) {
-				return null;
-			}
-
-			$hash = HashBuilder::createHashIdFromSegments(
-				$row->smw_title,
-				$row->smw_namespace,
-				$row->smw_iw,
-				$row->smw_subobject
-			);
-
-			$this->saveToCache( $id, $hash );
+		if ( !$poolCache->contains( $id ) && !$this->canMatchById( $id ) ) {
+			return null;
 		}
 
-		return HashBuilder::newDiWikiPageFromHash(
+		$wikiPage = HashBuilder::newDiWikiPageFromHash(
 			$poolCache->fetch( $id )
 		);
+
+		$wikiPage->setId( $id );
+
+		return $wikiPage;
+	}
+
+	private function canMatchById( $id ) {
+
+		$row = $this->connection->selectRow(
+			\SMWSQLStore3::ID_TABLE,
+			array(
+				'smw_title',
+				'smw_namespace',
+				'smw_iw',
+				'smw_subobject'
+			),
+			array( 'smw_id' => $id ),
+			__METHOD__
+		);
+
+		if ( $row === false ) {
+			return false;
+		}
+
+		$hash = HashBuilder::createHashIdFromSegments(
+			$row->smw_title,
+			$row->smw_namespace,
+			$row->smw_iw,
+			$row->smw_subobject
+		);
+
+		$this->saveToCache( $id, $hash );
+
+		return true;
 	}
 
 }

@@ -2,7 +2,8 @@
 
 namespace SMW\DataValues\ValueValidators;
 
-use SMW\DataValues\ValueParserFactory;
+use SMW\DataValues\ValueParsers\AllowsPatternValueParser;
+use SMW\ApplicationFactory;
 use SMWDataValue as DataValue;
 
 /**
@@ -14,12 +15,12 @@ use SMWDataValue as DataValue;
  *
  * @author mwjames
  */
-class PatternConstraintValueValidator  implements ConstraintValueValidator {
+class PatternConstraintValueValidator implements ConstraintValueValidator {
 
 	/**
 	 * @var AllowsPatternContentParser
 	 */
-	private $allowsPatternContentParser;
+	private $allowsPatternValueParser;
 
 	/**
 	 * @var boolean
@@ -28,9 +29,11 @@ class PatternConstraintValueValidator  implements ConstraintValueValidator {
 
 	/**
 	 * @since 2.4
+	 *
+	 * @param AllowsPatternValueParser $allowsPatternValueParser
 	 */
-	public function __construct() {
-		$this->allowsPatternContentParser = ValueParserFactory::getInstance()->newAllowsPatternContentParser();
+	public function __construct( AllowsPatternValueParser $allowsPatternValueParser ) {
+		$this->allowsPatternValueParser = $allowsPatternValueParser;
 	}
 
 	/**
@@ -58,11 +61,11 @@ class PatternConstraintValueValidator  implements ConstraintValueValidator {
 			return $this->hasConstraintViolation;
 		}
 
-		if ( ( $reference = $dataValue->getPropertySpecificationLookup()->getAllowedPatternFor( $dataValue->getProperty() ) ) === '' ) {
+		if ( ( $reference = ApplicationFactory::getInstance()->getPropertySpecificationLookup()->getAllowedPatternBy( $dataValue->getProperty() ) ) === '' ) {
 			return $this->hasConstraintViolation;
 		}
 
-		$content = $this->allowsPatternContentParser->parse(
+		$content = $this->allowsPatternValueParser->parse(
 			$reference
 		);
 

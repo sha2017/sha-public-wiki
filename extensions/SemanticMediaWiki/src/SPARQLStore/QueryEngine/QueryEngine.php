@@ -4,7 +4,7 @@ namespace SMW\SPARQLStore\QueryEngine;
 
 use RuntimeException;
 use SMW\Exporter\Element;
-use SMW\Query\DebugOutputFormatter;
+use SMW\Query\DebugOutputFormatter as QueryDebugOutputFormatter;
 use SMW\Query\Language\ThingDescription;
 use SMW\SPARQLStore\QueryEngine\Condition\Condition;
 use SMW\SPARQLStore\QueryEngine\Condition\FalseCondition;
@@ -12,6 +12,7 @@ use SMW\SPARQLStore\QueryEngine\Condition\SingletonCondition;
 use SMW\SPARQLStore\RepositoryConnection;
 use SMWQuery as Query;
 use SMWQueryResult as QueryResult;
+use SMW\QueryEngine as QueryEngineInterface;
 
 /**
  * Class mapping SMWQuery objects to SPARQL, and for controlling the execution
@@ -23,9 +24,11 @@ use SMWQueryResult as QueryResult;
  * @author Markus Krötzsch
  * @author mwjames
  */
-class QueryEngine {
+class QueryEngine implements QueryEngineInterface {
 
-	/// The name of the SPARQL variable that represents the query result.
+	/**
+	 * The name of the SPARQL variable that represents the query result.
+	 */
 	const RESULT_VARIABLE = 'result';
 
 	/**
@@ -47,6 +50,11 @@ class QueryEngine {
 	 * @var EngineOptions
 	 */
 	private $engineOptions;
+
+	/**
+	 * @var array
+	 */
+	private $sortKeys = array();
 
 	/**
 	 * @since  2.0
@@ -90,9 +98,10 @@ class QueryEngine {
 			return $this->queryResultFactory->newEmptyQueryResult( $query, true );
 		}
 
-		$this->compoundConditionBuilder->setSortKeys( $query->sortkeys );
+		$this->sortKeys = $query->sortkeys;
+		$this->compoundConditionBuilder->setSortKeys( $this->sortKeys );
 
-		$compoundCondition = $this->compoundConditionBuilder->buildCondition(
+		$compoundCondition = $this->compoundConditionBuilder->getConditionFrom(
 			$query->getDescription()
 		);
 
@@ -127,6 +136,7 @@ class QueryEngine {
 
 		$condition = $this->compoundConditionBuilder->convertConditionToString( $compoundCondition );
 		$namespaces = $compoundCondition->namespaces;
+		$this->sortKeys = $this->compoundConditionBuilder->getSortKeys();
 
 		$options = $this->getOptions( $query, $compoundCondition );
 		$options['DISTINCT'] = true;
@@ -162,6 +172,7 @@ class QueryEngine {
 		} else {
 			$condition = $this->compoundConditionBuilder->convertConditionToString( $compoundCondition );
 			$namespaces = $compoundCondition->namespaces;
+			$this->sortKeys = $this->compoundConditionBuilder->getSortKeys();
 
 			$options = $this->getOptions( $query, $compoundCondition );
 			$options['DISTINCT'] = true;
@@ -194,6 +205,7 @@ class QueryEngine {
 		} else {
 			$condition = $this->compoundConditionBuilder->convertConditionToString( $compoundCondition );
 			$namespaces = $compoundCondition->namespaces;
+			$this->sortKeys = $this->compoundConditionBuilder->getSortKeys();
 
 			$options = $this->getOptions( $query, $compoundCondition );
 			$options['DISTINCT'] = true;
@@ -206,10 +218,9 @@ class QueryEngine {
 			);
 		}
 
-		$sparql = str_replace( array( '[',':',' ' ), array( '&#x005B;', '&#x003A;', '&#x0020;' ), $sparql );
-		$entries['SPARQL Query'] = '<div class="smwpre">' . $sparql . '</div>';
+		$entries['SPARQL Query'] = QueryDebugOutputFormatter::doFormatSPARQLStatement( $sparql );
 
-		return DebugOutputFormatter::formatOutputFor( 'SPARQLStore', $entries, $query );
+		return QueryDebugOutputFormatter::getStringFrom( 'SPARQLStore', $entries, $query );
 	}
 
 	private function isSingletonConditionWithElementMatch( $condition ) {
@@ -226,32 +237,36 @@ class QueryEngine {
 	 */
 	protected function getOptions( Query $query, Condition $compoundCondition ) {
 
-		$result = array( 'LIMIT' => $query->getLimit() + 1, 'OFFSET' => $query->getOffset() );
+		$options = array(
+			'LIMIT' => $query->getLimit() + 1,
+			'OFFSET' => $query->getOffset()
+		);
 
 		// Build ORDER BY options using discovered sorting fields.
-		if ( $this->engineOptions->get( 'smwgQSortingSupport' ) ) {
+		if ( !$this->engineOptions->get( 'smwgQSortingSupport' ) || !is_array( $this->sortKeys ) ) {
+			return $options;
+		}
 
-			$orderByString = '';
+		$orderByString = '';
 
-			foreach ( $query->sortkeys as $propkey => $order ) {
+		foreach ( $this->sortKeys as $propkey => $order ) {
 
-				if ( !is_string( $propkey ) ) {
-					throw new RuntimeException( "Expected a string value as sortkey" );
-				}
-
-				if ( ( $order != 'RANDOM' ) && array_key_exists( $propkey, $compoundCondition->orderVariables ) ) {
-					$orderByString .= "$order(?" . $compoundCondition->orderVariables[$propkey] . ") ";
-				} elseif ( ( $order == 'RANDOM' ) && $this->engineOptions->get( 'smwgQRandSortingSupport' ) ) {
-					// not supported in SPARQL; might be possible via function calls in some stores
-				}
+			if ( !is_string( $propkey ) ) {
+				throw new RuntimeException( "Expected a string value as sortkey" );
 			}
 
-			if ( $orderByString !== '' ) {
-				$result['ORDER BY'] = $orderByString;
+			if ( ( $order != 'RANDOM' ) && array_key_exists( $propkey, $compoundCondition->orderVariables ) ) {
+				$orderByString .= "$order(?" . $compoundCondition->orderVariables[$propkey] . ") ";
+			} elseif ( ( $order == 'RANDOM' ) && $this->engineOptions->get( 'smwgQRandSortingSupport' ) ) {
+				// not supported in SPARQL; might be possible via function calls in some stores
 			}
 		}
 
-		return $result;
+		if ( $orderByString !== '' ) {
+			$options['ORDER BY'] = $orderByString;
+		}
+
+		return $options;
 	}
 
 }

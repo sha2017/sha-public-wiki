@@ -9,6 +9,7 @@ use ParserHooks\HookRegistrant;
 use SMW\ApplicationFactory;
 use SMW\DeferredRequestDispatchManager;
 use SMW\NamespaceManager;
+use SMW\SQLStore\QueryEngine\FulltextSearchTableFactory;
 use SMW\ParserFunctions\DocumentationParserFunction;
 use SMW\ParserFunctions\InfoParserFunction;
 use SMW\PermissionPthValidator;
@@ -102,14 +103,32 @@ class HookRegistry {
 		$httpRequestFactory = new HttpRequestFactory();
 
 		$deferredRequestDispatchManager = new DeferredRequestDispatchManager(
-			$httpRequestFactory->newSocketRequest()
+			$httpRequestFactory->newSocketRequest(),
+			$applicationFactory->newJobFactory()
 		);
 
-		$deferredRequestDispatchManager->setEnabledHttpDeferredJobRequestState(
+		$deferredRequestDispatchManager->setLogger(
+			$applicationFactory->getMediaWikiLogger()
+		);
+
+		$deferredRequestDispatchManager->isEnabledHttpDeferredRequest(
 			$applicationFactory->getSettings()->get( 'smwgEnabledHttpDeferredJobRequest' )
 		);
 
-		$permissionPthValidator = new PermissionPthValidator();
+		// SQLite has no lock manager making table lock contention very common
+		// hence use the JobQueue to enqueue any change request and avoid
+		// a rollback due to canceled DB transactions
+		$deferredRequestDispatchManager->isPreferredWithJobQueue(
+			$GLOBALS['wgDBtype'] === 'sqlite'
+		);
+
+		$permissionPthValidator = new PermissionPthValidator(
+			$applicationFactory->singleton( 'EditProtectionValidator' )
+		);
+
+		$permissionPthValidator->setEditProtectionRight(
+			$applicationFactory->getSettings()->get( 'smwgEditProtectionRight' )
+		);
 
 		/**
 		 * Hook: ParserAfterTidy to add some final processing to the fully-rendered page output
@@ -119,11 +138,14 @@ class HookRegistry {
 		$this->handlers['ParserAfterTidy'] = function ( &$parser, &$text ) {
 
 			$parserAfterTidy = new ParserAfterTidy(
-				$parser,
-				$text
+				$parser
 			);
 
-			return $parserAfterTidy->process();
+			$parserAfterTidy->isCommandLineMode(
+				$GLOBALS['wgCommandLineMode']
+			);
+
+			return $parserAfterTidy->process( $text );
 		};
 
 		/**
@@ -151,11 +173,10 @@ class HookRegistry {
 		$this->handlers['SkinAfterContent'] = function ( &$data, $skin = null ) {
 
 			$skinAfterContent = new SkinAfterContent(
-				$data,
 				$skin
 			);
 
-			return $skinAfterContent->process();
+			return $skinAfterContent->performUpdate( $data );
 		};
 
 		/**
@@ -194,14 +215,17 @@ class HookRegistry {
 		 *
 		 * @see https://www.mediawiki.org/wiki/Manual:Hooks/InternalParseBeforeLinks
 		 */
-		$this->handlers['InternalParseBeforeLinks'] = function ( &$parser, &$text ) {
+		$this->handlers['InternalParseBeforeLinks'] = function ( &$parser, &$text ) use ( $applicationFactory ) {
 
 			$internalParseBeforeLinks = new InternalParseBeforeLinks(
-				$parser,
-				$text
+				$parser
 			);
 
-			return $internalParseBeforeLinks->process();
+			$internalParseBeforeLinks->setEnabledSpecialPage(
+				$applicationFactory->getSettings()->get( 'smwgEnabledSpecialPage' )
+			);
+
+			return $internalParseBeforeLinks->process( $text );
 		};
 
 		/**
@@ -220,6 +244,37 @@ class HookRegistry {
 			);
 
 			return $newRevisionFromEditComplete->process();
+		};
+
+		/**
+		 * Hook: Occurs after the protect article request has been processed
+		 *
+		 * @see https://www.mediawiki.org/wiki/Manual:Hooks/ArticleProtectComplete
+		 */
+		$this->handlers['ArticleProtectComplete'] = function ( &$wikiPage, &$user, $protections, $reason ) use ( $applicationFactory ) {
+
+			$editInfoProvider = $applicationFactory->newMwCollaboratorFactory()->newEditInfoProvider(
+				$wikiPage,
+				$wikiPage->getRevision(),
+				$user
+			);
+
+			$articleProtectComplete = new ArticleProtectComplete(
+				$wikiPage->getTitle(),
+				$editInfoProvider
+			);
+
+			$articleProtectComplete->setEditProtectionRight(
+				$applicationFactory->getSettings()->get( 'smwgEditProtectionRight' )
+			);
+
+			$articleProtectComplete->setLogger(
+				$applicationFactory->getMediaWikiLogger()
+			);
+
+			$articleProtectComplete->process( $protections, $reason );
+
+			return true;
 		};
 
 		/**
@@ -259,16 +314,15 @@ class HookRegistry {
 		 *
 		 * @see https://www.mediawiki.org/wiki/Manual:Hooks/ArticleDelete
 		 */
-		$this->handlers['ArticleDelete'] = function ( &$wikiPage, &$user, &$reason, &$error ) {
+		$this->handlers['ArticleDelete'] = function ( &$wikiPage, &$user, &$reason, &$error ) use( $applicationFactory ) {
 
-			$articleDelete = new ArticleDelete(
-				$wikiPage,
-				$user,
-				$reason,
-				$error
+			$articleDelete = new ArticleDelete();
+
+			$articleDelete->setLogger(
+				$applicationFactory->getMediaWikiLogger()
 			);
 
-			return $articleDelete->process();
+			return $articleDelete->process( $wikiPage );
 		};
 
 		/**
@@ -276,13 +330,15 @@ class HookRegistry {
 		 *
 		 * @see https://www.mediawiki.org/wiki/Manual:Hooks/LinksUpdateConstructed
 		 */
-		$this->handlers['LinksUpdateConstructed'] = function ( $linksUpdate ) {
+		$this->handlers['LinksUpdateConstructed'] = function ( $linksUpdate ) use( $applicationFactory ) {
 
-			$linksUpdateConstructed = new LinksUpdateConstructed(
-				$linksUpdate
+			$linksUpdateConstructed = new LinksUpdateConstructed();
+
+			$linksUpdateConstructed->setLogger(
+				$applicationFactory->getMediaWikiLogger()
 			);
 
-			return $linksUpdateConstructed->process();
+			return $linksUpdateConstructed->process( $linksUpdate );
 		};
 
 		/**
@@ -437,11 +493,10 @@ class HookRegistry {
 		$this->handlers['TitleIsMovable'] = function ( $title, &$isMovable ) {
 
 			$titleIsMovable = new TitleIsMovable(
-				$title,
-				$isMovable
+				$title
 			);
 
-			return $titleIsMovable->process();
+			return $titleIsMovable->process( $isMovable );
 		};
 
 		/**
@@ -449,29 +504,26 @@ class HookRegistry {
 		 */
 		$this->handlers['EditPage::showEditForm:initial'] = function ( $editPage, $output = null ) use ( $applicationFactory ) {
 
-			// 1.19 hook interface is missing the output object
-			if ( !$output instanceof \OutputPage ) {
-				$output = $GLOBALS['wgOut'];
-			}
-
-			$htmlFormRenderer = $applicationFactory->newMwCollaboratorFactory()->newHtmlFormRenderer(
-				$editPage->getTitle(),
-				$output->getLanguage()
-			);
-
 			$editPageForm = new EditPageForm(
-				$editPage,
-				$htmlFormRenderer
+				$applicationFactory->getNamespaceExaminer()
 			);
 
-			return $editPageForm->process();
+			$editPageForm->isEnabledEditPageHelp(
+				$applicationFactory->getSettings()->get( 'smwgEnabledEditPageHelp' )
+			);
+
+			return $editPageForm->process( $editPage );
 		};
 
 		/**
-		 * @see https://www.mediawiki.org/wiki/Manual:Hooks/userCan
+		 * @see https://www.mediawiki.org/wiki/Manual:Hooks/TitleQuickPermissions
+		 *
+		 * "...Quick permissions are checked first in the Title::checkQuickPermissions
+		 * function. Quick permissions are the most basic of permissions needed
+		 * to perform an action ..."
 		 */
-		$this->handlers['userCan'] = function ( &$title, &$user, $action, &$result ) use ( $permissionPthValidator ) {
-			return $permissionPthValidator->checkUserCanPermissionFor( $title, $user, $action, $result );
+		$this->handlers['TitleQuickPermissions'] = function ( $title, $user, $action, &$errors, $rigor, $short ) use ( $permissionPthValidator ) {
+			return $permissionPthValidator->checkQuickPermissionOn( $title, $user, $action, $errors );
 		};
 
 		$this->registerHooksForInternalUse( $applicationFactory, $deferredRequestDispatchManager );
@@ -482,16 +534,28 @@ class HookRegistry {
 
 		$queryDependencyLinksStoreFactory = new QueryDependencyLinksStoreFactory();
 
+		$queryDependencyLinksStore = $queryDependencyLinksStoreFactory->newQueryDependencyLinksStore(
+			$applicationFactory->getStore()
+		);
+
+		$tempChangeOpStore = $applicationFactory->singleton( 'TempChangeOpStore' );
+
 		/**
 		 * @see https://www.semantic-mediawiki.org/wiki/Hooks#SMW::SQLStore::AfterDataUpdateComplete
 		 */
-		$this->handlers['SMW::SQLStore::AfterDataUpdateComplete'] = function ( $store, $semanticData, $compositePropertyTableDiffIterator ) use ( $applicationFactory, $queryDependencyLinksStoreFactory, $deferredRequestDispatchManager ) {
+		$this->handlers['SMW::SQLStore::AfterDataUpdateComplete'] = function ( $store, $semanticData, $compositePropertyTableDiffIterator ) use ( $queryDependencyLinksStoreFactory, $queryDependencyLinksStore, $deferredRequestDispatchManager, $tempChangeOpStore ) {
 
-			$queryDependencyLinksStore = $queryDependencyLinksStoreFactory->newQueryDependencyLinksStore(
-				$store
+			// When in commandLine mode avoid deferred execution and run a process
+			// within the same transaction
+			$deferredRequestDispatchManager->isCommandLineMode(
+				$store->getOptions()->has( 'isCommandLineMode' ) ? $store->getOptions()->get( 'isCommandLineMode' ) : $GLOBALS['wgCommandLineMode']
 			);
 
+			$queryDependencyLinksStore->setStore( $store );
+			$subject = $semanticData->getSubject();
+
 			$queryDependencyLinksStore->pruneOutdatedTargetLinks(
+				$subject,
 				$compositePropertyTableDiffIterator
 			);
 
@@ -504,26 +568,103 @@ class HookRegistry {
 				$entityIdListRelevanceDetectionFilter
 			);
 
-			$deferredRequestDispatchManager->dispatchParserCachePurgeJobFor(
-				$semanticData->getSubject()->getTitle(),
+			$deferredRequestDispatchManager->dispatchParserCachePurgeJobWith(
+				$subject->getTitle(),
 				$jobParameters
+			);
+
+			$fulltextSearchTableFactory = new FulltextSearchTableFactory();
+
+			$textByChangeUpdater = $fulltextSearchTableFactory->newTextByChangeUpdater(
+				$store
+			);
+
+			$textByChangeUpdater->pushUpdates(
+				$compositePropertyTableDiffIterator,
+				$deferredRequestDispatchManager
 			);
 
 			return true;
 		};
 
 		/**
+		 * @see https://www.semantic-mediawiki.org/wiki/Hooks#SMW::Store::BeforeQueryResultLookupComplete
+		 */
+		$this->handlers['SMW::Store::BeforeQueryResultLookupComplete'] = function ( $store, $query, &$result, $queryEngine ) use ( $applicationFactory ) {
+
+			$cachedQueryResultPrefetcher = $applicationFactory->singleton( 'CachedQueryResultPrefetcher' );
+
+			$cachedQueryResultPrefetcher->setQueryEngine(
+				$queryEngine
+			);
+
+			if ( !$cachedQueryResultPrefetcher->isEnabled() ) {
+				return true;
+			}
+
+			$result = $cachedQueryResultPrefetcher->getQueryResult( $query );
+
+			return false;
+		};
+
+		/**
 		 * @see https://www.semantic-mediawiki.org/wiki/Hooks#SMW::Store::AfterQueryResultLookupComplete
 		 */
-		$this->handlers['SMW::Store::AfterQueryResultLookupComplete'] = function ( $store, &$result ) use ( $queryDependencyLinksStoreFactory ) {
+		$this->handlers['SMW::Store::AfterQueryResultLookupComplete'] = function ( $store, &$result ) use ( $queryDependencyLinksStore, $applicationFactory ) {
 
-			$queryDependencyLinksStore = $queryDependencyLinksStoreFactory->newQueryDependencyLinksStore(
+			$queryDependencyLinksStore->setStore( $store );
+			$queryDependencyLinksStore->doUpdateDependenciesFrom( $result );
+
+			$applicationFactory->singleton( 'CachedQueryResultPrefetcher' )->recordStats();
+
+			return true;
+		};
+
+		/**
+		 * @see https://www.semantic-mediawiki.org/wiki/Hooks/Browse::AfterIncomingPropertiesLookupComplete
+		 */
+		$this->handlers['SMW::Browse::AfterIncomingPropertiesLookupComplete'] = function ( $store, $semanticData, $requestOptions ) use ( $queryDependencyLinksStoreFactory ) {
+
+			$queryReferenceBacklinks = $queryDependencyLinksStoreFactory->newQueryReferenceBacklinks(
 				$store
 			);
 
-			$queryDependencyLinksStore->doUpdateDependenciesBy(
-				$queryDependencyLinksStoreFactory->newQueryResultDependencyListResolver( $result )
+			$queryReferenceBacklinks->addReferenceLinksTo(
+				$semanticData,
+				$requestOptions
 			);
+
+			return true;
+		};
+
+		/**
+		 * @see https://www.semantic-mediawiki.org/wiki/Hooks/Browse::BeforeIncomingPropertyValuesFurtherLinkCreate
+		 */
+		$this->handlers['SMW::Browse::BeforeIncomingPropertyValuesFurtherLinkCreate'] = function ( $property, $subject, &$html ) use ( $queryDependencyLinksStoreFactory, $applicationFactory ) {
+
+			$queryReferenceBacklinks = $queryDependencyLinksStoreFactory->newQueryReferenceBacklinks(
+				$applicationFactory->getStore()
+			);
+
+			$doesRequireFurtherLink = $queryReferenceBacklinks->doesRequireFurtherLink(
+				$property,
+				$subject,
+				$html
+			);
+
+			// Return false in order to stop the link creation process to replace the
+			// standard link
+			return $doesRequireFurtherLink;
+		};
+
+		/**
+		 * @see https://www.semantic-mediawiki.org/wiki/Hooks#SMW::Store::AfterQueryResultLookupComplete
+		 */
+		$this->handlers['SMW::SQLStore::Installer::AfterCreateTablesComplete'] = function ( $tableBuilder, $messageReporter ) use ( $applicationFactory ) {
+
+			$fileImporter = $applicationFactory->create( 'JsonContentsImporter' );
+			$fileImporter->setMessageReporter( $messageReporter );
+			$fileImporter->doImport();
 
 			return true;
 		};

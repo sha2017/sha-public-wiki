@@ -24,7 +24,7 @@ class NamespaceManagerTest extends \PHPUnit_Framework_TestCase {
 	protected function setUp() {
 		$this->testEnvironment = new TestEnvironment();
 
-		$this->extraneousLanguage = $this->getMockBuilder( '\SMW\ExtraneousLanguage' )
+		$this->extraneousLanguage = $this->getMockBuilder( '\SMW\ExtraneousLanguage\ExtraneousLanguage' )
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -45,6 +45,8 @@ class NamespaceManagerTest extends \PHPUnit_Framework_TestCase {
 			'wgNamespacesWithSubpages' => array(),
 			'wgExtraNamespaces'  => array(),
 			'wgNamespaceAliases' => array(),
+			'wgContentNamespaces' => array(),
+			'wgNamespacesToBeSearchedDefault' => array(),
 			'wgLanguageCode'     => 'en'
 		);
 	}
@@ -64,9 +66,9 @@ class NamespaceManagerTest extends \PHPUnit_Framework_TestCase {
 	public function testExecutionWithIncompleteConfiguration() {
 
 		$test = $this->default + array(
-				'wgExtraNamespaces'  => '',
-				'wgNamespaceAliases' => ''
-			);
+			'wgExtraNamespaces'  => '',
+			'wgNamespaceAliases' => ''
+		);
 
 		$instance = new NamespaceManager( $test, $this->extraneousLanguage );
 		$instance->init();
@@ -91,7 +93,7 @@ class NamespaceManagerTest extends \PHPUnit_Framework_TestCase {
 		);
 
 		$this->assertCount(
-			6,
+			4,
 			$result
 		);
 	}
@@ -126,7 +128,8 @@ class NamespaceManagerTest extends \PHPUnit_Framework_TestCase {
 	public function testInitCustomNamespace() {
 
 		$test = array(
-			'wgLanguageCode' => 'en'
+			'wgLanguageCode' => 'en',
+			'wgContentNamespaces' => array()
 		);
 
 		NamespaceManager::initCustomNamespace( $test );

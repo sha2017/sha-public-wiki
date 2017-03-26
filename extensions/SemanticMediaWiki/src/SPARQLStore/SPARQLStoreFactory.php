@@ -3,9 +3,10 @@
 namespace SMW\SPARQLStore;
 
 use SMW\ApplicationFactory;
-use SMW\CircularReferenceGuard;
+use SMW\Utils\CircularReferenceGuard;
 use SMW\ConnectionManager;
 use SMW\SPARQLStore\QueryEngine\CompoundConditionBuilder;
+use SMW\SPARQLStore\QueryEngine\DescriptionInterpreterFactory;
 use SMW\SPARQLStore\QueryEngine\EngineOptions;
 use SMW\SPARQLStore\QueryEngine\QueryEngine;
 use SMW\SPARQLStore\QueryEngine\QueryResultFactory;
@@ -26,27 +27,23 @@ class SPARQLStoreFactory {
 	private $store;
 
 	/**
-	 * @var ApplicationFactory
-	 */
-	private $applicationFactory;
-
-	/**
 	 * @since 2.2
 	 *
 	 * @param SPARQLStore $store
 	 */
 	public function __construct( SPARQLStore $store ) {
 		$this->store = $store;
-		$this->applicationFactory = ApplicationFactory::getInstance();
 	}
 
 	/**
 	 * @since 2.2
 	 *
+	 * @param string $storeClass
+	 *
 	 * @return Store
 	 */
-	public function newBaseStore( $storeId ) {
-		return StoreFactory::getStore( $storeId );
+	public function getBaseStore( $storeClass ) {
+		return StoreFactory::getStore( $storeClass );
 	}
 
 	/**
@@ -58,10 +55,11 @@ class SPARQLStoreFactory {
 
 		$engineOptions = new EngineOptions();
 
-		$circularReferenceGuard = new CircularReferenceGuard( 'sparql-query' );
+		$circularReferenceGuard = new CircularReferenceGuard( 'sparql-queryengine' );
 		$circularReferenceGuard->setMaxRecursionDepth( 2 );
 
 		$compoundConditionBuilder = new CompoundConditionBuilder(
+			new DescriptionInterpreterFactory(),
 			$engineOptions
 		);
 
@@ -70,7 +68,7 @@ class SPARQLStoreFactory {
 		);
 
 		$compoundConditionBuilder->setPropertyHierarchyLookup(
-			$this->applicationFactory->newPropertyHierarchyLookup()
+			ApplicationFactory::getInstance()->newPropertyHierarchyLookup()
 		);
 
 		$queryEngine = new QueryEngine(
@@ -84,6 +82,47 @@ class SPARQLStoreFactory {
 	}
 
 	/**
+	 * @since 2.5
+	 *
+	 * @return RepositoryRedirectLookup
+	 */
+	public function newRepositoryRedirectLookup() {
+		return new RepositoryRedirectLookup( $this->store->getConnection( 'sparql' ) );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return TurtleTriplesBuilder
+	 */
+	public function newTurtleTriplesBuilder() {
+
+		$turtleTriplesBuilder = new TurtleTriplesBuilder(
+			$this->newRepositoryRedirectLookup()
+		);
+
+		$turtleTriplesBuilder->setTriplesChunkSize( 80 );
+
+		return $turtleTriplesBuilder;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return ReplicationDataTruncator
+	 */
+	public function newReplicationDataTruncator() {
+
+		$replicationDataTruncator = new ReplicationDataTruncator();
+
+		$replicationDataTruncator->setPropertyExemptionList(
+			ApplicationFactory::getInstance()->getSettings()->get( 'smwgSparqlReplicationPropertyExemptionList' )
+		);
+
+		return $replicationDataTruncator;
+	}
+
+	/**
 	 * @since 2.2
 	 *
 	 * @return ConnectionManager
@@ -94,7 +133,7 @@ class SPARQLStoreFactory {
 
 		$repositoryConnectionProvider = new RepositoryConnectionProvider();
 		$repositoryConnectionProvider->setHttpVersionTo(
-			$this->applicationFactory->getSettings()->get( 'smwgSparqlRepositoryConnectorForcedHttpVersion' )
+			ApplicationFactory::getInstance()->getSettings()->get( 'smwgSparqlRepositoryConnectorForcedHttpVersion' )
 		);
 
 		$connectionManager->registerConnectionProvider(

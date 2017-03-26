@@ -7,6 +7,7 @@ use SMW\SQLStore\QueryDependency\DependencyLinksTableUpdater;
 use SMW\SQLStore\QueryDependency\EntityIdListRelevanceDetectionFilter;
 use SMW\SQLStore\QueryDependency\QueryDependencyLinksStore;
 use SMW\SQLStore\QueryDependency\QueryResultDependencyListResolver;
+use SMW\SQLStore\QueryDependency\QueryReferenceBacklinks;
 use SMW\Store;
 
 /**
@@ -20,33 +21,18 @@ use SMW\Store;
 class QueryDependencyLinksStoreFactory {
 
 	/**
-	 * @var $applicationFactory
-	 */
-	private $applicationFactory;
-
-	/**
 	 * @since 2.4
-	 */
-	public function __construct() {
-		$this->applicationFactory = ApplicationFactory::getInstance();
-	}
-
-	/**
-	 * @since 2.4
-	 *
-	 * @param QueryResult|string $queryResult
 	 *
 	 * @return QueryResultDependencyListResolver
 	 */
-	public function newQueryResultDependencyListResolver( $queryResult ) {
+	public function newQueryResultDependencyListResolver() {
 
 		$queryResultDependencyListResolver = new QueryResultDependencyListResolver(
-			$queryResult,
-			$this->applicationFactory->newPropertyHierarchyLookup()
+			ApplicationFactory::getInstance()->newPropertyHierarchyLookup()
 		);
 
 		$queryResultDependencyListResolver->setPropertyDependencyExemptionlist(
-			$this->applicationFactory->getSettings()->get( 'smwgQueryDependencyPropertyExemptionlist' )
+			ApplicationFactory::getInstance()->getSettings()->get( 'smwgQueryDependencyPropertyExemptionlist' )
 		);
 
 		return $queryResultDependencyListResolver;
@@ -59,15 +45,29 @@ class QueryDependencyLinksStoreFactory {
 	 *
 	 * @return QueryDependencyLinksStore
 	 */
-	public function newQueryDependencyLinksStore( $store ) {
+	public function newQueryDependencyLinksStore( Store $store ) {
+
+		$logger = ApplicationFactory::getInstance()->getMediaWikiLogger();
+		$dependencyLinksTableUpdater = new DependencyLinksTableUpdater( $store );
+
+		$dependencyLinksTableUpdater->setLogger(
+			$logger
+		);
 
 		$queryDependencyLinksStore = new QueryDependencyLinksStore(
-			new DependencyLinksTableUpdater( $store )
+			$this->newQueryResultDependencyListResolver(),
+			$dependencyLinksTableUpdater
 		);
 
-		$queryDependencyLinksStore->setEnabledState(
-			$this->applicationFactory->getSettings()->get( 'smwgEnabledQueryDependencyLinksStore' )
+		$queryDependencyLinksStore->setLogger(
+			$logger
 		);
+
+		$queryDependencyLinksStore->setEnabled(
+			ApplicationFactory::getInstance()->getSettings()->get( 'smwgEnabledQueryDependencyLinksStore' )
+		);
+
+		$queryDependencyLinksStore->isCommandLineMode( $GLOBALS['wgCommandLineMode'] );
 
 		return $queryDependencyLinksStore;
 	}
@@ -82,20 +82,37 @@ class QueryDependencyLinksStoreFactory {
 	 */
 	public function newEntityIdListRelevanceDetectionFilter( Store $store, CompositePropertyTableDiffIterator $compositePropertyTableDiffIterator ) {
 
+		$settings = ApplicationFactory::getInstance()->getSettings();
+
 		$entityIdListRelevanceDetectionFilter = new EntityIdListRelevanceDetectionFilter(
 			$store,
 			$compositePropertyTableDiffIterator
 		);
 
+		$entityIdListRelevanceDetectionFilter->setLogger(
+			ApplicationFactory::getInstance()->getMediaWikiLogger()
+		);
+
 		$entityIdListRelevanceDetectionFilter->setPropertyExemptionlist(
-			$this->applicationFactory->getSettings()->get( 'smwgQueryDependencyPropertyExemptionlist' )
+			$settings->get( 'smwgQueryDependencyPropertyExemptionlist' )
 		);
 
 		$entityIdListRelevanceDetectionFilter->setAffiliatePropertyDetectionlist(
-			$this->applicationFactory->getSettings()->get( 'smwgQueryDependencyAffiliatePropertyDetectionlist' )
+			$settings->get( 'smwgQueryDependencyAffiliatePropertyDetectionlist' )
 		);
 
 		return $entityIdListRelevanceDetectionFilter;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param Store $store
+	 *
+	 * @return QueryReferenceBacklinks
+	 */
+	public function newQueryReferenceBacklinks( Store $store ) {
+		return new QueryReferenceBacklinks( $this->newQueryDependencyLinksStore( $store ) );
 	}
 
 }

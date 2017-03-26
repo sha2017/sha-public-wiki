@@ -181,6 +181,17 @@ abstract class ResultPrinter extends \ContextSource implements QueryResultPrinte
 	}
 
 	/**
+	 * @since 2.5
+	 *
+	 * @param integer $feature
+	 *
+	 * @return boolean
+	 */
+	public function isEnabledFeature( $feature ) {
+		return ( (int)$GLOBALS['smwgResultFormatsFeatures'] & $feature ) != 0;
+	}
+
+	/**
 	 * @see SMWIResultPrinter::getResult
 	 *
 	 * @note: since 1.8 this method is final, since it's the entry point.
@@ -287,9 +298,8 @@ abstract class ResultPrinter extends \ContextSource implements QueryResultPrinte
 
 		// Apply intro parameter
 		if ( ( $this->mIntro ) && ( $results->getCount() > 0 ) ) {
-			if ( $outputmode == SMW_OUTPUT_HTML && $wgParser->getTitle() instanceof Title ) {
-				global $wgParser;
-				$result = $wgParser->recursiveTagParse( $this->mIntro ) . $result;
+			if ( $outputmode == SMW_OUTPUT_HTML ) {
+				$result = Message::get( array( 'smw-parse', $this->mIntro ), Message::PARSE ) . $result;
 			} else {
 				$result = $this->mIntro . $result;
 			}
@@ -297,8 +307,8 @@ abstract class ResultPrinter extends \ContextSource implements QueryResultPrinte
 
 		// Apply outro parameter
 		if ( ( $this->mOutro ) && ( $results->getCount() > 0 ) ) {
-			if ( $outputmode == SMW_OUTPUT_HTML && $wgParser->getTitle() instanceof Title ) {
-				$result = $result . $wgParser->recursiveTagParse( $this->mOutro );
+			if ( $outputmode == SMW_OUTPUT_HTML ) {
+				$result = $result . Message::get( array( 'smw-parse', $this->mOutro ), Message::PARSE );
 			} else {
 				$result = $result . $this->mOutro;
 			}
@@ -658,6 +668,15 @@ abstract class ResultPrinter extends \ContextSource implements QueryResultPrinte
 	 */
 	public function isExportFormat() {
 		return false;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getDefaultSort() {
+		return 'ASC';
 	}
 
 }

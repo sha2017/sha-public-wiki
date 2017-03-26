@@ -42,7 +42,7 @@ class RequestOptionsProcessor {
 	 *
 	 * @return array
 	 */
-	public function transformToSQLOptions( RequestOptions $requestOptions = null, $valueCol = '' ) {
+	public function getSQLOptionsFrom( RequestOptions $requestOptions = null, $valueCol = '' ) {
 		$sqlConds = array();
 
 		if ( $requestOptions === null ) {
@@ -78,7 +78,7 @@ class RequestOptionsProcessor {
 	 *
 	 * @return string
 	 */
-	public function transformToSQLConditions( RequestOptions $requestOptions = null, $valueCol = '', $labelCol = '', $addAnd = true ) {
+	public function getSQLConditionsFrom( RequestOptions $requestOptions = null, $valueCol = '', $labelCol = '', $addAnd = true ) {
 		$sqlConds = '';
 
 		if ( $requestOptions === null ) {
@@ -103,19 +103,22 @@ class RequestOptionsProcessor {
 		if ( $labelCol !== '' ) {
 			foreach ( $requestOptions->getStringConditions() as $strcond ) {
 				$string = str_replace( '_', '\_', $strcond->string );
+				$condition = 'LIKE';
 
 				switch ( $strcond->condition ) {
-					case StringCondition::STRCOND_PRE:  $string .= '%';
+					case StringCondition::COND_PRE:  $string .= '%';
 					break;
-					case StringCondition::STRCOND_POST: $string = '%' . $string;
+					case StringCondition::COND_POST: $string = '%' . $string;
 					break;
-					case StringCondition::STRCOND_MID:  $string = '%' . $string . '%';
+					case StringCondition::COND_MID:  $string = '%' . $string . '%';
+					break;
+					case StringCondition::COND_EQ:  $condition = '=';
 					break;
 				}
 
-				$conditionOperator = $strcond->asDisjunctiveCondition ? ' OR ' : ' AND ';
+				$conditionOperator = $strcond->isDisjunctiveCondition ? ' OR ' : ' AND ';
 
-				$sqlConds .= ( ( $addAnd || ( $sqlConds !== '' ) ) ? $conditionOperator : '' ) . $labelCol . ' LIKE ' . $connection->addQuotes( $string );
+				$sqlConds .= ( ( $addAnd || ( $sqlConds !== '' ) ) ? $conditionOperator : '' ) . "$labelCol $condition " . $connection->addQuotes( $string );
 			}
 		}
 

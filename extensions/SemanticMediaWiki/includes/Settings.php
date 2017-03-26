@@ -2,6 +2,8 @@
 
 namespace SMW;
 
+use SMW\Exception\SettingNotFoundException;
+
 /**
  * Encapsulate Semantic MediaWiki settings to access values through a
  * specified interface
@@ -17,6 +19,11 @@ class Settings extends Options {
 	 * @var Settings
 	 */
 	private static $instance = null;
+
+	/**
+	 * @var array
+	 */
+	private $iterate = array();
 
 	/**
 	 * Assemble individual SMW related settings into one accessible array for
@@ -36,10 +43,13 @@ class Settings extends Options {
 	 */
 	public static function newFromGlobals() {
 
-		$settings = array(
+		$configuration = array(
 			'smwgScriptPath' => isset( $GLOBALS['smwgScriptPath'] ) ? $GLOBALS['smwgScriptPath'] : '',
 			'smwgIP' => $GLOBALS['smwgIP'],
 			'smwgExtraneousLanguageFileDir' => $GLOBALS['smwgExtraneousLanguageFileDir'],
+			'smwgServicesFileDir' => $GLOBALS['smwgServicesFileDir'],
+			'smwgImportFileDir' => $GLOBALS['smwgImportFileDir'],
+			'smwgImportReqVersion' => $GLOBALS['smwgImportReqVersion'],
 			'smwgSemanticsEnabled' => $GLOBALS['smwgSemanticsEnabled'],
 			'smwgEnabledCompatibilityMode' => $GLOBALS['smwgEnabledCompatibilityMode'],
 			'smwgDefaultStore' => $GLOBALS['smwgDefaultStore'],
@@ -49,6 +59,9 @@ class Settings extends Options {
 			'smwgSparqlUpdateEndpoint' => $GLOBALS['smwgSparqlUpdateEndpoint'],
 			'smwgSparqlDataEndpoint' => $GLOBALS['smwgSparqlDataEndpoint'],
 			'smwgSparqlDefaultGraph' => $GLOBALS['smwgSparqlDefaultGraph'],
+			'smwgSparqlRepositoryConnectorForcedHttpVersion' => $GLOBALS['smwgSparqlRepositoryConnectorForcedHttpVersion'],
+			'smwgSparqlReplicationPropertyExemptionList' => $GLOBALS['smwgSparqlReplicationPropertyExemptionList'],
+			'smwgSparqlQFeatures' => $GLOBALS['smwgSparqlQFeatures'],
 			'smwgHistoricTypeNamespace' => $GLOBALS['smwgHistoricTypeNamespace'],
 			'smwgNamespaceIndex' => $GLOBALS['smwgNamespaceIndex'],
 			'smwgShowFactbox' => $GLOBALS['smwgShowFactbox'],
@@ -62,20 +75,26 @@ class Settings extends Options {
 			'smwgMaxNumRecurringEvents' => $GLOBALS['smwgMaxNumRecurringEvents'],
 			'smwgBrowseShowInverse' => $GLOBALS['smwgBrowseShowInverse'],
 			'smwgBrowseShowAll' => $GLOBALS['smwgBrowseShowAll'],
+			'smwgBrowseByApi' => $GLOBALS['smwgBrowseByApi'],
 			'smwgSearchByPropertyFuzzy' => $GLOBALS['smwgSearchByPropertyFuzzy'],
 			'smwgTypePagingLimit' => $GLOBALS['smwgTypePagingLimit'],
 			'smwgConceptPagingLimit' => $GLOBALS['smwgConceptPagingLimit'],
 			'smwgPropertyPagingLimit' => $GLOBALS['smwgPropertyPagingLimit'],
+			'smwgSubPropertyListLimit' => $GLOBALS['smwgSubPropertyListLimit'],
+			'smwgRedirectPropertyListLimit' => $GLOBALS['smwgRedirectPropertyListLimit'],
 			'smwgQEnabled' => $GLOBALS['smwgQEnabled'],
 			'smwgQMaxLimit' => $GLOBALS['smwgQMaxLimit'],
 			'smwgIgnoreQueryErrors' => $GLOBALS['smwgIgnoreQueryErrors'],
 			'smwgQSubcategoryDepth' => $GLOBALS['smwgQSubcategoryDepth'],
+			'smwgQSubpropertyDepth' => $GLOBALS['smwgQSubpropertyDepth'],
 			'smwgQEqualitySupport' => $GLOBALS['smwgQEqualitySupport'],
 			'smwgQSortingSupport' => $GLOBALS['smwgQSortingSupport'],
 			'smwgQRandSortingSupport' => $GLOBALS['smwgQRandSortingSupport'],
 			'smwgQDefaultNamespaces' => $GLOBALS['smwgQDefaultNamespaces'],
 			'smwgQComparators' => $GLOBALS['smwgQComparators'],
+			'smwgQFilterDuplicates' => $GLOBALS['smwgQFilterDuplicates'],
 			'smwStrictComparators' => $GLOBALS['smwStrictComparators'],
+			'smwgQStrictComparators' => $GLOBALS['smwgQStrictComparators'],
 			'smwgQMaxSize' => $GLOBALS['smwgQMaxSize'],
 			'smwgQMaxDepth' => $GLOBALS['smwgQMaxDepth'],
 			'smwgQFeatures' => $GLOBALS['smwgQFeatures'],
@@ -89,26 +108,32 @@ class Settings extends Options {
 			'smwgQConceptMaxDepth' => $GLOBALS['smwgQConceptMaxDepth'],
 			'smwgQConceptFeatures' => $GLOBALS['smwgQConceptFeatures'],
 			'smwgQConceptCacheLifetime' => $GLOBALS['smwgQConceptCacheLifetime'],
-			'smwgResultFormats' => $GLOBALS['smwgResultFormats'],
-			'smwgResultAliases' => $GLOBALS['smwgResultAliases'],
 			'smwgQuerySources' => $GLOBALS['smwgQuerySources'],
+			'smwgQTemporaryTablesAutoCommitMode' => $GLOBALS['smwgQTemporaryTablesAutoCommitMode'],
+			'smwgResultFormats' => $GLOBALS['smwgResultFormats'],
+			'smwgResultFormatsFeatures' => $GLOBALS['smwgResultFormatsFeatures'],
+			'smwgResultAliases' => $GLOBALS['smwgResultAliases'],
 			'smwgPDefaultType' => $GLOBALS['smwgPDefaultType'],
 			'smwgAllowRecursiveExport' => $GLOBALS['smwgAllowRecursiveExport'],
 			'smwgExportBacklinks' => $GLOBALS['smwgExportBacklinks'],
+			'smwgExportResourcesAsIri' => $GLOBALS['smwgExportResourcesAsIri'],
+			'smwgExportBCNonCanonicalFormUse' => $GLOBALS['smwgExportBCNonCanonicalFormUse'],
+			'smwgExportBCAuxiliaryUse' => $GLOBALS['smwgExportBCAuxiliaryUse'],
 			'smwgMaxNonExpNumber' => $GLOBALS['smwgMaxNonExpNumber'],
 			'smwgEnableUpdateJobs' => $GLOBALS['smwgEnableUpdateJobs'],
 			'smwgNamespacesWithSemanticLinks' => $GLOBALS['smwgNamespacesWithSemanticLinks'],
 			'smwgPageSpecialProperties' => $GLOBALS['smwgPageSpecialProperties'],
 			'smwgDeclarationProperties' => $GLOBALS['smwgDeclarationProperties'],
+			'smwgDataTypePropertyExemptionList' => $GLOBALS['smwgDataTypePropertyExemptionList'],
 			'smwgTranslate' => $GLOBALS['smwgTranslate'],
 			'smwgAdminRefreshStore' => $GLOBALS['smwgAdminRefreshStore'],
 			'smwgAutocompleteInSpecialAsk' => $GLOBALS['smwgAutocompleteInSpecialAsk'],
 			'smwgAutoRefreshSubject' => $GLOBALS['smwgAutoRefreshSubject'],
+			'smwgAdminFeatures' => $GLOBALS['smwgAdminFeatures'],
 			'smwgAutoRefreshOnPurge' => $GLOBALS['smwgAutoRefreshOnPurge'],
 			'smwgAutoRefreshOnPageMove' => $GLOBALS['smwgAutoRefreshOnPageMove'],
 			'smwgContLang' => isset( $GLOBALS['smwgContLang'] ) ? $GLOBALS['smwgContLang'] : '',
 			'smwgMaxPropertyValues' => $GLOBALS['smwgMaxPropertyValues'],
-			'smwgQSubpropertyDepth' => $GLOBALS['smwgQSubpropertyDepth'],
 			'smwgNamespace' => $GLOBALS['smwgNamespace'],
 			'smwgMasterStore' => isset( $GLOBALS['smwgMasterStore'] ) ? $GLOBALS['smwgMasterStore'] : '',
 			'smwgIQRunningNumber' => isset( $GLOBALS['smwgIQRunningNumber'] ) ? $GLOBALS['smwgIQRunningNumber'] : 0,
@@ -128,26 +153,33 @@ class Settings extends Options {
 			'smwgEnabledSpecialPage' => $GLOBALS['smwgEnabledSpecialPage'],
 			'smwgFallbackSearchType' => $GLOBALS['smwgFallbackSearchType'],
 			'smwgEnabledEditPageHelp' => $GLOBALS['smwgEnabledEditPageHelp'],
-			'smwgSparqlQFeatures' => $GLOBALS['smwgSparqlQFeatures'],
 			'smwgEnabledDeferredUpdate' => $GLOBALS['smwgEnabledDeferredUpdate'],
 			'smwgEnabledHttpDeferredJobRequest' => $GLOBALS['smwgEnabledHttpDeferredJobRequest'],
 			'smwgEnabledQueryDependencyLinksStore' => $GLOBALS['smwgEnabledQueryDependencyLinksStore'],
 			'smwgQueryDependencyPropertyExemptionlist' => $GLOBALS['smwgQueryDependencyPropertyExemptionlist'],
 			'smwgQueryDependencyAffiliatePropertyDetectionlist' => $GLOBALS['smwgQueryDependencyAffiliatePropertyDetectionlist'],
-			'smwgExportBCNonCanonicalFormUse' => $GLOBALS['smwgExportBCNonCanonicalFormUse'],
-			'smwgExportBCAuxiliaryUse' => $GLOBALS['smwgExportBCAuxiliaryUse'],
 			'smwgEnabledInTextAnnotationParserStrictMode' => $GLOBALS['smwgEnabledInTextAnnotationParserStrictMode'],
-			'smwgSparqlRepositoryConnectorForcedHttpVersion' => $GLOBALS['smwgSparqlRepositoryConnectorForcedHttpVersion'],
 			'smwgDVFeatures' => $GLOBALS['smwgDVFeatures'],
-			'smwgQTemporaryTablesAutoCommitMode' => $GLOBALS['smwgQTemporaryTablesAutoCommitMode'],
+			'smwgEnabledFulltextSearch' => $GLOBALS['smwgEnabledFulltextSearch'],
+			'smwgFulltextDeferredUpdate' => $GLOBALS['smwgFulltextDeferredUpdate'],
+			'smwgFulltextSearchTableOptions' => $GLOBALS['smwgFulltextSearchTableOptions'],
+			'smwgFulltextSearchPropertyExemptionList' => $GLOBALS['smwgFulltextSearchPropertyExemptionList'],
+			'smwgFulltextSearchMinTokenSize' => $GLOBALS['smwgFulltextSearchMinTokenSize'],
+			'smwgFulltextLanguageDetection' => $GLOBALS['smwgFulltextLanguageDetection'],
+			'smwgFulltextSearchIndexableDataTypes' => $GLOBALS['smwgFulltextSearchIndexableDataTypes'],
+			'smwgQueryResultCacheType' => $GLOBALS['smwgQueryResultCacheType'],
+			'smwgQueryResultCacheLifetime' => $GLOBALS['smwgQueryResultCacheLifetime'],
+			'smwgQueryResultNonEmbeddedCacheLifetime' => $GLOBALS['smwgQueryResultNonEmbeddedCacheLifetime'],
+			'smwgQueryResultCacheRefreshOnPurge' => $GLOBALS['smwgQueryResultCacheRefreshOnPurge'],
+			'smwgEditProtectionRight' => $GLOBALS['smwgEditProtectionRight'],
+			'smwgSimilarityLookupExemptionProperty' => $GLOBALS['smwgSimilarityLookupExemptionProperty'],
+			'smwgPropertyInvalidCharacterList' => $GLOBALS['smwgPropertyInvalidCharacterList'],
 		);
 
-		$settings = $settings + array(
-			'smwgCanonicalNames' => NamespaceManager::getCanonicalNames()
-		);
+		\Hooks::run( 'SMW::Config::BeforeCompletion', array( &$configuration ) );
 
 		if ( self::$instance === null ) {
-			self::$instance = self::newFromArray( $settings );
+			self::$instance = self::newFromArray( $configuration );
 		}
 
 		return self::$instance;
@@ -172,6 +204,27 @@ class Settings extends Options {
 	}
 
 	/**
+	 * @since 2.5
+	 *
+	 * @param string $key
+	 * @param mixed $value
+	 */
+	public function add( $key, $value ) {
+
+		if ( !$this->has( $key ) ) {
+			return $this->set( $key, $value );
+		}
+
+		$val = $this->get( $key );
+
+		if ( is_array( $val ) ) {
+			$value = array_merge_recursive( $val, $value );
+		}
+
+		return $this->set( $key, $value );
+	}
+
+	/**
 	 * Returns settings for a given key (nested settings are supported)
 	 *
 	 * @par Example:
@@ -191,23 +244,17 @@ class Settings extends Options {
 	 * @param string $key
 	 *
 	 * @return mixed
-	 * @throws InvalidSettingsArgumentException
+	 * @throws SettingNotFoundException
 	 */
 	public function get( $key ) {
 
-		if ( !$this->has( $key ) ) {
-
-			// If the key wasn't found it could be because of a nested array
-			// therefore iterate and verify otherwise throw an exception
-			$value = $this->doIterate( $key );
-			if ( $value !== null ) {
-				return $value;
-			}
-
-			throw new InvalidSettingsArgumentException( "'{$key}' is not a valid settings key" );
+		if ( $this->has( $key ) ) {
+			return parent::get( $key );
 		}
 
-		return parent::get( $key );
+		// If the key wasn't matched it could be because of a nested array
+		// hence iterate and verify otherwise throw an exception
+		return $this->doIterate( $key, $this->getOptions() );
 	}
 
 	/**
@@ -220,19 +267,24 @@ class Settings extends Options {
 	/**
 	 * Iterates over a nested array to find an element
 	 */
-	private function doIterate( $key ) {
+	private function doIterate( $key, $options ) {
+
+		if ( isset( $this->iterate[$key] ) ) {
+			return $this->iterate[$key];
+		}
 
 		$iterator = new \RecursiveIteratorIterator(
-			new \RecursiveArrayIterator( $this->getOptions() ),
+			new \RecursiveArrayIterator( $options ),
 			\RecursiveIteratorIterator::CHILD_FIRST
 		);
 
 		foreach( $iterator as $it => $value ) {
 			if ( $key === $it ) {
-				return $value;
+				return $this->iterate[$key] = $value;
 			}
 		}
 
-		return null;
+		throw new SettingNotFoundException( "'{$key}' is not a valid settings key" );
 	}
+
 }

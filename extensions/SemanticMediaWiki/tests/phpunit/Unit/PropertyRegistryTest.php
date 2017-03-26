@@ -356,7 +356,7 @@ class PropertyRegistryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testFindPropertyIdByLanguageCode() {
+	public function testfindPropertyIdFromLabelByLanguageCode() {
 
 		$datatypeRegistry = $this->getMockBuilder( '\SMW\DataTypeRegistry' )
 			->disableOriginalConstructor()
@@ -386,8 +386,155 @@ class PropertyRegistryTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(
 			'_TYPE',
-			$instance->findPropertyIdByLanguageCode( 'A le type', 'fr' )
+			$instance->findPropertyIdFromLabelByLanguageCode( 'A le type', 'fr' )
 		);
+	}
+
+	public function testFindPropertyLabelByLanguageCode() {
+
+		$datatypeRegistry = $this->getMockBuilder( '\SMW\DataTypeRegistry' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$datatypeRegistry->expects( $this->once() )
+			->method( 'getKnownTypeLabels' )
+			->will( $this->returnValue( array() ) );
+
+		$datatypeRegistry->expects( $this->once() )
+			->method( 'getKnownTypeAliases' )
+			->will( $this->returnValue( array() ) );
+
+		$store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
+
+		$propertyLabelFinder = new PropertyLabelFinder( $store, array() );
+
+		$propertyAliases = new PropertyAliasFinder();
+
+		$instance = new PropertyRegistry(
+			$datatypeRegistry,
+			$propertyLabelFinder,
+			$propertyAliases
+		);
+
+		$this->assertEquals(
+			'A le type',
+			$instance->findPropertyLabelByLanguageCode( '_TYPE', 'fr' )
+		);
+	}
+
+	public function testPropertyDescriptionMsgKey() {
+
+		$datatypeRegistry = $this->getMockBuilder( '\SMW\DataTypeRegistry' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$datatypeRegistry->expects( $this->once() )
+			->method( 'getKnownTypeLabels' )
+			->will( $this->returnValue( array() ) );
+
+		$datatypeRegistry->expects( $this->once() )
+			->method( 'getKnownTypeAliases' )
+			->will( $this->returnValue( array() ) );
+
+		$store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
+
+		$propertyLabelFinder = new PropertyLabelFinder( $store, array() );
+
+		$propertyAliases = new PropertyAliasFinder();
+
+		$instance = new PropertyRegistry(
+			$datatypeRegistry,
+			$propertyLabelFinder,
+			$propertyAliases
+		);
+
+		$instance->registerPropertyDescriptionMsgKeyById( '_foo', 'bar' );
+
+		$this->assertEquals(
+			'bar',
+			$instance->findPropertyDescriptionMsgKeyById( '_foo' )
+		);
+
+		$this->assertEmpty(
+			$instance->findPropertyDescriptionMsgKeyById( 'unknown' )
+		);
+	}
+
+	public function testDataTypePropertyExemptionList() {
+
+		$datatypeRegistry = $this->getMockBuilder( '\SMW\DataTypeRegistry' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$datatypeRegistry->expects( $this->once() )
+			->method( 'getKnownTypeLabels' )
+			->will( $this->returnValue( array( '_foo' => 'Foo', '_foobar' => 'Foobar' ) ) );
+
+		$datatypeRegistry->expects( $this->once() )
+			->method( 'getKnownTypeAliases' )
+			->will( $this->returnValue( array( 'Bar' => '_bar' ) ) );
+
+		$store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
+
+		$propertyLabelFinder = new PropertyLabelFinder( $store, array() );
+
+		$propertyAliases = new PropertyAliasFinder();
+
+		$dataTypePropertyExemptionList = array( 'Foo', 'Bar' );
+
+		$instance = new PropertyRegistry(
+			$datatypeRegistry,
+			$propertyLabelFinder,
+			$propertyAliases,
+			$dataTypePropertyExemptionList
+		);
+
+		$this->assertEquals(
+			'_foobar',
+			$instance->findPropertyIdByLabel( 'Foobar' )
+		);
+
+		$this->assertFalse(
+			$instance->findPropertyIdByLabel( 'Foo' )
+		);
+
+		$this->assertFalse(
+			$instance->findPropertyIdByLabel( 'Bar' )
+		);
+	}
+
+	/**
+	 * @dataProvider typeToCanonicalLabelProvider
+	 */
+	public function testFindCanonicalPropertyLabelById( $id, $expected ) {
+
+		$instance = PropertyRegistry::getInstance();
+
+		$this->assertSame(
+			$expected,
+			$instance->findCanonicalPropertyLabelById( $id )
+		);
+	}
+
+	public function typeToCanonicalLabelProvider() {
+
+		$provider[] = array(
+			'_txt',
+			'Text'
+		);
+
+		$provider[] = array(
+			'_TEXT',
+			'Text'
+		);
+
+		return $provider;
 	}
 
 }

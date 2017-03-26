@@ -204,7 +204,7 @@ class SemanticMediaWikiProvidedHookInterfaceIntegrationTest extends \PHPUnit_Fra
 			->disableOriginalConstructor()
 			->getMock();
 
-		$instance = $this->applicationFactory->newFactboxFactory()->newFactbox( $parserData, $contextSource );
+		$instance = $this->applicationFactory->singleton( 'FactboxFactory' )->newFactbox( $parserData, $contextSource );
 		$instance->doBuild();
 
 		$this->assertEquals(
@@ -372,12 +372,16 @@ class SemanticMediaWikiProvidedHookInterfaceIntegrationTest extends \PHPUnit_Fra
 				$this->anything() )
 			->will( $this->returnValue( array() ) );
 
+		$linksProcessor = $this->getMockBuilder( '\SMW\Parser\LinksProcessor' )
+			->disableOriginalConstructor()
+			->getMock();
+
 		$redirectTargetFinder = $this->getMockBuilder( '\SMW\MediaWiki\RedirectTargetFinder' )
 			->disableOriginalConstructor()
 			->getMock();
 
 		$inTextAnnotationParser = $this->getMockBuilder( '\SMW\InTextAnnotationParser' )
-			->setConstructorArgs( array( $parserData, $magicWordsFinder, $redirectTargetFinder ) )
+			->setConstructorArgs( array( $parserData, $linksProcessor, $magicWordsFinder, $redirectTargetFinder ) )
 			->setMethods( null )
 			->getMock();
 
@@ -428,6 +432,9 @@ class SemanticMediaWikiProvidedHookInterfaceIntegrationTest extends \PHPUnit_Fra
 		$store->expects( $this->any() )
 			->method( 'getPropertyTables' )
 			->will( $this->returnValue( array() ) );
+
+		$store->getOptions()->set( 'smwgSemanticsEnabled', true );
+		$store->getOptions()->set( 'smwgAutoRefreshSubject', true );
 
 		$this->mwHooksHandler->register( 'SMW::SQLStore::AfterDataUpdateComplete', function( $store, $semanticData, $compositePropertyTableDiffIterator ) use ( $test ){
 			$test->is( $compositePropertyTableDiffIterator->getCombinedIdListOfChangedEntities() );

@@ -7,6 +7,7 @@ use Onoi\MessageReporter\MessageReporter;
 use Onoi\MessageReporter\MessageReporterFactory;
 use SMW\DIWikiPage;
 use SMW\MediaWiki\TitleCreator;
+use SMW\ApplicationFactory;
 use SMW\Options;
 use SMW\Store;
 use Title;
@@ -210,20 +211,19 @@ class DataRebuilder {
 
 	private function doRebuildAll() {
 
-		$byIdDataRebuildDispatcher = $this->store->refreshData(
+		$entityRebuildDispatcher = $this->store->refreshData(
 			$this->start,
 			1
 		);
 
-		$byIdDataRebuildDispatcher->setIterationLimit( 1 );
+		$entityRebuildDispatcher->setDispatchRangeLimit( 1 );
 
-		$byIdDataRebuildDispatcher->setUpdateJobParseMode(
+		$entityRebuildDispatcher->setUpdateJobParseMode(
 			$this->options->has( 'shallow-update' ) ? SMW_UJ_PM_CLASTMDATE : false
 		);
 
-		$byIdDataRebuildDispatcher->setUpdateJobToUseJobQueueScheduler( false );
-
-		$this->deleteMarkedSubjects( $byIdDataRebuildDispatcher );
+		$entityRebuildDispatcher->useJobQueueScheduler( false );
+		$this->doDisposeMarkedOutdatedEntities();
 
 		if ( !$this->options->has( 'skip-properties' ) ) {
 			$this->options->set( 'p', true );
@@ -242,7 +242,7 @@ class DataRebuilder {
 			" refresh). Continue this until all pages have been refreshed.\n---\n"
 		);
 
-		$total = $this->end && $this->end - $this->start > 0 ? $this->end - $this->start : $byIdDataRebuildDispatcher->getMaxId();
+		$total = $this->end && $this->end - $this->start > 0 ? $this->end - $this->start : $entityRebuildDispatcher->getMaxId();
 		$id = $this->start;
 
 		$this->reportMessage(
@@ -251,7 +251,7 @@ class DataRebuilder {
 
 		$this->reportMessage(
 			"Processing all IDs from $this->start to " .
-			( $this->end ? "$this->end" : $byIdDataRebuildDispatcher->getMaxId() ) . " ...\n"
+			( $this->end ? "$this->end" : $entityRebuildDispatcher->getMaxId() ) . " ...\n"
 		);
 
 		$this->rebuildCount = 0;
@@ -263,13 +263,13 @@ class DataRebuilder {
 			$this->rebuildCount++;
 			$this->exceptionLog = array();
 
-			$this->doExecuteFor( $byIdDataRebuildDispatcher, $id );
+			$this->doExecuteFor( $entityRebuildDispatcher, $id );
 
 			if ( $this->rebuildCount % 60 === 0 ) {
-				$progress = round( ( $this->end - $this->start > 0 ? $this->rebuildCount / $total : $byIdDataRebuildDispatcher->getEstimatedProgress() ) * 100 ) . "%";
+				$progress = round( ( $this->end - $this->start > 0 ? $this->rebuildCount / $total : $entityRebuildDispatcher->getEstimatedProgress() ) * 100 ) . "%";
 			}
 
-			foreach ( $byIdDataRebuildDispatcher->getDispatchedEntities() as $value ) {
+			foreach ( $entityRebuildDispatcher->getDispatchedEntities() as $value ) {
 
 				$text = $this->getHumanReadableTextFrom( $id, $value );
 
@@ -285,7 +285,7 @@ class DataRebuilder {
 				}
 			}
 
-			$this->doPrintDotProgressIndicator( $this->verbose, $progress );
+			$this->doPrintDotProgressIndicator( $this->verbose, $this->rebuildCount, $progress );
 		}
 
 		$this->writeIdToFile( $id );
@@ -301,14 +301,14 @@ class DataRebuilder {
 		return true;
 	}
 
-	private function doExecuteFor( $byIdDataRebuildDispatcher, &$id ) {
+	private function doExecuteFor( $entityRebuildDispatcher, &$id ) {
 
 		if ( !$this->options->has( 'ignore-exceptions' ) ) {
-			$byIdDataRebuildDispatcher->dispatchRebuildFor( $id );
+			$entityRebuildDispatcher->startRebuildWith( $id );
 		} else {
 
 			try {
-				$byIdDataRebuildDispatcher->dispatchRebuildFor( $id );
+				$entityRebuildDispatcher->startRebuildWith( $id );
 			} catch ( \Exception $e ) {
 				$this->exceptionLog[$id] = array(
 					'msg'   => $e->getMessage(),
@@ -369,9 +369,6 @@ class DataRebuilder {
 		wfCountDown( 6 );
 
 		$this->store->drop( $this->verbose );
-		\Hooks::run( 'smwDropTables' );
-		\Hooks::run( 'SMW::Store::dropTables', array( $this->verbose ) );
-
 		$this->store->setupStore( $this->verbose );
 
 		// Be sure to have some buffer, otherwise some PHPs complain
@@ -384,35 +381,27 @@ class DataRebuilder {
 		return true;
 	}
 
-	private function deleteMarkedSubjects( $byIdDataRebuildDispatcher ) {
+	private function doDisposeMarkedOutdatedEntities() {
 
-		$matches = array();
-
-		$res = $this->store->getConnection( 'mw.db' )->select(
-			\SMWSql3SmwIds::TABLE_NAME,
-			array( 'smw_id' ),
-			array( 'smw_iw' => SMW_SQL3_SMWDELETEIW ),
-			__METHOD__
+		$entityIdDisposerJob = ApplicationFactory::getInstance()->newJobFactory()->newEntityIdDisposerJob(
+			Title::newFromText( __METHOD__ )
 		);
 
-		foreach ( $res as $row ) {
-			$matches[] = $row->smw_id;
-		}
+		$outdatedEntitiesResultIterator = $entityIdDisposerJob->newOutdatedEntitiesResultIterator();
+		$matchesCount = $outdatedEntitiesResultIterator->count();
+		$counter = 0;
 
-		if ( $matches === array() ) {
-			return null;
+		if ( $matchesCount == 0 ) {
+			return;
 		}
 
 		$this->reportMessage( "Removing table entries (marked for deletion).\n" );
-		$matchesCount = count( $matches );
 
-		foreach ( $matches as $id ) {
-			$this->rebuildCount++;
-			$this->doPrintDotProgressIndicator( false, round( $this->rebuildCount / $matchesCount * 100 ) . ' %' );
-			$this->doExecuteFor( $byIdDataRebuildDispatcher, $id );
+		foreach ( $outdatedEntitiesResultIterator as $row ) {
+			$counter++;
+			$this->doPrintDotProgressIndicator( false, $counter, round( $counter / $matchesCount * 100 ) . ' %' );
+			$entityIdDisposerJob->dispose( $row );
 		}
-
-		$this->rebuildCount = 0;
 
 		$this->reportMessage( "\n\n{$matchesCount} IDs removed.\n\n" );
 	}
@@ -453,15 +442,15 @@ class DataRebuilder {
 		}
 	}
 
-	private function doPrintDotProgressIndicator( $verbose, $progress ) {
+	private function doPrintDotProgressIndicator( $verbose, $counter, $progress ) {
 
-		if ( ( $this->rebuildCount - 1 ) % 60 === 0 ) {
+		if ( ( $counter - 1 ) % 60 === 0 ) {
 			$this->reportMessage( "\n", !$verbose );
 		}
 
 		$this->reportMessage( '.', !$verbose );
 
-		if ( $this->rebuildCount % 60 === 0 ) {
+		if ( $counter % 60 === 0 ) {
 			$this->reportMessage( " $progress", !$verbose );
 		}
 	}

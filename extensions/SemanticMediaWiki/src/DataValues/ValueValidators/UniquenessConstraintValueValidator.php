@@ -47,6 +47,14 @@ class UniquenessConstraintValueValidator implements ConstraintValueValidator {
 	private $hasConstraintViolation = false;
 
 	/**
+	 * Tracks annotations for the current context to verify that a subject only
+	 * contains unique assignments.
+	 *
+	 * @var array
+	 */
+	private static $inMemoryAnnotationTracer = array();
+
+	/**
 	 * @since 2.4
 	 *
 	 * @param CachedPropertyValuesPrefetcher $cachedPropertyValuesPrefetcher
@@ -58,7 +66,7 @@ class UniquenessConstraintValueValidator implements ConstraintValueValidator {
 			$this->cachedPropertyValuesPrefetcher = ApplicationFactory::getInstance()->getCachedPropertyValuesPrefetcher();
 		}
 
-		$this->queryFactory = ApplicationFactory::getInstance()->newQueryFactory();
+		$this->queryFactory = ApplicationFactory::getInstance()->getQueryFactory();
 	}
 
 	/**
@@ -85,14 +93,14 @@ class UniquenessConstraintValueValidator implements ConstraintValueValidator {
 
 		$property = $dataValue->getProperty();
 
-		if ( !$dataValue->getPropertySpecificationLookup()->hasUniquenessConstraintFor( $property ) ) {
+		if ( !ApplicationFactory::getInstance()->getPropertySpecificationLookup()->hasUniquenessConstraintBy( $property ) ) {
 			return $this->hasConstraintViolation;
 		}
 
 		$blobStore = $this->cachedPropertyValuesPrefetcher->getBlobStore();
 		$dataItem = $dataValue->getDataItem();
 
-		$hash = $this->cachedPropertyValuesPrefetcher->getHashFor(
+		$hash = $this->cachedPropertyValuesPrefetcher->createHashFromString(
 			$property->getKey() . ':' . $dataItem->getHash()
 		);
 
@@ -132,6 +140,25 @@ class UniquenessConstraintValueValidator implements ConstraintValueValidator {
 
 			$this->hasConstraintViolation = true;
 		}
+
+		// Already assigned!
+		if ( !$this->hasConstraintViolation && ( $isKnownBy = $this->isKnownBy( $hash, $dataValue ) ) !== false ) {
+			$dataValue->addErrorMsg(
+				array(
+					'smw-datavalue-uniqueness-constraint-isknown',
+					$property->getLabel(),
+					$dataValue->getWikiValue(),
+					$isKnownBy->getTitle()->getPrefixedText()
+				)
+			);
+
+			$this->hasConstraintViolation = true;
+		}
+
+	}
+
+	private function canValidate( $dataValue ) {
+		return $dataValue instanceof DataValue && $dataValue->getProperty() !== null && $dataValue->getContextPage() !== null && $dataValue->isEnabledFeature( SMW_DV_PVUC );
 	}
 
 	private function tryFindMatchResultFor( $hash, $dataValue ) {
@@ -149,6 +176,8 @@ class UniquenessConstraintValueValidator implements ConstraintValueValidator {
 
 		$query = $this->queryFactory->newQuery( $description );
 		$query->setLimit( 1 );
+		$query->setContextPage( $contextPage );
+		$query->setOption( $query::PROC_CONTEXT, 'UniquenessConstraintValueValidator' );
 
 		$dataItems = $this->cachedPropertyValuesPrefetcher->queryPropertyValuesFor(
 			$query
@@ -170,7 +199,7 @@ class UniquenessConstraintValueValidator implements ConstraintValueValidator {
 		$blobStore = $this->cachedPropertyValuesPrefetcher->getBlobStore();
 
 		$container = $blobStore->read(
-			$this->cachedPropertyValuesPrefetcher->getRootHashFor( $page )
+			$this->cachedPropertyValuesPrefetcher->getRootHashFrom( $page )
 		);
 
 		$container->addToLinkedList( $hash );
@@ -182,8 +211,24 @@ class UniquenessConstraintValueValidator implements ConstraintValueValidator {
 		return $page;
 	}
 
-	private function canValidate( $dataValue ) {
-		return $dataValue instanceof DataValue && $dataValue->getProperty() !== null && $dataValue->getContextPage() !== null && $dataValue->isEnabledFeature( SMW_DV_PVUC );
+	private function isKnownBy( $valueHash, $dataValue  ) {
+
+		$contextPage = $dataValue->getContextPage();
+
+		if ( $contextPage === null ) {
+			return false;
+		}
+
+		$key = $dataValue->getProperty()->getKey();
+		$hash = $contextPage->getHash();
+
+		if ( isset( self::$inMemoryAnnotationTracer[$hash][$key] ) && self::$inMemoryAnnotationTracer[$hash][$key] !== $valueHash ) {
+			return $contextPage;
+		} else {
+			self::$inMemoryAnnotationTracer[$hash][$key] = $valueHash;
+		}
+
+		return false;
 	}
 
 }
