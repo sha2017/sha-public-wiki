@@ -6,7 +6,8 @@
 			"Giro720",
 			"Jaideraf",
 			"Luckas Blade",
-			"Luckas"
+			"Luckas",
+			"!Silent"
 		]
 	},
 	"srf-desc": "Formatos adicionais de resultado para consultas do Semantic MediaWiki",
@@ -46,7 +47,8 @@
 	"srf-ui-widgets-label-parameter-limit": "Parâmetro limit",
 	"srf-error-option-mix": "A opção ($1) não está disponível",
 	"srf-error-option-link-all": "A opção ($1) requer o parâmetro \"link\" definido como \"all\"",
-	"srf-error-missing-layout": "O layout está faltando",
+	"srf-error-missing-layout": "O diagrama ou gráfico não pode ser mostrado porque o layout está faltando.",
+	"srf-error-jqplot-stackseries-data-length": "O diagrama ou gráfico não pode ser mostrado porque nem todas as barras ou linhas têm o mesmo número de elementos.",
 	"srf-warn-empy-chart": "O quadro ou gráfico está vazio devido à dados ausentes",
 	"srfc_previousmonth": "Mês anterior",
 	"srfc_nextmonth": "Mês seguinte",
@@ -55,6 +57,8 @@
 	"srf_printername_calendar": "Calendário mensal",
 	"srf_paramdesc_calendarlang": "O código de idioma em que será apresentado o calendário",
 	"srf_paramdesc_calendarcolors": "A cor a ser exibida para cada propriedade de data (exemplo: \"Start date=>green,End date=>#09c\")",
+	"srf-paramdesc-calendar-startmonth": "O mês com o qual a exibição do calendário é inicializada (o padrão é o mês atual)",
+	"srf-paramdesc-calendar-startyear": "O ano com o qual a exibição do calendário é inicializada (o padrão é o ano atual)",
 	"srf_printername_vcard": "Exportar vCard",
 	"srf_printername_icalendar": "Exportar iCalendar",
 	"srf_paramdesc_icalendartitle": "O título do arquivo do calendário",
@@ -229,6 +233,7 @@
 	"srf-paramdesc-filtered-calendar-title": "A exibição que contém o título de um evento. Não pode ser utilizado junto com um título de uma predefinição.",
 	"srf-paramdesc-filtered-calendar-title-template": "Uma predefinição utilizada para formatar o título do evento no calendário",
 	"srf-filtered-selectorlabel-list": "Lista",
+	"srf-filtered-selectorlabel-table": "Tabela",
 	"srf-filtered-selectorlabel-calendar": "Calendário",
 	"srf-printername-d3chart": "Gráfico D3",
 	"srf-printername-timeseries": "Gráfico de séries temporais",
@@ -282,5 +287,7 @@
 	"srf-ui-mediaplayer-label-full-screen": "Tela inteira",
 	"srf-ui-mediaplayer-label-restore-screen": "Restaurar tela",
 	"srf-excel-link": "Excel",
-	"srf-excel-missing-phpexcel": "Não foi possível exportar para MS-Excel porque a extensão [https://www.mediawiki.org/wiki/Extension:PHPExcel PHPExcel] não está instalada."
+	"srf-excel-missing-phpexcel": "Não foi possível exportar para MS-Excel porque a extensão [https://www.mediawiki.org/wiki/Extension:PHPExcel PHPExcel] não está instalada.",
+	"srf-paramdesc-excel-filename": "O nome do arquivo para baixar do arquivo gerado",
+	"srf-paramdesc-excel-templatefile": "O nome de um arquivo Excel do domínio \"File (Arquivo)\", usado para formatar o arquivo gerado"
 }

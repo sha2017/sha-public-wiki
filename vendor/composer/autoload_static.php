@@ -26,8 +26,9 @@ class ComposerStaticInit_mediawiki_vendor
         'c3f7f0e81464740a933532e81fa26cc7' => __DIR__ . '/..' . '/wikimedia/base-convert/src/Functions.php',
         'd55c27a601de788b19a09b7d057d07ae' => __DIR__ . '/..' . '/wikimedia/relpath/src/RelPath.php',
         'ea0829831173fdc99fa791b7b5e02180' => __DIR__ . '/../..' . '/extensions/SemanticMaps/SemanticMaps.php',
-        '49b46b7a2828914e66c76de75c8414c0' => __DIR__ . '/../..' . '/extensions/SemanticExtraSpecialProperties/SemanticExtraSpecialProperties.php',
         '43b3c7644dd913f46db744c4ac998fef' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/SemanticResultFormats.php',
+        '02d63a16591d28134871cab9deee4744' => __DIR__ . '/../..' . '/extensions/SemanticExtraSpecialProperties/DefaultSettings.php',
+        '49b46b7a2828914e66c76de75c8414c0' => __DIR__ . '/../..' . '/extensions/SemanticExtraSpecialProperties/SemanticExtraSpecialProperties.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -46,6 +47,7 @@ class ComposerStaticInit_mediawiki_vendor
         ),
         'S' => 
         array (
+            'SimpleCache\\' => 12,
             'Serializers\\' => 12,
             'SMW\\Maintenance\\' => 16,
             'SMW\\' => 4,
@@ -68,6 +70,10 @@ class ComposerStaticInit_mediawiki_vendor
         'M' => 
         array (
             'Maps\\' => 5,
+        ),
+        'F' => 
+        array (
+            'FileFetcher\\' => 12,
         ),
         'D' => 
         array (
@@ -114,6 +120,10 @@ class ComposerStaticInit_mediawiki_vendor
         array (
             0 => __DIR__ . '/..' . '/data-values/interfaces/src/ValueFormatters',
             1 => __DIR__ . '/..' . '/data-values/common/src/ValueFormatters',
+        ),
+        'SimpleCache\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/jeroen/simple-cache/src',
         ),
         'Serializers\\' => 
         array (
@@ -167,6 +177,10 @@ class ComposerStaticInit_mediawiki_vendor
         'Maps\\' => 
         array (
             0 => __DIR__ . '/../..' . '/extensions/Maps/src',
+        ),
+        'FileFetcher\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/jeroen/file-fetcher/src',
         ),
         'Deserializers\\' => 
         array (
@@ -369,6 +383,11 @@ class ComposerStaticInit_mediawiki_vendor
         'Deserializers\\StrategicDeserializer' => __DIR__ . '/..' . '/serialization/serialization/src/Deserializers/StrategicDeserializer.php',
         'Deserializers\\TypedDeserializationStrategy' => __DIR__ . '/..' . '/serialization/serialization/src/Deserializers/TypedDeserializationStrategy.php',
         'Deserializers\\TypedObjectDeserializer' => __DIR__ . '/..' . '/serialization/serialization/src/Deserializers/TypedObjectDeserializer.php',
+        'FileFetcher\\CachingFileFetcher' => __DIR__ . '/..' . '/jeroen/file-fetcher/src/CachingFileFetcher.php',
+        'FileFetcher\\FileFetcher' => __DIR__ . '/..' . '/jeroen/file-fetcher/src/FileFetcher.php',
+        'FileFetcher\\FileFetchingException' => __DIR__ . '/..' . '/jeroen/file-fetcher/src/FileFetchingException.php',
+        'FileFetcher\\InMemoryFileFetcher' => __DIR__ . '/..' . '/jeroen/file-fetcher/src/InMemoryFileFetcher.php',
+        'FileFetcher\\SimpleFileFetcher' => __DIR__ . '/..' . '/jeroen/file-fetcher/src/SimpleFileFetcher.php',
         'Hashable' => __DIR__ . '/..' . '/data-values/data-values/src/interfaces/Hashable.php',
         'HtmlFormatter\\HtmlFormatter' => __DIR__ . '/..' . '/wikimedia/html-formatter/src/HtmlFormatter.php',
         'IPSet\\IPSet' => __DIR__ . '/..' . '/wikimedia/ip-set/src/IPSet.php',
@@ -471,7 +490,7 @@ class ComposerStaticInit_mediawiki_vendor
         'MapsMappingService' => __DIR__ . '/../..' . '/extensions/Maps/includes/Maps_MappingService.php',
         'MapsMappingServices' => __DIR__ . '/../..' . '/extensions/Maps/includes/Maps_MappingServices.php',
         'MapsMapsDoc' => __DIR__ . '/../..' . '/extensions/Maps/includes/parserhooks/Maps_MapsDoc.php',
-        'MapsNominatimGeocoder' => __DIR__ . '/../..' . '/extensions/Maps/includes/geocoders/Maps_NominatimGeocoder.php',
+        'MapsOldGeocoderAdapter' => __DIR__ . '/../..' . '/extensions/Maps/includes/geocoders/Maps_OldGeocoderAdapter.php',
         'MapsOpenLayers' => __DIR__ . '/../..' . '/extensions/Maps/includes/services/OpenLayers/Maps_OpenLayers.php',
         'Maps\\Api\\Geocode' => __DIR__ . '/../..' . '/extensions/Maps/includes/api/ApiGeocode.php',
         'Maps\\CircleParser' => __DIR__ . '/../..' . '/extensions/Maps/includes/parsers/CircleParser.php',
@@ -488,6 +507,9 @@ class ComposerStaticInit_mediawiki_vendor
         'Maps\\Elements\\WmsOverlay' => __DIR__ . '/../..' . '/extensions/Maps/src/Elements/WmsOverlay.php',
         'Maps\\Geocoder' => __DIR__ . '/../..' . '/extensions/Maps/includes/Geocoder.php',
         'Maps\\Geocoders' => __DIR__ . '/../..' . '/extensions/Maps/includes/Geocoders.php',
+        'Maps\\Geocoders\\Geocoder' => __DIR__ . '/../..' . '/extensions/Maps/src/Geocoders/Geocoder.php',
+        'Maps\\Geocoders\\InMemoryGeocoder' => __DIR__ . '/../..' . '/extensions/Maps/src/Geocoders/InMemoryGeocoder.php',
+        'Maps\\Geocoders\\NominatimGeocoder' => __DIR__ . '/../..' . '/extensions/Maps/src/Geocoders/NominatimGeocoder.php',
         'Maps\\ImageOverlayParser' => __DIR__ . '/../..' . '/extensions/Maps/includes/parsers/ImageOverlayParser.php',
         'Maps\\LineParser' => __DIR__ . '/../..' . '/extensions/Maps/includes/parsers/LineParser.php',
         'Maps\\LocationParser' => __DIR__ . '/../..' . '/extensions/Maps/includes/parsers/LocationParser.php',
@@ -495,14 +517,6 @@ class ComposerStaticInit_mediawiki_vendor
         'Maps\\PolygonParser' => __DIR__ . '/../..' . '/extensions/Maps/includes/parsers/PolygonParser.php',
         'Maps\\RectangleParser' => __DIR__ . '/../..' . '/extensions/Maps/includes/parsers/RectangleParser.php',
         'Maps\\ServiceParam' => __DIR__ . '/../..' . '/extensions/Maps/includes/ServiceParam.php',
-        'Maps\\Test\\ParserHookTest' => __DIR__ . '/../..' . '/extensions/Maps/tests/phpunit/parserhooks/ParserHookTest.php',
-        'Maps\\Tests\\Elements\\BaseElementTest' => __DIR__ . '/../..' . '/extensions/Maps/tests/phpunit/elements/BaseElementTest.php',
-        'Maps\\Tests\\Elements\\CircleTest' => __DIR__ . '/../..' . '/extensions/Maps/tests/phpunit/elements/CircleTest.php',
-        'Maps\\Tests\\Elements\\ImageOverlayTest' => __DIR__ . '/../..' . '/extensions/Maps/tests/phpunit/elements/ImageOverlayTest.php',
-        'Maps\\Tests\\Elements\\LineTest' => __DIR__ . '/../..' . '/extensions/Maps/tests/phpunit/elements/LineTest.php',
-        'Maps\\Tests\\Elements\\LocationTest' => __DIR__ . '/../..' . '/extensions/Maps/tests/phpunit/elements/LocationTest.php',
-        'Maps\\Tests\\Elements\\PolygonTest' => __DIR__ . '/../..' . '/extensions/Maps/tests/phpunit/elements/PolygonTest.php',
-        'Maps\\Tests\\Elements\\RectangleTest' => __DIR__ . '/../..' . '/extensions/Maps/tests/phpunit/elements/RectangleTest.php',
         'Maps\\WmsOverlayParser' => __DIR__ . '/../..' . '/extensions/Maps/includes/parsers/WmsOverlayParser.php',
         'OOUI\\AccessKeyedElement' => __DIR__ . '/..' . '/oojs/oojs-ui/php/mixins/AccessKeyedElement.php',
         'OOUI\\ActionFieldLayout' => __DIR__ . '/..' . '/oojs/oojs-ui/php/layouts/ActionFieldLayout.php',
@@ -646,7 +660,6 @@ class ComposerStaticInit_mediawiki_vendor
         'SMKMLPrinter' => __DIR__ . '/../..' . '/extensions/SemanticMaps/src/queryprinters/SM_KMLPrinter.php',
         'SMMapPrinter' => __DIR__ . '/../..' . '/extensions/SemanticMaps/src/queryprinters/SM_MapPrinter.php',
         'SMQueryHandler' => __DIR__ . '/../..' . '/extensions/SemanticMaps/src/queryprinters/SM_QueryHandler.php',
-        'SMQueryPrinters' => __DIR__ . '/../..' . '/extensions/SemanticMaps/src/queryprinters/SM_QueryPrinters.php',
         'SMWAdmin' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/includes/specials/SMW_SpecialSMWAdmin.php',
         'SMWAskPage' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/includes/specials/SMW_SpecialAsk.php',
         'SMWBibTeXEntry' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/bibtex/SRF_BibTeX.php',
@@ -872,6 +885,7 @@ class ComposerStaticInit_mediawiki_vendor
         'SMW\\MediaWiki\\ByLanguageCollationMapper' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/MediaWiki/ByLanguageCollationMapper.php',
         'SMW\\MediaWiki\\Database' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/MediaWiki/Database.php',
         'SMW\\MediaWiki\\DatabaseConnectionProvider' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/MediaWiki/DatabaseConnectionProvider.php',
+        'SMW\\MediaWiki\\DatabaseHelper' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/MediaWiki/DatabaseHelper.php',
         'SMW\\MediaWiki\\DeepRedirectTargetResolver' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/MediaWiki/DeepRedirectTargetResolver.php',
         'SMW\\MediaWiki\\EditInfoProvider' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/MediaWiki/EditInfoProvider.php',
         'SMW\\MediaWiki\\Hooks\\ArticleDelete' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/MediaWiki/Hooks/ArticleDelete.php',
@@ -932,8 +946,8 @@ class ComposerStaticInit_mediawiki_vendor
         'SMW\\MediaWiki\\TitleLookup' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/MediaWiki/TitleLookup.php',
         'SMW\\Message' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/Message.php',
         'SMW\\MessageFormatter' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/includes/formatters/MessageFormatter.php',
-        'SMW\\NamespaceExaminer' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/includes/NamespaceExaminer.php',
-        'SMW\\NamespaceManager' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/includes/NamespaceManager.php',
+        'SMW\\NamespaceExaminer' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/NamespaceExaminer.php',
+        'SMW\\NamespaceManager' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/NamespaceManager.php',
         'SMW\\NamespaceUriFinder' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/NamespaceUriFinder.php',
         'SMW\\Options' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/Options.php',
         'SMW\\PageInfo' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/PageInfo.php',
@@ -1080,8 +1094,8 @@ class ComposerStaticInit_mediawiki_vendor
         'SMW\\SQLStore\\RedirectInfoStore' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/SQLStore/RedirectInfoStore.php',
         'SMW\\SQLStore\\RequestOptionsProcessor' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/SQLStore/RequestOptionsProcessor.php',
         'SMW\\SQLStore\\SQLStoreFactory' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/SQLStore/SQLStoreFactory.php',
+        'SMW\\SQLStore\\TableBuilder\\TemporaryTableBuilder' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/SQLStore/TableBuilder/TemporaryTableBuilder.php',
         'SMW\\SQLStore\\TableDefinition' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/SQLStore/TableDefinition.php',
-        'SMW\\SQLStore\\TemporaryIdTableCreator' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/SQLStore/TemporaryIdTableCreator.php',
         'SMW\\SQLStore\\ValueLookupStore' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/SQLStore/ValueLookupStore.php',
         'SMW\\SemanticData' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/includes/SemanticData.php',
         'SMW\\SerializerFactory' => __DIR__ . '/../..' . '/extensions/SemanticMediaWiki/src/SerializerFactory.php',
@@ -1134,8 +1148,6 @@ class ComposerStaticInit_mediawiki_vendor
         'SRFOutlineTree' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/outline/SRF_Outline.php',
         'SRFPageWidget' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/widget/SRF_PageWidget.php',
         'SRFParserFunctions' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/SemanticResultFormats.parser.php',
-        'SRFPloticus' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/ploticus/SRF_Ploticus.php',
-        'SRFPloticusVBar' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/ploticus/SRF_PloticusVBar.php',
         'SRFProcess' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/graphviz/SRF_Process.php',
         'SRFSlideShow' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/slideshow/SRF_SlideShow.php',
         'SRFSlideShowApi' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/slideshow/SRF_SlideShowApi.php',
@@ -1178,6 +1190,12 @@ class ComposerStaticInit_mediawiki_vendor
         'Serializers\\Exceptions\\SerializationException' => __DIR__ . '/..' . '/serialization/serialization/src/Serializers/Exceptions/SerializationException.php',
         'Serializers\\Exceptions\\UnsupportedObjectException' => __DIR__ . '/..' . '/serialization/serialization/src/Serializers/Exceptions/UnsupportedObjectException.php',
         'Serializers\\Serializer' => __DIR__ . '/..' . '/serialization/serialization/src/Serializers/Serializer.php',
+        'SimpleCache\\Cache\\Cache' => __DIR__ . '/..' . '/jeroen/simple-cache/src/Cache/Cache.php',
+        'SimpleCache\\Cache\\CombinatoryCache' => __DIR__ . '/..' . '/jeroen/simple-cache/src/Cache/CombinatoryCache.php',
+        'SimpleCache\\Cache\\MediaWikiCache' => __DIR__ . '/..' . '/jeroen/simple-cache/src/Cache/MediaWikiCache.php',
+        'SimpleCache\\Cache\\SimpleInMemoryCache' => __DIR__ . '/..' . '/jeroen/simple-cache/src/Cache/SimpleInMemoryCache.php',
+        'SimpleCache\\KeyBuilder\\KeyBuilder' => __DIR__ . '/..' . '/jeroen/simple-cache/src/KeyBuilder/KeyBuilder.php',
+        'SimpleCache\\KeyBuilder\\NamespacedKeyBuilder' => __DIR__ . '/..' . '/jeroen/simple-cache/src/KeyBuilder/NamespacedKeyBuilder.php',
         'SpecialMapEditor' => __DIR__ . '/../..' . '/extensions/Maps/includes/specials/SpecialMapEditor.php',
         'SplitConditionalOrEdge' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/graphviz/SRF_Process.php',
         'SplitEdge' => __DIR__ . '/../..' . '/extensions/SemanticResultFormats/formats/graphviz/SRF_Process.php',

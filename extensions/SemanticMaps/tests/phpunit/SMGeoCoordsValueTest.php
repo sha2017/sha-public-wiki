@@ -2,6 +2,7 @@
 
 namespace SM\Test;
 
+use SMAreaValueDescription;
 use SMGeoCoordsValue;
 use SMGeoCoordsValueDescription;
 use SMW\DataValueFactory;
@@ -27,7 +28,7 @@ class SMGeoCoordsValueTest extends \PHPUnit_Framework_TestCase {
 		 */
 		$geoValue = DataValueFactory::newDataItemValue( $geoDI );
 
-		$this->assertInstanceOf( 'SMGeoCoordsValue', $geoValue );
+		$this->assertInstanceOf( SMGeoCoordsValue::class, $geoValue );
 
 		$this->assertEquals( $geoDI, $geoValue->getDataItem() );
 		$this->assertEquals( '23° 0\' 0", 42° 0\' 0"', $geoValue->getShortWikiText() );
@@ -48,7 +49,7 @@ class SMGeoCoordsValueTest extends \PHPUnit_Framework_TestCase {
 		/**
 		 * @var SMGeoCoordsValueDescription $description
 		 */
-		$this->assertInstanceOf( 'SMGeoCoordsValueDescription', $description );
+		$this->assertInstanceOf( SMGeoCoordsValueDescription::class, $description );
 		$this->assertEquals( $lat, $description->getDataItem()->getLatitude() );
 		$this->assertEquals( $long, $description->getDataItem()->getLongitude() );
 	}
@@ -58,23 +59,23 @@ class SMGeoCoordsValueTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	public function coordinateProvider() {
-		return array(
-			array(
+		return [
+			[
 				23,
 				42,
 				'23° 0\' 0", 42° 0\' 0"',
-			),
-			array(
+			],
+			[
 				0,
 				0,
 				'0° 0\' 0", 0° 0\' 0"',
-			),
-			array(
+			],
+			[
 				-23.5,
 				-42.5,
 				'-23° 30\' 0", -42° 30\' 0"',
-			),
-		);
+			],
+		];
 	}
 
 	/**
@@ -85,24 +86,24 @@ class SMGeoCoordsValueTest extends \PHPUnit_Framework_TestCase {
 
 		$description = $geoValue->getQueryDescription( $serialization );
 
-		$this->assertInstanceOf( 'SMAreaValueDescription', $description );
+		$this->assertInstanceOf( SMAreaValueDescription::class, $description );
 	}
 
 	public function coordinateWithDistanceProvider() {
-		return array(
-			array(
+		return [
+			[
 				'23° 0\' 0", 42° 0\' 0"(1km)',
 				1000,
-			),
-			array(
+			],
+			[
 				'0° 0\' 0", 0° 0\' 0" ( 1 m )',
 				1,
-			),
-			array(
+			],
+			[
 				'-23° 30\' 0", -42° 30\' 0" (9001m)',
 				9001,
-			),
-		);
+			],
+		];
 	}
 
 }

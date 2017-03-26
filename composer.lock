@@ -4,7 +4,6 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "5c37a4b60fa202e5782a47c00cf0f3a1",
     "content-hash": "b7a9ad4a31a451f202073068bf487bfd",
     "packages": [
         {
@@ -112,7 +111,7 @@
                 "zend",
                 "zikula"
             ],
-            "time": "2016-08-13 20:53:52"
+            "time": "2016-08-13T20:53:52+00:00"
         },
         {
             "name": "composer/semver",
@@ -174,7 +173,7 @@
                 "validation",
                 "versioning"
             ],
-            "time": "2016-03-30 13:16:03"
+            "time": "2016-03-30T13:16:03+00:00"
         },
         {
             "name": "cssjanus/cssjanus",
@@ -209,7 +208,7 @@
                 "Apache-2.0"
             ],
             "description": "Convert CSS stylesheets between left-to-right and right-to-left.",
-            "time": "2015-06-15 17:20:16"
+            "time": "2015-06-15T17:20:16+00:00"
         },
         {
             "name": "data-values/common",
@@ -270,7 +269,7 @@
                 "valuevalidators",
                 "wikidata"
             ],
-            "time": "2015-08-14 10:15:07"
+            "time": "2015-08-14T10:15:07+00:00"
         },
         {
             "name": "data-values/data-values",
@@ -329,20 +328,20 @@
                 "wikibase",
                 "wikidata"
             ],
-            "time": "2014-09-26 07:02:27"
+            "time": "2014-09-26T07:02:27+00:00"
         },
         {
             "name": "data-values/geo",
-            "version": "1.1.7",
+            "version": "1.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/DataValues/Geo.git",
-                "reference": "31bc304c5b525f59fa7db047adc583d6b86e3ad9"
+                "reference": "b16af85da2dc879382d2913bb32aeae00a074c55"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DataValues/Geo/zipball/31bc304c5b525f59fa7db047adc583d6b86e3ad9",
-                "reference": "31bc304c5b525f59fa7db047adc583d6b86e3ad9",
+                "url": "https://api.github.com/repos/DataValues/Geo/zipball/b16af85da2dc879382d2913bb32aeae00a074c55",
+                "reference": "b16af85da2dc879382d2913bb32aeae00a074c55",
                 "shasum": ""
             },
             "require": {
@@ -351,10 +350,13 @@
                 "data-values/interfaces": "~0.2.0|~0.1.5",
                 "php": ">=5.3.0"
             },
+            "require-dev": {
+                "mediawiki/mediawiki-codesniffer": "~0.5"
+            },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.1.x-dev"
+                    "dev-master": "1.2.x-dev"
                 }
             },
             "autoload": {
@@ -392,7 +394,7 @@
                 "parsers",
                 "wikidata"
             ],
-            "time": "2016-05-27 15:02:09"
+            "time": "2017-03-14T17:59:19+00:00"
         },
         {
             "name": "data-values/interfaces",
@@ -446,7 +448,7 @@
                 "valuevalidators",
                 "wikidata"
             ],
-            "time": "2016-07-15 10:58:24"
+            "time": "2016-07-15T10:58:24+00:00"
         },
         {
             "name": "data-values/validators",
@@ -507,7 +509,116 @@
                 "valueparsers",
                 "wikidata"
             ],
-            "time": "2014-10-09 19:10:23"
+            "time": "2014-10-09T19:10:23+00:00"
+        },
+        {
+            "name": "jeroen/file-fetcher",
+            "version": "3.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/JeroenDeDauw/FileFetcher.git",
+                "reference": "818da8261c256aac137f000cabbe59bd4c348a44"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/JeroenDeDauw/FileFetcher/zipball/818da8261c256aac137f000cabbe59bd4c348a44",
+                "reference": "818da8261c256aac137f000cabbe59bd4c348a44",
+                "shasum": ""
+            },
+            "require": {
+                "jeroen/simple-cache": "~2.0",
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "ockcyp/covers-validator": "~0.4",
+                "phpmd/phpmd": "~2.1",
+                "phpunit/phpunit": "~4.0",
+                "squizlabs/php_codesniffer": "~2.1"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "FileFetcher\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "http://jeroendedauw.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Simple file fetching interface",
+            "homepage": "https://github.com/JeroenDeDauw/FileFetcher",
+            "keywords": [
+                "cache",
+                "curl",
+                "file fetcher",
+                "file_get_contents",
+                "wget"
+            ],
+            "time": "2016-01-07T21:17:42+00:00"
+        },
+        {
+            "name": "jeroen/simple-cache",
+            "version": "2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/JeroenDeDauw/SimpleCache.git",
+                "reference": "159a72cf2ba7b7506495914d294d9e423700bd54"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/JeroenDeDauw/SimpleCache/zipball/159a72cf2ba7b7506495914d294d9e423700bd54",
+                "reference": "159a72cf2ba7b7506495914d294d9e423700bd54",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "replace": {
+                "jeroen-de-dauw/simple-cache": "*"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "SimpleCache\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Jeroen De Dauw",
+                    "email": "jeroendedauw@gmail.com",
+                    "homepage": "http://jeroendedauw.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Small library defining a minimalistic caching interface and provides some basic implementations",
+            "homepage": "https://github.com/JeroenDeDauw/SimpleCache",
+            "keywords": [
+                "cache",
+                "simplecache"
+            ],
+            "time": "2014-08-19T00:36:41+00:00"
         },
         {
             "name": "liuggio/statsd-php-client",
@@ -557,7 +668,7 @@
                 "php",
                 "statsd"
             ],
-            "time": "2015-07-23 23:12:45"
+            "time": "2015-07-23T23:12:45+00:00"
         },
         {
             "name": "mediawiki/at-ease",
@@ -604,25 +715,27 @@
             ],
             "description": "Safe replacement to @ for suppressing warnings.",
             "homepage": "https://www.mediawiki.org/wiki/at-ease",
-            "time": "2015-09-18 07:02:06"
+            "time": "2015-09-18T07:02:06+00:00"
         },
         {
             "name": "mediawiki/maps",
-            "version": "3.8.1",
+            "version": "3.8.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/JeroenDeDauw/Maps.git",
-                "reference": "978b928b7279006f4a95a7f146127976d4dd930d"
+                "reference": "a5a1d771f56c43f463c3503f89454f77d4d48477"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/JeroenDeDauw/Maps/zipball/978b928b7279006f4a95a7f146127976d4dd930d",
-                "reference": "978b928b7279006f4a95a7f146127976d4dd930d",
+                "url": "https://api.github.com/repos/JeroenDeDauw/Maps/zipball/a5a1d771f56c43f463c3503f89454f77d4d48477",
+                "reference": "a5a1d771f56c43f463c3503f89454f77d4d48477",
                 "shasum": ""
             },
             "require": {
                 "composer/installers": "^1.0.1",
                 "data-values/geo": "~1.0",
+                "jeroen/file-fetcher": "~3.1",
+                "jeroen/simple-cache": "~2.0",
                 "mediawiki/validator": "^2.0.2",
                 "php": ">=5.5"
             },
@@ -644,9 +757,7 @@
                 },
                 "classmap": [
                     "includes/",
-                    "Maps.hooks.php",
-                    "tests/phpunit/elements/",
-                    "tests/phpunit/parserhooks/ParserHookTest.php"
+                    "Maps.hooks.php"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -672,7 +783,65 @@
                 "mediawiki",
                 "osm"
             ],
-            "time": "2016-09-07 11:37:12"
+            "time": "2016-09-22T03:18:29+00:00"
+        },
+        {
+            "name": "mediawiki/page-forms",
+            "version": "4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wikimedia/mediawiki-extensions-PageForms.git",
+                "reference": "7f1cec5d7bcbc8ddce8e012deb71979acbb6aa02"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wikimedia/mediawiki-extensions-PageForms/zipball/7f1cec5d7bcbc8ddce8e012deb71979acbb6aa02",
+                "reference": "7f1cec5d7bcbc8ddce8e012deb71979acbb6aa02",
+                "shasum": ""
+            },
+            "require": {
+                "composer/installers": "1.*,>=1.0.1",
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "jakub-onderka/php-parallel-lint": "0.9.2"
+            },
+            "suggest": {
+                "mediawiki/open-layers": "Allow us to use ResourceLoader for OpenLayers."
+            },
+            "type": "mediawiki-extension",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.0.x-dev"
+                },
+                "installer-paths": {
+                    "../{$name}": [
+                        "mediawiki/open-layers"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Yaron Koren",
+                    "homepage": "http://yaronkoren.com/"
+                }
+            ],
+            "description": "Forms for creating and editing wiki pages.",
+            "homepage": "https://www.mediawiki.org/wiki/Extension:Page_Forms",
+            "keywords": [
+                "Forms",
+                "PF",
+                "Page Forms",
+                "SF",
+                "Semantic Forms",
+                "mediawiki",
+                "wiki"
+            ],
+            "time": "2017-02-08T19:13:24+00:00"
         },
         {
             "name": "mediawiki/parser-hooks",
@@ -726,35 +895,36 @@
                 "parserhooks",
                 "tag extension"
             ],
-            "time": "2016-03-05 15:47:04"
+            "time": "2016-03-05T15:47:04+00:00"
         },
         {
             "name": "mediawiki/semantic-extra-special-properties",
-            "version": "1.3.1",
+            "version": "1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SemanticMediaWiki/SemanticExtraSpecialProperties.git",
-                "reference": "8b2c8b2acb3366777b34657d43d2654141b3958e"
+                "reference": "a7ff0f91869ceacba58afc9dd75f0cfa9697355f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticExtraSpecialProperties/zipball/8b2c8b2acb3366777b34657d43d2654141b3958e",
-                "reference": "8b2c8b2acb3366777b34657d43d2654141b3958e",
+                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticExtraSpecialProperties/zipball/a7ff0f91869ceacba58afc9dd75f0cfa9697355f",
+                "reference": "a7ff0f91869ceacba58afc9dd75f0cfa9697355f",
                 "shasum": ""
             },
             "require": {
                 "composer/installers": "1.*,>=1.0.1",
-                "mediawiki/semantic-media-wiki": "1.9.*|~2.0",
+                "mediawiki/semantic-media-wiki": "~2.3",
                 "php": ">=5.3.0"
             },
             "type": "mediawiki-extension",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.3.x-dev"
+                    "dev-master": "1.4.x-dev"
                 }
             },
             "autoload": {
                 "files": [
+                    "DefaultSettings.php",
                     "SemanticExtraSpecialProperties.php"
                 ],
                 "psr-4": {
@@ -767,12 +937,14 @@
             ],
             "authors": [
                 {
-                    "name": "Leo Wallentin",
-                    "homepage": "https://github.com/rotsee"
+                    "name": "James Hong Kong",
+                    "homepage": "https://semantic-mediawiki.org/wiki/User:MWJames",
+                    "role": "Developer"
                 },
                 {
-                    "name": "mwjames",
-                    "homepage": "https://semantic-mediawiki.org/wiki/User:MWJames"
+                    "name": "Leo Wallentin",
+                    "homepage": "https://github.com/rotsee",
+                    "role": "Creator"
                 }
             ],
             "description": "Provides extra special properties for Semantic MediaWiki",
@@ -785,29 +957,29 @@
                 "special properties",
                 "wiki"
             ],
-            "time": "2015-07-18 16:01:11"
+            "time": "2017-01-22T02:01:40+00:00"
         },
         {
             "name": "mediawiki/semantic-maps",
-            "version": "3.3.0",
+            "version": "3.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SemanticMediaWiki/SemanticMaps.git",
-                "reference": "c8c74c23f8f615f869f8b7f60cdfbe13684b41a9"
+                "reference": "67a9b86a2b30caabd37397a49c95ea634b99948e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMaps/zipball/c8c74c23f8f615f869f8b7f60cdfbe13684b41a9",
-                "reference": "c8c74c23f8f615f869f8b7f60cdfbe13684b41a9",
+                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMaps/zipball/67a9b86a2b30caabd37397a49c95ea634b99948e",
+                "reference": "67a9b86a2b30caabd37397a49c95ea634b99948e",
                 "shasum": ""
             },
             "require": {
                 "composer/installers": "^1.0.1",
                 "data-values/geo": "~1.1",
-                "mediawiki/maps": "~3.2",
+                "mediawiki/maps": "~3.8",
                 "mediawiki/semantic-media-wiki": "~2.0",
                 "mediawiki/validator": "~2.0",
-                "php": ">=5.3.0"
+                "php": ">=5.5.0"
             },
             "suggest": {
                 "mediawiki/semantic-forms": "Allows entering coordinates via a form map input"
@@ -815,7 +987,7 @@
             "type": "mediawiki-extension",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.2.x-dev"
+                    "dev-master": "3.4.x-dev"
                 }
             },
             "autoload": {
@@ -851,20 +1023,20 @@
                 "mediawiki",
                 "wiki"
             ],
-            "time": "2016-04-02 15:58:05"
+            "time": "2016-11-23T20:00:34+00:00"
         },
         {
             "name": "mediawiki/semantic-media-wiki",
-            "version": "2.4.1",
+            "version": "2.4.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SemanticMediaWiki/SemanticMediaWiki.git",
-                "reference": "af782574b907a42e42ef7645d639f16c0d44364a"
+                "reference": "3d70e021e2c0fed6058d415f81c9e244c8ea16a9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMediaWiki/zipball/af782574b907a42e42ef7645d639f16c0d44364a",
-                "reference": "af782574b907a42e42ef7645d639f16c0d44364a",
+                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMediaWiki/zipball/3d70e021e2c0fed6058d415f81c9e244c8ea16a9",
+                "reference": "3d70e021e2c0fed6058d415f81c9e244c8ea16a9",
                 "shasum": ""
             },
             "require": {
@@ -945,20 +1117,20 @@
                 "mediawiki",
                 "wiki"
             ],
-            "time": "2016-07-12 10:28:58"
+            "time": "2017-02-15T19:38:14+00:00"
         },
         {
             "name": "mediawiki/semantic-result-formats",
-            "version": "2.3",
+            "version": "2.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SemanticMediaWiki/SemanticResultFormats.git",
-                "reference": "986366a3cbcff524a5317aa0c7c8c052b7cc94a1"
+                "reference": "dc464a111fcde8257d8d110590b3da2b159b01ec"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticResultFormats/zipball/986366a3cbcff524a5317aa0c7c8c052b7cc94a1",
-                "reference": "986366a3cbcff524a5317aa0c7c8c052b7cc94a1",
+                "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticResultFormats/zipball/dc464a111fcde8257d8d110590b3da2b159b01ec",
+                "reference": "dc464a111fcde8257d8d110590b3da2b159b01ec",
                 "shasum": ""
             },
             "require": {
@@ -1026,25 +1198,25 @@
                 "mediawiki",
                 "wiki"
             ],
-            "time": "2015-09-24 21:27:44"
+            "time": "2017-02-25T11:20:30+00:00"
         },
         {
             "name": "mediawiki/validator",
-            "version": "2.0.6",
+            "version": "2.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/JeroenDeDauw/Validator.git",
-                "reference": "860b673fccf25863bdedbe5ae733f7edc7711a3e"
+                "reference": "04ad7a2f6c982b291dcbaa166f2ce90505da6401"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/JeroenDeDauw/Validator/zipball/860b673fccf25863bdedbe5ae733f7edc7711a3e",
-                "reference": "860b673fccf25863bdedbe5ae733f7edc7711a3e",
+                "url": "https://api.github.com/repos/JeroenDeDauw/Validator/zipball/04ad7a2f6c982b291dcbaa166f2ce90505da6401",
+                "reference": "04ad7a2f6c982b291dcbaa166f2ce90505da6401",
                 "shasum": ""
             },
             "require": {
                 "param-processor/param-processor": "~1.1",
-                "php": ">=5.3.0"
+                "php": ">=5.5.0"
             },
             "require-dev": {
                 "data-values/common": "~0.3.1"
@@ -1052,7 +1224,7 @@
             "type": "mediawiki-extension",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev"
+                    "dev-master": "2.2.x-dev"
                 }
             },
             "autoload": {
@@ -1087,7 +1259,7 @@
                 "mediawiki",
                 "validator"
             ],
-            "time": "2016-07-01 18:07:25"
+            "time": "2016-10-10T08:33:58+00:00"
         },
         {
             "name": "onoi/blob-store",
@@ -1132,7 +1304,7 @@
             "keywords": [
                 "messages"
             ],
-            "time": "2016-07-09 17:32:53"
+            "time": "2016-07-09T17:32:53+00:00"
         },
         {
             "name": "onoi/cache",
@@ -1177,7 +1349,7 @@
             "keywords": [
                 "cache"
             ],
-            "time": "2015-06-02 08:52:45"
+            "time": "2015-06-02T08:52:45+00:00"
         },
         {
             "name": "onoi/callback-container",
@@ -1222,7 +1394,7 @@
             "keywords": [
                 "cache"
             ],
-            "time": "2016-04-30 07:11:39"
+            "time": "2016-04-30T07:11:39+00:00"
         },
         {
             "name": "onoi/event-dispatcher",
@@ -1267,20 +1439,20 @@
                 "events",
                 "listener"
             ],
-            "time": "2015-03-25 23:19:55"
+            "time": "2015-03-25T23:19:55+00:00"
         },
         {
             "name": "onoi/http-request",
-            "version": "1.3.0",
+            "version": "1.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/onoi/http-request.git",
-                "reference": "e6b704d95763d8cffa484f8790dc283aa3aa05b4"
+                "reference": "a7cf33bae82cffe570086fc06d6617e802c0cc74"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/onoi/http-request/zipball/e6b704d95763d8cffa484f8790dc283aa3aa05b4",
-                "reference": "e6b704d95763d8cffa484f8790dc283aa3aa05b4",
+                "url": "https://api.github.com/repos/onoi/http-request/zipball/a7cf33bae82cffe570086fc06d6617e802c0cc74",
+                "reference": "a7cf33bae82cffe570086fc06d6617e802c0cc74",
                 "shasum": ""
             },
             "require": {
@@ -1317,7 +1489,7 @@
                 "curl",
                 "http request"
             ],
-            "time": "2015-11-23 14:04:14"
+            "time": "2017-01-14T16:25:41+00:00"
         },
         {
             "name": "onoi/message-reporter",
@@ -1364,7 +1536,7 @@
             "keywords": [
                 "messages"
             ],
-            "time": "2016-08-02 04:16:55"
+            "time": "2016-08-02T04:16:55+00:00"
         },
         {
             "name": "oojs/oojs-ui",
@@ -1443,7 +1615,7 @@
             ],
             "description": "Provides library of common widgets, layouts, and windows.",
             "homepage": "https://www.mediawiki.org/wiki/OOjs_UI",
-            "time": "2016-05-03 22:34:48"
+            "time": "2016-05-03T22:34:48+00:00"
         },
         {
             "name": "oyejorge/less.php",
@@ -1505,20 +1677,20 @@
                 "php",
                 "stylesheet"
             ],
-            "time": "2015-12-30 05:47:36"
+            "time": "2015-12-30T05:47:36+00:00"
         },
         {
             "name": "param-processor/param-processor",
-            "version": "1.3.0",
+            "version": "1.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/JeroenDeDauw/ParamProcessor.git",
-                "reference": "39700858d926a4d5ba61fee269c8f4160edd0dfe"
+                "reference": "36979aa99b9010088998f1db891636ce98ad33f7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/JeroenDeDauw/ParamProcessor/zipball/39700858d926a4d5ba61fee269c8f4160edd0dfe",
-                "reference": "39700858d926a4d5ba61fee269c8f4160edd0dfe",
+                "url": "https://api.github.com/repos/JeroenDeDauw/ParamProcessor/zipball/36979aa99b9010088998f1db891636ce98ad33f7",
+                "reference": "36979aa99b9010088998f1db891636ce98ad33f7",
                 "shasum": ""
             },
             "require": {
@@ -1573,7 +1745,7 @@
                 "mediawiki",
                 "validator"
             ],
-            "time": "2016-07-15 11:53:19"
+            "time": "2016-09-21T02:42:06+00:00"
         },
         {
             "name": "psr/log",
@@ -1611,7 +1783,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2012-12-21 11:40:51"
+            "time": "2012-12-21T11:40:51+00:00"
         },
         {
             "name": "serialization/serialization",
@@ -1667,19 +1839,19 @@
                 "unserialization",
                 "wikidata"
             ],
-            "time": "2014-08-19 01:53:31"
+            "time": "2014-08-19T01:53:31+00:00"
         },
         {
             "name": "wikimedia/assert",
             "version": "v0.2.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/wmde/Assert.git",
+                "url": "https://github.com/wikimedia/Assert.git",
                 "reference": "2da55927525975f8d52825fc3ee02e5e36f5036c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wmde/Assert/zipball/2da55927525975f8d52825fc3ee02e5e36f5036c",
+                "url": "https://api.github.com/repos/wikimedia/Assert/zipball/2da55927525975f8d52825fc3ee02e5e36f5036c",
                 "reference": "2da55927525975f8d52825fc3ee02e5e36f5036c",
                 "shasum": ""
             },
@@ -1712,7 +1884,7 @@
                 "precondition",
                 "qa"
             ],
-            "time": "2015-04-29 17:23:50"
+            "time": "2015-04-29T17:23:50+00:00"
         },
         {
             "name": "wikimedia/base-convert",
@@ -1758,7 +1930,7 @@
             ],
             "description": "Convert an arbitrarily-long string from one numeric base to another, optionally zero-padding to a minimum column width.",
             "homepage": "https://www.mediawiki.org/wiki/base_convert",
-            "time": "2015-10-29 22:19:02"
+            "time": "2015-10-29T22:19:02+00:00"
         },
         {
             "name": "wikimedia/cdb",
@@ -1808,7 +1980,7 @@
             ],
             "description": "Constant Database (CDB) wrapper library for PHP. Provides pure-PHP fallback when dba_* functions are absent.",
             "homepage": "https://www.mediawiki.org/wiki/CDB",
-            "time": "2015-09-08 19:53:04"
+            "time": "2015-09-08T19:53:04+00:00"
         },
         {
             "name": "wikimedia/cldr-plural-rule-parser",
@@ -1854,7 +2026,7 @@
             ],
             "description": "Evaluates plural rules specified in the CLDR project notation.",
             "homepage": "https://www.mediawiki.org/wiki/CLDRPluralRuleParser",
-            "time": "2015-08-28 17:03:03"
+            "time": "2015-08-28T17:03:03+00:00"
         },
         {
             "name": "wikimedia/composer-merge-plugin",
@@ -1903,7 +2075,7 @@
                 }
             ],
             "description": "Composer plugin to merge multiple composer.json files",
-            "time": "2016-03-08 17:11:37"
+            "time": "2016-03-08T17:11:37+00:00"
         },
         {
             "name": "wikimedia/html-formatter",
@@ -1945,7 +2117,7 @@
             ],
             "description": "Performs transformations of HTML by wrapping around libxml2 and working around its countless bugs.",
             "homepage": "https://www.mediawiki.org/wiki/HtmlFormatter",
-            "time": "2016-04-07 21:25:47"
+            "time": "2016-04-07T21:25:47+00:00"
         },
         {
             "name": "wikimedia/ip-set",
@@ -1987,7 +2159,7 @@
             ],
             "description": "Efficiently match IP addresses against a set of CIDR specifications.",
             "homepage": "https://github.com/wikimedia/IPSet",
-            "time": "2016-02-12 15:19:10"
+            "time": "2016-02-12T15:19:10+00:00"
         },
         {
             "name": "wikimedia/php-session-serializer",
@@ -2031,7 +2203,7 @@
             ],
             "description": "Provides methods like PHP's session_encode and session_decode that don't mess with $_SESSION",
             "homepage": "https://www.mediawiki.org/wiki/Php-session-serializer",
-            "time": "2015-11-10 22:16:03"
+            "time": "2015-11-10T22:16:03+00:00"
         },
         {
             "name": "wikimedia/relpath",
@@ -2073,7 +2245,7 @@
             ],
             "description": "Compute a relative filepath between two paths.",
             "homepage": "https://www.mediawiki.org/wiki/RelPath",
-            "time": "2015-09-29 21:17:03"
+            "time": "2015-09-29T21:17:03+00:00"
         },
         {
             "name": "wikimedia/running-stat",
@@ -2115,7 +2287,7 @@
             ],
             "description": "PHP implementations of online statistical algorithms",
             "homepage": "https://www.mediawiki.org/wiki/RunningStat",
-            "time": "2015-10-28 22:29:15"
+            "time": "2015-10-28T22:29:15+00:00"
         },
         {
             "name": "wikimedia/utfnormal",
@@ -2159,7 +2331,7 @@
             ],
             "description": "Contains Unicode normalization routines, including both pure PHP implementations and automatic use of the 'intl' PHP extension when present",
             "homepage": "https://www.mediawiki.org/wiki/utfnormal",
-            "time": "2015-08-29 14:13:27"
+            "time": "2015-08-29T14:13:27+00:00"
         },
         {
             "name": "wikimedia/wrappedstring",
@@ -2201,7 +2373,7 @@
             ],
             "description": "Automatically compact sequentially-outputted strings that share a common prefix / suffix pair.",
             "homepage": "https://www.mediawiki.org/wiki/WrappedString",
-            "time": "2015-07-31 00:06:22"
+            "time": "2015-07-31T00:06:22+00:00"
         },
         {
             "name": "zordius/lightncandy",
@@ -2248,7 +2420,7 @@
                 "php",
                 "template"
             ],
-            "time": "2015-11-05 07:14:57"
+            "time": "2015-11-05T07:14:57+00:00"
         }
     ],
     "packages-dev": [
@@ -2304,7 +2476,7 @@
                 "constructor",
                 "instantiate"
             ],
-            "time": "2015-06-14 21:17:01"
+            "time": "2015-06-14T21:17:01+00:00"
         },
         {
             "name": "jakub-onderka/php-parallel-lint",
@@ -2351,7 +2523,7 @@
             ],
             "description": "This tool check syntax of PHP files about 20x faster than serial check.",
             "homepage": "https://github.com/JakubOnderka/PHP-Parallel-Lint",
-            "time": "2015-12-15 10:42:16"
+            "time": "2015-12-15T10:42:16+00:00"
         },
         {
             "name": "justinrainbow/json-schema",
@@ -2417,7 +2589,7 @@
                 "json",
                 "schema"
             ],
-            "time": "2016-01-25 15:43:01"
+            "time": "2016-01-25T15:43:01+00:00"
         },
         {
             "name": "mediawiki/mediawiki-codesniffer",
@@ -2453,7 +2625,7 @@
                 "codesniffer",
                 "mediawiki"
             ],
-            "time": "2016-05-28 01:08:59"
+            "time": "2016-05-28T01:08:59+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -2531,7 +2703,7 @@
                 "logging",
                 "psr-3"
             ],
-            "time": "2016-04-02 13:12:58"
+            "time": "2016-04-02T13:12:58+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -2576,19 +2748,19 @@
                 "parser",
                 "php"
             ],
-            "time": "2015-09-19 14:15:08"
+            "time": "2015-09-19T14:15:08+00:00"
         },
         {
             "name": "nmred/kafka-php",
             "version": "v0.1.5",
             "source": {
                 "type": "git",
-                "url": "https://github.com/nmred/kafka-php.git",
+                "url": "https://github.com/weiboad/kafka-php.git",
                 "reference": "317ad8c208684db8b9e6d2f5bf7f471e89a8b4eb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nmred/kafka-php/zipball/317ad8c208684db8b9e6d2f5bf7f471e89a8b4eb",
+                "url": "https://api.github.com/repos/weiboad/kafka-php/zipball/317ad8c208684db8b9e6d2f5bf7f471e89a8b4eb",
                 "reference": "317ad8c208684db8b9e6d2f5bf7f471e89a8b4eb",
                 "shasum": ""
             },
@@ -2616,7 +2788,7 @@
                 "client",
                 "kafka"
             ],
-            "time": "2015-12-02 12:06:23"
+            "time": "2015-12-02T12:06:23+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",
@@ -2670,20 +2842,20 @@
                 "reflection",
                 "static analysis"
             ],
-            "time": "2015-12-27 11:43:31"
+            "time": "2015-12-27T11:43:31+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "3.1.0",
+            "version": "3.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "9270140b940ff02e58ec577c237274e92cd40cdd"
+                "reference": "8331b5efe816ae05461b7ca1e721c01b46bafb3e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/9270140b940ff02e58ec577c237274e92cd40cdd",
-                "reference": "9270140b940ff02e58ec577c237274e92cd40cdd",
+                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/8331b5efe816ae05461b7ca1e721c01b46bafb3e",
+                "reference": "8331b5efe816ae05461b7ca1e721c01b46bafb3e",
                 "shasum": ""
             },
             "require": {
@@ -2715,20 +2887,20 @@
                 }
             ],
             "description": "With this component, a library can provide support for annotations via DocBlocks or otherwise retrieve information that is embedded in a DocBlock.",
-            "time": "2016-06-10 09:48:41"
+            "time": "2016-09-30T07:12:33+00:00"
         },
         {
             "name": "phpdocumentor/type-resolver",
-            "version": "0.2",
+            "version": "0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/TypeResolver.git",
-                "reference": "b39c7a5b194f9ed7bd0dd345c751007a41862443"
+                "reference": "e224fb2ea2fba6d3ad6fdaef91cd09a172155ccb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/b39c7a5b194f9ed7bd0dd345c751007a41862443",
-                "reference": "b39c7a5b194f9ed7bd0dd345c751007a41862443",
+                "url": "https://api.github.com/repos/phpDocumentor/TypeResolver/zipball/e224fb2ea2fba6d3ad6fdaef91cd09a172155ccb",
+                "reference": "e224fb2ea2fba6d3ad6fdaef91cd09a172155ccb",
                 "shasum": ""
             },
             "require": {
@@ -2762,31 +2934,32 @@
                     "email": "me@mikevanriel.com"
                 }
             ],
-            "time": "2016-06-10 07:14:17"
+            "time": "2016-11-25T06:54:22+00:00"
         },
         {
             "name": "phpspec/prophecy",
-            "version": "v1.6.1",
+            "version": "v1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpspec/prophecy.git",
-                "reference": "58a8137754bc24b25740d4281399a4a3596058e0"
+                "reference": "93d39f1f7f9326d746203c7c056f300f7f126073"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/58a8137754bc24b25740d4281399a4a3596058e0",
-                "reference": "58a8137754bc24b25740d4281399a4a3596058e0",
+                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/93d39f1f7f9326d746203c7c056f300f7f126073",
+                "reference": "93d39f1f7f9326d746203c7c056f300f7f126073",
                 "shasum": ""
             },
             "require": {
                 "doctrine/instantiator": "^1.0.2",
                 "php": "^5.3|^7.0",
                 "phpdocumentor/reflection-docblock": "^2.0|^3.0.2",
-                "sebastian/comparator": "^1.1",
-                "sebastian/recursion-context": "^1.0"
+                "sebastian/comparator": "^1.1|^2.0",
+                "sebastian/recursion-context": "^1.0|^2.0|^3.0"
             },
             "require-dev": {
-                "phpspec/phpspec": "^2.0"
+                "phpspec/phpspec": "^2.5|^3.2",
+                "phpunit/phpunit": "^4.8 || ^5.6.5"
             },
             "type": "library",
             "extra": {
@@ -2824,7 +2997,7 @@
                 "spy",
                 "stub"
             ],
-            "time": "2016-06-07 08:13:47"
+            "time": "2017-03-02T20:05:34+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -2886,20 +3059,20 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2015-10-06 15:47:00"
+            "time": "2015-10-06T15:47:00+00:00"
         },
         {
             "name": "phpunit/php-file-iterator",
-            "version": "1.4.1",
+            "version": "1.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-file-iterator.git",
-                "reference": "6150bf2c35d3fc379e50c7602b75caceaa39dbf0"
+                "reference": "3cc8f69b3028d0f96a9078e6295d86e9bf019be5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/6150bf2c35d3fc379e50c7602b75caceaa39dbf0",
-                "reference": "6150bf2c35d3fc379e50c7602b75caceaa39dbf0",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-file-iterator/zipball/3cc8f69b3028d0f96a9078e6295d86e9bf019be5",
+                "reference": "3cc8f69b3028d0f96a9078e6295d86e9bf019be5",
                 "shasum": ""
             },
             "require": {
@@ -2933,7 +3106,7 @@
                 "filesystem",
                 "iterator"
             ],
-            "time": "2015-06-21 13:08:43"
+            "time": "2016-10-03T07:40:28+00:00"
         },
         {
             "name": "phpunit/php-text-template",
@@ -2974,29 +3147,34 @@
             "keywords": [
                 "template"
             ],
-            "time": "2015-06-21 13:50:34"
+            "time": "2015-06-21T13:50:34+00:00"
         },
         {
             "name": "phpunit/php-timer",
-            "version": "1.0.8",
+            "version": "1.0.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-timer.git",
-                "reference": "38e9124049cf1a164f1e4537caf19c99bf1eb260"
+                "reference": "3dcf38ca72b158baf0bc245e9184d3fdffa9c46f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-timer/zipball/38e9124049cf1a164f1e4537caf19c99bf1eb260",
-                "reference": "38e9124049cf1a164f1e4537caf19c99bf1eb260",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-timer/zipball/3dcf38ca72b158baf0bc245e9184d3fdffa9c46f",
+                "reference": "3dcf38ca72b158baf0bc245e9184d3fdffa9c46f",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.3"
+                "php": "^5.3.3 || ^7.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "~4|~5"
+                "phpunit/phpunit": "^4.8.35 || ^5.7 || ^6.0"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0-dev"
+                }
+            },
             "autoload": {
                 "classmap": [
                     "src/"
@@ -3018,20 +3196,20 @@
             "keywords": [
                 "timer"
             ],
-            "time": "2016-05-12 18:03:57"
+            "time": "2017-02-26T11:10:40+00:00"
         },
         {
             "name": "phpunit/php-token-stream",
-            "version": "1.4.8",
+            "version": "1.4.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-token-stream.git",
-                "reference": "3144ae21711fb6cac0b1ab4cbe63b75ce3d4e8da"
+                "reference": "e03f8f67534427a787e21a385a67ec3ca6978ea7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-token-stream/zipball/3144ae21711fb6cac0b1ab4cbe63b75ce3d4e8da",
-                "reference": "3144ae21711fb6cac0b1ab4cbe63b75ce3d4e8da",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-token-stream/zipball/e03f8f67534427a787e21a385a67ec3ca6978ea7",
+                "reference": "e03f8f67534427a787e21a385a67ec3ca6978ea7",
                 "shasum": ""
             },
             "require": {
@@ -3067,7 +3245,7 @@
             "keywords": [
                 "tokenizer"
             ],
-            "time": "2015-09-15 10:49:45"
+            "time": "2017-02-27T10:12:30+00:00"
         },
         {
             "name": "phpunit/phpunit",
@@ -3139,7 +3317,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2016-03-14 06:16:08"
+            "time": "2016-03-14T06:16:08+00:00"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -3195,26 +3373,26 @@
                 "mock",
                 "xunit"
             ],
-            "time": "2015-10-02 06:51:40"
+            "time": "2015-10-02T06:51:40+00:00"
         },
         {
             "name": "sebastian/comparator",
-            "version": "1.2.0",
+            "version": "1.2.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/comparator.git",
-                "reference": "937efb279bd37a375bcadf584dec0726f84dbf22"
+                "reference": "2b7424b55f5047b47ac6e5ccb20b2aea4011d9be"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/937efb279bd37a375bcadf584dec0726f84dbf22",
-                "reference": "937efb279bd37a375bcadf584dec0726f84dbf22",
+                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/2b7424b55f5047b47ac6e5ccb20b2aea4011d9be",
+                "reference": "2b7424b55f5047b47ac6e5ccb20b2aea4011d9be",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3",
                 "sebastian/diff": "~1.2",
-                "sebastian/exporter": "~1.2"
+                "sebastian/exporter": "~1.2 || ~2.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "~4.4"
@@ -3259,7 +3437,7 @@
                 "compare",
                 "equality"
             ],
-            "time": "2015-07-26 15:48:44"
+            "time": "2017-01-29T09:50:25+00:00"
         },
         {
             "name": "sebastian/diff",
@@ -3311,7 +3489,7 @@
             "keywords": [
                 "diff"
             ],
-            "time": "2015-12-08 07:14:41"
+            "time": "2015-12-08T07:14:41+00:00"
         },
         {
             "name": "sebastian/environment",
@@ -3361,7 +3539,7 @@
                 "environment",
                 "hhvm"
             ],
-            "time": "2016-08-18 05:49:44"
+            "time": "2016-08-18T05:49:44+00:00"
         },
         {
             "name": "sebastian/exporter",
@@ -3428,7 +3606,7 @@
                 "export",
                 "exporter"
             ],
-            "time": "2016-06-17 09:04:28"
+            "time": "2016-06-17T09:04:28+00:00"
         },
         {
             "name": "sebastian/global-state",
@@ -3479,20 +3657,20 @@
             "keywords": [
                 "global state"
             ],
-            "time": "2015-10-12 03:26:01"
+            "time": "2015-10-12T03:26:01+00:00"
         },
         {
             "name": "sebastian/recursion-context",
-            "version": "1.0.2",
+            "version": "1.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/recursion-context.git",
-                "reference": "913401df809e99e4f47b27cdd781f4a258d58791"
+                "reference": "b19cc3298482a335a95f3016d2f8a6950f0fbcd7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/913401df809e99e4f47b27cdd781f4a258d58791",
-                "reference": "913401df809e99e4f47b27cdd781f4a258d58791",
+                "url": "https://api.github.com/repos/sebastianbergmann/recursion-context/zipball/b19cc3298482a335a95f3016d2f8a6950f0fbcd7",
+                "reference": "b19cc3298482a335a95f3016d2f8a6950f0fbcd7",
                 "shasum": ""
             },
             "require": {
@@ -3532,7 +3710,7 @@
             ],
             "description": "Provides functionality to recursively process PHP variables",
             "homepage": "http://www.github.com/sebastianbergmann/recursion-context",
-            "time": "2015-11-11 19:50:13"
+            "time": "2016-10-03T07:41:43+00:00"
         },
         {
             "name": "sebastian/version",
@@ -3567,7 +3745,7 @@
             ],
             "description": "Library that helps with managing the version number of Git-hosted PHP projects",
             "homepage": "https://github.com/sebastianbergmann/version",
-            "time": "2015-06-21 13:59:46"
+            "time": "2015-06-21T13:59:46+00:00"
         },
         {
             "name": "squizlabs/php_codesniffer",
@@ -3645,29 +3823,35 @@
                 "phpcs",
                 "standards"
             ],
-            "time": "2016-04-03 22:58:34"
+            "time": "2016-04-03T22:58:34+00:00"
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.1.4",
+            "version": "v3.2.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "f291ed25eb1435bddbe8a96caaef16469c2a092d"
+                "reference": "093e416ad096355149e265ea2e4cc1f9ee40ab1a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/f291ed25eb1435bddbe8a96caaef16469c2a092d",
-                "reference": "f291ed25eb1435bddbe8a96caaef16469c2a092d",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/093e416ad096355149e265ea2e4cc1f9ee40ab1a",
+                "reference": "093e416ad096355149e265ea2e4cc1f9ee40ab1a",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.5.9"
             },
+            "require-dev": {
+                "symfony/console": "~2.8|~3.0"
+            },
+            "suggest": {
+                "symfony/console": "For validating YAML files using the lint command"
+            },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.1-dev"
+                    "dev-master": "3.2-dev"
                 }
             },
             "autoload": {
@@ -3694,24 +3878,24 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2016-09-02 02:12:52"
+            "time": "2017-03-07T16:47:02+00:00"
         },
         {
             "name": "webmozart/assert",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/webmozart/assert.git",
-                "reference": "bb2d123231c095735130cc8f6d31385a44c7b308"
+                "reference": "2db61e59ff05fe5126d152bd0655c9ea113e550f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webmozart/assert/zipball/bb2d123231c095735130cc8f6d31385a44c7b308",
-                "reference": "bb2d123231c095735130cc8f6d31385a44c7b308",
+                "url": "https://api.github.com/repos/webmozart/assert/zipball/2db61e59ff05fe5126d152bd0655c9ea113e550f",
+                "reference": "2db61e59ff05fe5126d152bd0655c9ea113e550f",
                 "shasum": ""
             },
             "require": {
-                "php": "^5.3.3|^7.0"
+                "php": "^5.3.3 || ^7.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "^4.6",
@@ -3720,7 +3904,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.2-dev"
+                    "dev-master": "1.3-dev"
                 }
             },
             "autoload": {
@@ -3744,7 +3928,7 @@
                 "check",
                 "validate"
             ],
-            "time": "2016-08-09 15:02:57"
+            "time": "2016-11-23T20:04:58+00:00"
         },
         {
             "name": "wikimedia/avro",
@@ -3811,7 +3995,7 @@
             "keywords": [
                 "serialization"
             ],
-            "time": "2015-09-05 18:49:27"
+            "time": "2015-09-05T18:49:27+00:00"
         }
     ],
     "aliases": [],

@@ -81,48 +81,42 @@ class SRFExcel extends FileExportPrinter {
 
 		$definitions[ 'searchlabel' ]->setDefault( wfMessage( 'srf-excel-link' )->inContentLanguage()->text() );
 
-		$params[ 'templatefile' ] = new StringParam( 'string', 'templatefile', '' );
-		$params[ 'filename' ] = new StringParam( 'string', 'filename', '' );
+		$params[ 'templatefile' ] = array(
+			'type' => 'string',
+			'name' => 'templatefile',
+			'default' => '',
+			'message' => 'srf-paramdesc-excel-templatefile',
+		);
+
+		$params[ 'filename' ] = array(
+			'type' => 'string',
+			'name' => 'filename',
+			'default' => '',
+			'message' => 'srf-paramdesc-excel-filename',
+		);
 
 		return $params;
 	}
 
 	/**
 	 * Return serialised results in specified format.
-	 * Implemented by subclasses.
 	 */
 	protected function getResultText( SMWQueryResult $res, $outputMode ) {
-		if ( $outputMode == SMW_OUTPUT_FILE ) {
-			if ( $this->isPHPExcelInstalled() ) {
-				$document = $this->createExcelDocument();
-				$this->sheet = $document->getSheet( 0 );
 
-				$this->rowNum = 0;
-				//Get headers
-				if ( $this->mShowHeaders ) {
-					$this->populateDocumentWithHeaders( $res );
-					$this->rowNum++;
-				}
-
-				//Get data rows
-				$this->populateDocumentWithQueryData( $res );
-
-				$document->getActiveSheet()->getDefaultRowDimension()->setRowHeight();
-
-				$result = $this->writeDocumentToString( $document );
-			} else {
-				$result = wfMessage( 'srf-excel-missing-phpexcel' )->parse();
-			}
-		} else {
-			$result = $this->getLink( $res, $outputMode )->getText( $outputMode, $this->mLinker );
-			$this->isHTML = ( $outputMode == SMW_OUTPUT_HTML );
+		if ( $outputMode === SMW_OUTPUT_FILE ) {
+			return $this->getResultFileContents( $res );
 		}
 
-		return $result;
+		$this->isHTML = ( $outputMode === SMW_OUTPUT_HTML );
+		return $this->getLink( $res, $outputMode )->getText( $outputMode, $this->mLinker );
 	}
 
 	/*
 	 * Turns the PHPExcel document object into a string
+	 */
+	/**
+	 * @param $document
+	 * @return string
 	 */
 	protected function writeDocumentToString( $document ) {
 		$objWriter = PHPExcel_IOFactory::createWriter( $document, 'Excel5' );
@@ -143,6 +137,34 @@ class SRFExcel extends FileExportPrinter {
 			$this->colNum = 0;
 			$this->readRowData($row);
 		}
+	}
+
+	/**
+	 * @param SMWQueryResult $res
+	 * @return string
+	 */
+	protected function getResultFileContents( SMWQueryResult $res ) {
+		if ( !$this->isPHPExcelInstalled() ) {
+			throw new \RuntimeException( wfMessage( 'srf-excel-missing-phpexcel' )->parse() );
+		}
+
+		$document = $this->createExcelDocument();
+		$this->sheet = $document->getSheet( 0 );
+
+		$this->rowNum = 0;
+		//Get headers
+		if ( $this->mShowHeaders ) {
+			$this->populateDocumentWithHeaders( $res );
+			$this->rowNum++;
+		}
+
+		//Get data rows
+		$this->populateDocumentWithQueryData( $res );
+
+		$document->getActiveSheet()->getDefaultRowDimension()->setRowHeight();
+
+		$result = $this->writeDocumentToString( $document );
+		return $result;
 	}
 
 	/**
@@ -204,7 +226,7 @@ class SRFExcel extends FileExportPrinter {
 	/**
 	 * Sets a date/time value at the given col,row location
 	 *
-	 * @param $object    the raw data value object
+	 * @param \SMWTimeValue $object the raw data value object
 	 */
 	protected function setTimeDataValue ( \SMWTimeValue $object ) {
 		$type = PHPExcel_Cell_DataType::TYPE_NUMERIC;

@@ -25,6 +25,7 @@ return array(
     'c3f7f0e81464740a933532e81fa26cc7' => $vendorDir . '/wikimedia/base-convert/src/Functions.php',
     'd55c27a601de788b19a09b7d057d07ae' => $vendorDir . '/wikimedia/relpath/src/RelPath.php',
     'ea0829831173fdc99fa791b7b5e02180' => $baseDir . '/extensions/SemanticMaps/SemanticMaps.php',
-    '49b46b7a2828914e66c76de75c8414c0' => $baseDir . '/extensions/SemanticExtraSpecialProperties/SemanticExtraSpecialProperties.php',
     '43b3c7644dd913f46db744c4ac998fef' => $baseDir . '/extensions/SemanticResultFormats/SemanticResultFormats.php',
+    '02d63a16591d28134871cab9deee4744' => $baseDir . '/extensions/SemanticExtraSpecialProperties/DefaultSettings.php',
+    '49b46b7a2828914e66c76de75c8414c0' => $baseDir . '/extensions/SemanticExtraSpecialProperties/SemanticExtraSpecialProperties.php',
 );

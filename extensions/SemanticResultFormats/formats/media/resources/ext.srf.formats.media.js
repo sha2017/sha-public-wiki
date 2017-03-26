@@ -76,7 +76,7 @@
 				'360p' : { width: '640', height: '360', cssClass: 'jp-video-360p' }
 			},
 			jplayer : {
-				swfPath: srf.settings.get( 'srfgScriptPath' ) + '/resources/jquery/jplayer/Jplayer.swf',
+				swfPath: srf.settings.get( 'srfgScriptPath' ) + '/resources/jquery/jplayer/jquery.jplayer.swf',
 				backgroundColor: '#FFFFFF',
 				wmode: 'window',
 				errorAlerts: smw.debug()
@@ -137,7 +137,8 @@
 		 * @return Object
 		 */
 		getData: function( source, mediaType ){
-			var data = [];
+			var data = [],
+			self = this;
 			$.each( source, function( index, value ) {
 
 				// Make sure we display a title
@@ -148,7 +149,7 @@
 				// Use a pseudo cover art in case audio and video display is mixed to avoid
 				// a black video screen for audio files with no cover art
 				if ( mediaType === 'video' && ( value.poster === undefined || value.poster.length === 0 ) ) {
-					value.poster = this.defaults.posterImage;
+					value.poster = self.defaults.posterImage;
 				}
 				data.push ( value );
 			} );
@@ -206,7 +207,7 @@
 			var media = new srf.formats.media();
 
 			var $this = $( this ),
-				container = $this.find( '.container' ),
+				container = $this.find( '.media-container' ),
 				ID = container.attr( 'id' ),
 				json = media.parse( mw.config.get( ID ) ),
 				mode = json.count === 1 ? 'single' : 'multi';

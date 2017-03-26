@@ -61,6 +61,9 @@ class LatLongValue extends DataValueObject {
 		$this->longitude = $longitude;
 	}
 
+	/**
+	 * @param float $latitude
+	 */
 	protected function assertIsLatitude( $latitude ) {
 		if ( !is_float( $latitude ) ) {
 			throw new InvalidArgumentException( 'Can only construct LatLongValue with a numeric latitude' );
@@ -71,6 +74,9 @@ class LatLongValue extends DataValueObject {
 		}
 	}
 
+	/**
+	 * @param float $longitude
+	 */
 	protected function assertIsLongitude( $longitude ) {
 		if ( !is_float( $longitude ) ) {
 			throw new InvalidArgumentException( 'Can only construct LatLongValue with a numeric longitude' );
@@ -151,8 +157,6 @@ class LatLongValue extends DataValueObject {
 	}
 
 	/**
-	 * Returns the latitude.
-	 *
 	 * @since 0.1
 	 *
 	 * @return float
@@ -162,8 +166,6 @@ class LatLongValue extends DataValueObject {
 	}
 
 	/**
-	 * Returns the longitude.
-	 *
 	 * @since 0.1
 	 *
 	 * @return float
@@ -192,7 +194,7 @@ class LatLongValue extends DataValueObject {
 	 *
 	 * @since 0.1
 	 *
-	 * @param float[] $data
+	 * @param array $data
 	 *
 	 * @return self
 	 */

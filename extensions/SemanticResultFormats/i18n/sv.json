@@ -8,7 +8,8 @@
 			"Rotsee",
 			"WikiPhoenix",
 			"Lokal Profil",
-			"Freked"
+			"Freked",
+			"McDutchie"
 		]
 	},
 	"srf-desc": "Extra resultatformat för Semantic MediaWiki-frågor",
@@ -81,7 +82,7 @@
 	"srf-printername-jqplotchart": "jqPlot diagram",
 	"srf-printername-jqplotseries": "jqPlot serier",
 	"srf_paramdesc_chartheight": "Ange höjden (i pixlar) för diagrammet",
-	"srf_paramdesc_chartwidth": "Ange bredden (i pixlar) för diagrammet",
+	"srf_paramdesc_chartwidth": "Ange bredden (i pixlar eller procent) för diagrammet",
 	"srf_paramdesc_charttitle": "Namnet på diagrammet (dess titel)",
 	"srf_paramdesc_barcolor": "Ange diagramfärger",
 	"srf_paramdesc_bardirection": "Ange riktning för diagrammet",
@@ -196,6 +197,7 @@
 	"srf-paramdesc-filtered-list-named-args": "Namnge de argument som skickas till mallen.",
 	"srf-paramdesc-filtered-calendar-title-template": "En mall som används för att formatera evenemangets rubrik i kalendern",
 	"srf-filtered-selectorlabel-list": "Lista",
+	"srf-filtered-selectorlabel-table": "Tabell",
 	"srf-filtered-selectorlabel-calendar": "Kalender",
 	"srf-printername-d3chart": "D3 diagram",
 	"srf-printername-timeseries": "Tidsserie diagram",

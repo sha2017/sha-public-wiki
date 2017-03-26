@@ -37,6 +37,10 @@ class DmsCoordinateParser extends DmCoordinateParser {
 
 	/**
 	 * @see GeoCoordinateParserBase::areValidCoordinates
+	 *
+	 * @param string[] $normalizedCoordinateSegments
+	 *
+	 * @return bool
 	 */
 	protected function areValidCoordinates( array $normalizedCoordinateSegments ) {
 		// At least one coordinate segment needs to have seconds specified (which additionally
@@ -60,12 +64,12 @@ class DmsCoordinateParser extends DmCoordinateParser {
 		// directional and non-directional is regarded invalid).
 		$directional = false;
 
-		foreach( $normalizedCoordinateSegments as $i => $segment ) {
+		foreach ( $normalizedCoordinateSegments as $i => $segment ) {
 			$direction = '('
 				. $this->getOption( self::OPT_NORTH_SYMBOL ) . '|'
 				. $this->getOption( self::OPT_SOUTH_SYMBOL ) . ')';
 
-			if( $i === 1 ) {
+			if ( $i === 1 ) {
 				$direction = '('
 					. $this->getOption( self::OPT_EAST_SYMBOL ) . '|'
 					. $this->getOption( self::OPT_WEST_SYMBOL ) . ')';
@@ -76,7 +80,7 @@ class DmsCoordinateParser extends DmCoordinateParser {
 				$segment
 			);
 
-			if( $match ) {
+			if ( $match ) {
 				$detectedSecond = true;
 			} else {
 				$match = preg_match(
@@ -85,19 +89,19 @@ class DmsCoordinateParser extends DmCoordinateParser {
 				);
 			}
 
-			if( $match ) {
+			if ( $match ) {
 				$directional = true;
 			} elseif ( !$directional ) {
 				$match = preg_match( '/^(-)?' . $regExpStrict . '$/i', $segment );
 
-				if( $match ) {
+				if ( $match ) {
 					$detectedSecond = true;
-				} else  {
+				} else {
 					$match = preg_match( '/^(-)?' . $regExpLoose . '$/i', $segment );
 				}
 			}
 
-			if( !$match ) {
+			if ( !$match ) {
 				return false;
 			}
 		}
@@ -107,6 +111,10 @@ class DmsCoordinateParser extends DmCoordinateParser {
 
 	/**
 	 * @see DdCoordinateParser::getNormalizedNotation
+	 *
+	 * @param string $coordinates
+	 *
+	 * @return string
 	 */
 	protected function getNormalizedNotation( $coordinates ) {
 		$second = $this->getOption( self::OPT_SECOND_SYMBOL );
@@ -128,6 +136,10 @@ class DmsCoordinateParser extends DmCoordinateParser {
 
 	/**
 	 * @see DdCoordinateParser::parseCoordinate
+	 *
+	 * @param string $coordinateSegment
+	 *
+	 * @return float
 	 */
 	protected function parseCoordinate( $coordinateSegment ) {
 		$isNegative = substr( $coordinateSegment, 0, 1 ) === '-';
@@ -139,7 +151,7 @@ class DmsCoordinateParser extends DmCoordinateParser {
 		$degreeSymbol = $this->getOption( self::OPT_DEGREE_SYMBOL );
 		$degreePosition = strpos( $coordinateSegment, $degreeSymbol );
 
-		if( $degreePosition === false ) {
+		if ( $degreePosition === false ) {
 			throw new ParseException(
 				'Did not find degree symbol (' . $degreeSymbol . ')',
 				$coordinateSegment,
@@ -153,8 +165,7 @@ class DmsCoordinateParser extends DmCoordinateParser {
 
 		if ( $minutePosition === false ) {
 			$minutes = 0;
-		}
-		else {
+		} else {
 			$degSignLength = strlen( $this->getOption( self::OPT_DEGREE_SYMBOL ) );
 			$minuteLength = $minutePosition - $degreePosition - $degSignLength;
 			$minutes = substr( $coordinateSegment, $degreePosition + $degSignLength, $minuteLength );
@@ -164,8 +175,7 @@ class DmsCoordinateParser extends DmCoordinateParser {
 
 		if ( $secondPosition === false ) {
 			$seconds = 0;
-		}
-		else {
+		} else {
 			$secondLength = $secondPosition - $minutePosition - 1;
 			$seconds = substr( $coordinateSegment, $minutePosition + 1, $secondLength );
 		}

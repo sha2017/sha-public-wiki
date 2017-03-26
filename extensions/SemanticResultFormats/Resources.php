@@ -789,7 +789,7 @@ return array(
 	'ext.srf.slideshow' => $formatModule + array(
 		'scripts' => 'slideshow/resources/ext.srf.slideshow.js',
 		'styles'  => 'slideshow/resources/ext.srf.slideshow.css',
-		'dependencies' =>'mediawiki.legacy.ajax'
+		'dependencies' =>'mediawiki.util'
 	),
 
 	// Tagcanvas module
@@ -823,7 +823,7 @@ return array(
 
 	// Register the jplayer js
 	'ext.jquery.jplayer' => $moduleTemplate + array(
-		'scripts' => 'resources/jquery/jplayer/jquery.jplayer.min.js',
+		'scripts' => 'resources/jquery/jplayer/jquery.jplayer.js',
 	),
 
 	// Register the jplayer skin
@@ -833,7 +833,7 @@ return array(
 
 	// Register the jplayer skin
 	'ext.jquery.jplayer.skin.morning.light' => $moduleTemplate + array(
-		'styles' => 'resources/jquery/jplayer/skin/morning.light/jplayer.morning.light.css',
+		'styles' => 'resources/jquery/jplayer/skin/morning.light/css/jplayer.morning.light.css',
 	),
 
 	// Register the jplayer playlist js

@@ -1,5 +1,36 @@
 These are the release notes for the Semantic Maps extension.
 
+Note that Semantic Maps 3.4.2 is the last release of Semantic Maps as a dedicated extension. It has been
+merged into the [Maps](https://github.com/JeroenDeDauw/Maps) extension, where development continues. All features
+available in Semantic Maps 3.4.2 are now available in Maps 4.0 and later!
+
+## Semantic Maps 3.4.2
+
+Released on November 23rd, 2016.
+
+* Updated the documentation to reflect that this extension is now obsolete and should be replaced by Maps 4.0 and later.
+
+## Semantic Maps 3.4.1
+
+Released on September 21st, 2016.
+
+* Fixed regression introduced in 3.4 that caused the result formats to not be available
+
+## Semantic Maps 3.4
+
+Released on September 18th, 2016.
+
+### Compatibility changes
+
+* Dropped support for MediaWiki older than 1.23
+* Dropped support for PHP older than 5.5
+* Dropped support for Maps older than 3.8
+
+### New features
+
+* Added support for coordinates in SMWs [record datatype](https://www.semantic-mediawiki.org/wiki/Help:Type_Record) (by James Hong Kong)
+* Added support for the Maps tracking category (by Peter Grassberger)
+
 ## Semantic Maps 3.3
 
 Released on April 2nd, 2016.

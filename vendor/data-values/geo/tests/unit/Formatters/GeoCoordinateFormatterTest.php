@@ -35,7 +35,7 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 			),
 			'signed, minute' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				1.0/60,
+				1 / 60,
 				'-55.75, 37.25'
 			),
 			'signed, degree' => array(
@@ -58,9 +58,40 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 				10,
 				'-60, 40'
 			),
+			'rounding degrees down' => array(
+				new LatLongValue( -14.9, 14.9 ),
+				10,
+				'-10, 10'
+			),
+			'rounding degrees up' => array(
+				new LatLongValue( -15, 15 ),
+				10,
+				'-20, 20'
+			),
+			'rounding fractions down' => array(
+				new LatLongValue( -0.049, 0.049 ),
+				0.1,
+				'0, 0'
+			),
+			'rounding fractions up' => array(
+				new LatLongValue( -0.05, 0.05 ),
+				0.1,
+				'-0.1, 0.1'
+			),
+			'precision option must support strings' => array(
+				new LatLongValue( -0.05, 0.05 ),
+				'0.1',
+				'-0.1, 0.1'
+			),
 		);
 	}
 
+	/**
+	 * @param string $format One of the GeoCoordinateFormatter::TYPE_… constants
+	 * @param float|int $precision
+	 *
+	 * @return FormatterOptions
+	 */
 	private function makeOptions( $format, $precision ) {
 		$options = new FormatterOptions();
 		$options->setOption( GeoCoordinateFormatter::OPT_FORMAT, $format );
@@ -100,7 +131,7 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 			),
 			'signed, minute' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				1.0/60,
+				1 / 60,
 				'-55.75°, 37.25°'
 			),
 			'signed, degree' => array(
@@ -122,6 +153,31 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 				new LatLongValue( -55.755786, 37.25633 ),
 				10,
 				'-60°, 40°'
+			),
+			'rounding degrees down' => array(
+				new LatLongValue( -14.9, 14.9 ),
+				10,
+				'-10°, 10°'
+			),
+			'rounding degrees up' => array(
+				new LatLongValue( -15, 15 ),
+				10,
+				'-20°, 20°'
+			),
+			'rounding fractions down' => array(
+				new LatLongValue( -0.049, 0.049 ),
+				0.1,
+				'0.0°, 0.0°'
+			),
+			'rounding fractions up' => array(
+				new LatLongValue( -0.05, 0.05 ),
+				0.1,
+				'-0.1°, 0.1°'
+			),
+			'precision option must support strings' => array(
+				new LatLongValue( -0.05, 0.05 ),
+				'0.1',
+				'-0.1°, 0.1°'
 			),
 		);
 	}
@@ -151,42 +207,42 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 			),
 			'0, minute' => array(
 				new LatLongValue( 0, 0 ),
-				1.0/60,
+				1 / 60,
 				'0° 0\', 0° 0\''
 			),
 			'0, second' => array(
 				new LatLongValue( 0, 0 ),
-				1.0/3600,
+				1 / 3600,
 				'0° 0.00\', 0° 0.00\''
 			),
 			'negative zero' => array(
-				new LatLongValue( -1.0/128, 1.0/128 ),
-				1.0/60,
+				new LatLongValue( -1 / 128, 1 / 128 ),
+				1 / 60,
 				'0° 0\', 0° 0\''
 			),
 			'negative, not zero' => array(
 				new LatLongValue( -0.25, 0.25 ),
-				1.0/60,
+				1 / 60,
 				'-0° 15\', 0° 15\''
 			),
 			'second' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				1.0/3600,
+				1 / 3600,
 				'-55° 45.35\', 37° 15.38\''
 			),
 			'minute' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				1.0/60,
+				1 / 60,
 				'-55° 45\', 37° 15\''
 			),
 			'ten minutes' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				10.0/60,
-				'-55° 49\', 37° 19\''
+				10 / 60,
+				'-55° 50\', 37° 20\''
 			),
 			'fifty minutes' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				50.0/60,
+				50 / 60,
 				'-55° 50\', 37° 30\''
 			),
 			'degree' => array(
@@ -198,6 +254,41 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 				new LatLongValue( -55.755786, 37.25633 ),
 				10,
 				'-60°, 40°'
+			),
+			'rounding minutes down' => array(
+				new LatLongValue( -14.9 / 60, 14.9 / 60 ),
+				10 / 60,
+				'-0° 10\', 0° 10\''
+			),
+			'rounding minutes up' => array(
+				new LatLongValue( -15 / 60, 15 / 60 ),
+				10 / 60,
+				'-0° 20\', 0° 20\''
+			),
+			'rounding fractions down' => array(
+				new LatLongValue( -0.049 / 60, 0.049 / 60 ),
+				0.1 / 60,
+				'0° 0.0\', 0° 0.0\''
+			),
+			'rounding fractions up' => array(
+				new LatLongValue( -0.05 / 60, 0.05 / 60 ),
+				0.1 / 60,
+				'-0° 0.1\', 0° 0.1\''
+			),
+			'round to degree when it does not make a difference' => array(
+				new LatLongValue( 1.5, 2.5 ),
+				1 - 1 / 60,
+				'2°, 3°'
+			),
+			'round to minutes when it starts making a difference' => array(
+				new LatLongValue( 1.5, 2.5 ),
+				1 - 2 / 60,
+				'1° 56\', 2° 54\''
+			),
+			'precision option must support strings' => array(
+				new LatLongValue( -0.05, 0.05 ),
+				'0.1',
+				'-0° 6\', 0° 6\''
 			),
 		);
 	}
@@ -227,47 +318,47 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 			),
 			'0, minute' => array(
 				new LatLongValue( 0, 0 ),
-				1.0/60,
+				1 / 60,
 				'0° 0\', 0° 0\''
 			),
 			'0, second' => array(
 				new LatLongValue( 0, 0 ),
-				1.0/3600,
+				1 / 3600,
 				'0° 0\' 0", 0° 0\' 0"'
 			),
 			'negative zero' => array(
-				new LatLongValue( -1.0/8192, 1.0/8192 ),
-				1.0/3600,
+				new LatLongValue( -1 / 8192, 1 / 8192 ),
+				1 / 3600,
 				'0° 0\' 0", 0° 0\' 0"'
 			),
 			'negative, not zero' => array(
-				new LatLongValue( -1.0/4096, 1.0/4096 ),
-				1.0/7200,
+				new LatLongValue( -1 / 4096, 1 / 4096 ),
+				1 / 7200,
 				'-0° 0\' 1.0", 0° 0\' 1.0"'
 			),
 			'second' => array(
 				new LatLongValue( -55.755786, 37.25 ),
-				1.0/3600,
+				1 / 3600,
 				'-55° 45\' 21", 37° 15\' 0"'
 			),
 			'second/100' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				1.0/360000,
+				1 / 360000,
 				'-55° 45\' 20.83", 37° 15\' 22.79"'
 			),
 			'ten seconds' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				10.0/3600,
+				10 / 3600,
 				'-55° 45\' 20", 37° 15\' 20"'
 			),
 			'fifty seconds' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				50.0/3600,
+				50 / 3600,
 				'-55° 45\' 0", 37° 15\' 0"'
 			),
 			'minute' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
-				1.0/60,
+				1 / 60,
 				'-55° 45\', 37° 15\''
 			),
 			'degree' => array(
@@ -275,10 +366,90 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 				1,
 				'-56°, 37°'
 			),
+			'degree/100, case A' => array(
+				new LatLongValue( 52.01, 10.01 ),
+				0.01,
+				'52° 0\' 36", 10° 0\' 36"'
+			),
+			'degree/100, case B' => array(
+				new LatLongValue( 52.02, 10.02 ),
+				0.01,
+				'52° 1\' 12", 10° 1\' 12"'
+			),
+			'degree/1000' => array(
+				new LatLongValue( 52.4, 6.7667 ),
+				0.001,
+				'52° 24\' 0", 6° 46\' 1"'
+			),
 			'ten degrees' => array(
 				new LatLongValue( -55.755786, 37.25633 ),
 				10,
 				'-60°, 40°'
+			),
+			'rounding seconds down' => array(
+				new LatLongValue( -14.9 / 3600, 14.9 / 3600 ),
+				10 / 3600,
+				'-0° 0\' 10", 0° 0\' 10"'
+			),
+			'rounding seconds up' => array(
+				new LatLongValue( -15 / 3600, 15 / 3600 ),
+				10 / 3600,
+				'-0° 0\' 20", 0° 0\' 20"'
+			),
+			'rounding fractions down' => array(
+				new LatLongValue( -0.049 / 3600, 0.049 / 3600 ),
+				0.1 / 3600,
+				'0° 0\' 0.0", 0° 0\' 0.0"'
+			),
+			'rounding fractions up' => array(
+				new LatLongValue( -0.05 / 3600, 0.05 / 3600 ),
+				0.1 / 3600,
+				'-0° 0\' 0.1", 0° 0\' 0.1"'
+			),
+			'round to degree when it does not make a difference' => array(
+				new LatLongValue( 1.5, 2.5 ),
+				1 - 1 / 60,
+				'2°, 3°'
+			),
+			'round to minutes when it starts making a difference' => array(
+				new LatLongValue( 1.5, 2.5 ),
+				1 - 2 / 60,
+				'1° 56\', 2° 54\''
+			),
+			'round to minutes when it does not make a difference' => array(
+				new LatLongValue( 1.926, 2.926 ),
+				1 / 60 - 1 / 3600,
+				'1° 56\', 2° 56\''
+			),
+			'round to seconds when it starts making a difference' => array(
+				new LatLongValue( 1.926, 2.926 ),
+				1 / 60 - 2 / 3600,
+				'1° 56\' 0", 2° 55\' 56"'
+			),
+			'unexpected rounding to 36°, 36°' => array(
+				new LatLongValue( 36.5867, 37.0458 ),
+				1.1187604885913,
+				'37°, 37°'
+			),
+			'precision option must support strings' => array(
+				new LatLongValue( -0.05, 0.05 ),
+				'0.1',
+				'-0° 6\', 0° 6\''
+			),
+			'Bug T150085 with 1 second precision' => array(
+				new LatLongValue( 42.1206, 2.76944 ),
+				1 / 3600,
+				'42° 7\' 14", 2° 46\' 10"'
+			),
+			'Bug T150085 with 1 minute precision' => array(
+				new LatLongValue( 42.1206, 2.76944 ),
+				1 / 60,
+				'42° 7\', 2° 46\''
+			),
+			'Bug T150085 with ~0.7 minute precision' => array(
+				new LatLongValue( 42.1206, 2.76944 ),
+				0.012111004438894,
+				'42° 7\' 19", 2° 46\' 24"'
 			),
 		);
 	}
@@ -299,17 +470,22 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 		$this->assertRoundTrip( $latLong, $options );
 	}
 
+	/**
+	 * @param LatLongValue $latLong
+	 * @param FormatterOptions $options
+	 * @param string $expected
+	 */
 	private function assertFormatsCorrectly( LatLongValue $latLong, FormatterOptions $options, $expected ) {
 		$formatter = new GeoCoordinateFormatter( $options );
 
-		$this->assertEquals(
+		$this->assertSame(
 			$expected,
 			$formatter->format( $latLong ),
 			'format()'
 		);
 
 		$precision = $options->getOption( GeoCoordinateFormatter::OPT_PRECISION );
-		$this->assertEquals(
+		$this->assertSame(
 			$expected,
 			$formatter->formatLatLongValue( $latLong, $precision ),
 			'formatLatLongValue()'
@@ -326,7 +502,7 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 		// NOTE: $parsed may be != $coord, because of rounding, so we can't compare directly.
 		$formattedParsed = $formatter->format( $parsed );
 
-		$this->assertEquals( $formatted, $formattedParsed );
+		$this->assertSame( $formatted, $formattedParsed );
 	}
 
 	public function testDirectionalOptionGetsAppliedForDecimalMinutes() {
@@ -341,12 +517,16 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 		$this->assertIsDirectionalFormatMap( $coordinates, GeoCoordinateFormatter::TYPE_DM );
 	}
 
+	/**
+	 * @param array[] $coordinates
+	 * @param string $format One of the GeoCoordinateFormatter::TYPE_… constants
+	 */
 	private function assertIsDirectionalFormatMap( array $coordinates, $format ) {
 		foreach ( $coordinates as $expected => $arguments ) {
 			$options = new FormatterOptions();
 			$options->setOption( GeoCoordinateFormatter::OPT_FORMAT, $format );
 			$options->setOption( GeoCoordinateFormatter::OPT_DIRECTIONAL, true );
-			$options->setOption( GeoCoordinateFormatter::OPT_PRECISION, 1.0/60 );
+			$options->setOption( GeoCoordinateFormatter::OPT_PRECISION, 1 / 60 );
 
 			$this->assertFormatsCorrectly(
 				new LatLongValue( $arguments[0], $arguments[1] ),
@@ -418,14 +598,18 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 		$this->assertSpacingCorrect( $coordinates, GeoCoordinateFormatter::TYPE_DM );
 	}
 
+	/**
+	 * @param array[] $coordSets
+	 * @param string $format One of the GeoCoordinateFormatter::TYPE_… constants
+	 */
 	private function assertSpacingCorrect( array $coordSets, $format ) {
 		$spacingLevelOptions = $this->provideSpacingLevelOptions();
-		foreach( $coordSets as $spacingKey => $coordinates ) {
+		foreach ( $coordSets as $spacingKey => $coordinates ) {
 			foreach ( $coordinates as $expected => $arguments ) {
 				$options = new FormatterOptions();
 				$options->setOption( GeoCoordinateFormatter::OPT_FORMAT, $format );
 				$options->setOption( GeoCoordinateFormatter::OPT_DIRECTIONAL, true );
-				$options->setOption( GeoCoordinateFormatter::OPT_PRECISION, 1.0/60 );
+				$options->setOption( GeoCoordinateFormatter::OPT_PRECISION, 1 / 60 );
 				$options->setOption( GeoCoordinateFormatter::OPT_SPACING_LEVEL, $spacingLevelOptions[$spacingKey] );
 
 				$this->assertFormatsCorrectly(
@@ -494,7 +678,7 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 		$formatter = new GeoCoordinateFormatter( $options );
 
 		$formatted = $formatter->format( new LatLongValue( 1.2, 3.4 ) );
-		$this->assertEquals( '1.2, 3.4', $formatted );
+		$this->assertSame( '1.2, 3.4', $formatted );
 	}
 
 	/**
@@ -504,7 +688,7 @@ class GeoCoordinateFormatterTest extends \PHPUnit_Framework_TestCase {
 		$formatter = new GeoCoordinateFormatter( new FormatterOptions() );
 
 		$formatted = $formatter->formatLatLongValue( new LatLongValue( 1.2, 3.4 ), $precision );
-		$this->assertEquals( '1.2, 3.4', $formatted );
+		$this->assertSame( '1.2, 3.4', $formatted );
 	}
 
 	public function invalidPrecisionProvider() {

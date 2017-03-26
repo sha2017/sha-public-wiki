@@ -35,7 +35,7 @@ class FormInputsSetup {
 			// Check if the service has a form input.
 			$FIClass = $service->getFeature( 'fi' );
 			
-			// If the service has no FI, skipt it and continue with the next one.
+			// If the service has no FI, skip it and continue with the next one.
 			if ( $FIClass === false ) continue;
 			
 			// At least one form input will be enabled when this point is reached.
@@ -65,7 +65,7 @@ class FormInputsSetup {
 	 */
 	private function initFormHook( $inputName, $mainName = '' ) {
 		// Add the form input hook for the service.
-		$field_args = array();
+		$field_args = [];
 		
 		if ( $mainName !== '' ) {
 			$field_args['service_name'] = $mainName;

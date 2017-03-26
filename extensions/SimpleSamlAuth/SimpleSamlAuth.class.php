@@ -59,6 +59,7 @@ class SimpleSamlAuth {
 			&& ( !isset( $wgSessionsInObjectCache ) || !$wgSessionsInObjectCache )
 			&& ( !isset( $wgSessionsInMemcached ) || !$wgSessionsInMemcached )
 		) {
+			ini_restore( 'session.name' );
 			$wgSessionName = ini_get( 'session.name' );
 		}
 
@@ -254,10 +255,12 @@ class SimpleSamlAuth {
 
 		if ( self::$as->isAuthenticated() ) {
 			$attr = self::$as->getAttributes();
+			$attr[$wgSamlUsernameAttr] = str_replace('_', ' ', $attr[$wgSamlUsernameAttr]);
 			if ( !User::isUsableName( $wgContLang->ucfirst( reset( $attr[$wgSamlUsernameAttr] ) ) ) ) {
 				return 'Illegal username: ' . reset( $attr[$wgSamlUsernameAttr] );
 			}
-			self::loadUser( $user, $attr );
+			$loadError = self::loadUser( $user, $attr );
+			if ( $loadError ) return $loadError;
 			if ( $wgBlockDisablesLogin && $user->isBlocked() ) {
 				$block = $user->getBlock();
 				throw new UserBlockedError( $block );
@@ -367,6 +370,37 @@ class SimpleSamlAuth {
 	}
 
 	/**
+	 * Called to determine the class to handle the article rendering, based on title
+	 *
+	 * Reads the requested title.  If the title matches any title mentioned in $wgWhitelistRead,
+	 * the value of $wgSamlRequirement will be lowered to be SAML_LOGIN_ONLY at most.
+	 *
+	 * The effect of this, is that the site admin can use SAML_REQUIRED but still open some
+	 * pages to be queried by anonymous users.  This may be useful for allowing bots to read
+	 * pages, for example.
+	 *
+	 * This hook is only called for articles, so it is not possible to whitelist special pages
+	 * this way.
+	 *
+	 * @link https://www.mediawiki.org/wiki/Manual:Hooks/ArticleFromTitle
+	 * @link https://www.mediawiki.org/wiki/Manual:$wgWhitelistRead
+	 */
+	public static function hookArticleFromTitle( &$title, &$article, $context ) {
+		if ( !self::init() ) {
+			return true;
+		}
+
+		global $wgWhitelistRead;
+		global $wgSamlRequirement;
+
+		if ( is_array( $wgWhitelistRead ) && in_array( $title, $wgWhitelistRead ) ) {
+			$wgSamlRequirement = min( $wgSamlRequirement, SAML_LOGIN_ONLY );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Return a user object that corresponds to the current SAML assertion.
 	 * If no SAML assertion is set, the function returns null.
 	 * If the user doesn't exist, and auto create has been turned on in the config,
@@ -418,6 +452,7 @@ class SimpleSamlAuth {
 		global $wgSamlUsernameAttr;
 		global $wgSamlMailAttr;
 		global $wgContLang;
+		global $wgVersion;
 
 		$changed = false;
 		if ( isset( $wgSamlRealnameAttr )
@@ -428,17 +463,29 @@ class SimpleSamlAuth {
 			$changed = true;
 			$user->setRealName( reset( $attr[$wgSamlRealnameAttr] ) );
 		}
-		if ( $attr[$wgSamlMailAttr]
-			&& $user->getEmail() !== reset( $attr[$wgSamlMailAttr] )
+		if ( isset( $wgSamlMailAttr )
+			&& isset( $attr[$wgSamlMailAttr] )
+			&& $attr[$wgSamlMailAttr]
+			&& (
+			!$user->isEmailConfirmed()
+				|| $user->getEmail() !== reset( $attr[$wgSamlMailAttr] )
+			)
 		) {
 			$changed = true;
 			$user->setEmail( reset( $attr[$wgSamlMailAttr] ) );
-			$user->ConfirmEmail();
+			$user->confirmEmail();
 		}
 		if ( !$user->getId() ) {
 			$user->setName( $wgContLang->ucfirst( reset( $attr[$wgSamlUsernameAttr] ) ) );
-			$user->addToDatabase();
-			$user->setInternalPassword( null ); // prevent manual login until reset
+			if ( version_compare( $wgVersion, '1.26', '<=' ) ) {
+				// MW 1.26 and below uses AuthPlugin, which wants setPassword first
+				$user->setInternalPassword( null ); // prevent manual login until reset
+				$user->addToDatabase();
+			} else {
+				// MW 1.27 and up uses AuthManager, which wants addToDatabase first
+				$user->addToDatabase();
+				$user->setInternalPassword( null ); // prevent manual login until reset
+			}
 		} elseif ( $changed ) {
 			$user->saveSettings();
 		}

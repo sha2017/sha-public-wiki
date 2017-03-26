@@ -1,9 +1,10 @@
 {
         "require": {
-                "mediawiki/semantic-media-wiki": "~2.4",
-                "mediawiki/semantic-maps": "^3.3",
-		"mediawiki/semantic-result-formats": "^2.3",
-                "mediawiki/semantic-extra-special-properties": "^1.3"
+                "mediawiki/semantic-media-wiki": "~2.4.4",
+                "mediawiki/semantic-maps": "~3.4.2",
+		"mediawiki/semantic-result-formats": "~2.4",
+                "mediawiki/semantic-extra-special-properties": "~1.3",
+                "mediawiki/page-forms": "^4.1"
         }
 
 }

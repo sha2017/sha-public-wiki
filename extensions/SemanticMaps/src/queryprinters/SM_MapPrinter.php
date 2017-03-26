@@ -9,36 +9,47 @@ use ParamProcessor\ParamDefinition;
  * Query printer for maps. Is invoked via SMMapper.
  * Can be overridden per service to have custom output.
  *
- * @file SM_MapPrinter.php
  * @ingroup SemanticMaps
  *
  * @licence GNU GPL v2+
  * @author Jeroen De Dauw < jeroendedauw@gmail.com >
+ * @author Peter Grassberger < petertheone@gmail.com >
  */
 class SMMapPrinter extends SMW\ResultPrinter {
-	
+
+	private static $services = [];
+
 	/**
-	 * @since 0.6
-	 * 
-	 * @var iMappingService
+	 * @since 3.4
+	 * FIXME: this is a temporary hack that should be replaced when SMW allows for dependency
+	 * injection in query printers.
+	 *
+	 * @param MapsMappingService $service
 	 */
-	protected $service;	
+	public static function registerService( MapsMappingService $service ) {
+		self::$services[$service->getName()] = $service;
+	}
+
+	public static function registerDefaultService( $serviceName ) {
+		self::$services['map'] = self::$services[$serviceName];
+	}
 	
 	/**
-	 * @since 1.0
-	 * 
-	 * @var string|boolean false
+	 * @var MapsMappingService
+	 */
+	private $service;
+	
+	/**
+	 * @var string|boolean
 	 */
 	protected $fatalErrorMsg = false;
 	
 	/**
-	 * Constructor.
-	 * 
-	 * @param $format String
-	 * @param $inline
+	 * @param string $format
+	 * @param bool $inline
 	 */
 	public function __construct( $format, $inline = true ) {
-		$this->service = MapsMappingServices::getValidServiceInstance( $format, 'qp' );
+		$this->service = self::$services[$format];
 		
 		parent::__construct( $format, $inline );
 	}
@@ -50,56 +61,65 @@ class SMMapPrinter extends SMW\ResultPrinter {
 	 * 
 	 * @return array
 	 */
-	protected function getParameterInfo() {
+	private function getParameterInfo() {
 		global $smgQPShowTitle, $smgQPTemplate, $smgQPHideNamespace;
 		
 		$params = ParamDefinition::getCleanDefinitions( MapsMapper::getCommonParameters() );
 
 		$this->service->addParameterInfo( $params );
 
-		$params['staticlocations'] = array(
+		$params['staticlocations'] = [
 			'type' => 'mapslocation',
-			'aliases' => array( 'locations', 'points' ),
-			'default' => array(),
+			'aliases' => [ 'locations', 'points' ],
+			'default' => [],
 			'islist' => true,
 			'delimiter' => ';',
 			'message' => 'semanticmaps-par-staticlocations',
-		);
+		];
 
-		$params['showtitle'] = array(
+		$params['showtitle'] = [
 			'type' => 'boolean',
 			'aliases' => 'show title',
 			'default' => $smgQPShowTitle,
-		);
+		];
 
-		$params['hidenamespace'] = array(
+		$params['hidenamespace'] = [
 			'type' => 'boolean',
 			'aliases' => 'hide namespace',
 			'default' => $smgQPHideNamespace,
-		);
+		];
 
-		$params['template'] = array(
+		$params['template'] = [
 			'default' => $smgQPTemplate,
-		);
+		];
 
-		$params['userparam'] = array(
+		$params['userparam'] = [
 			'default' => '',
-		);
+		];
 
-		$params['activeicon'] = array (
+		$params['activeicon'] =  [
 			'type' => 'string',
 			'default' => '',
-		);
+		];
 
-		$params['pagelabel'] = array (
+		$params['pagelabel'] =  [
 			'type' => 'boolean',
 			'default' => false,
+		];
+
+		$params['ajaxcoordproperty'] = array(
+			'default' => '',
+		);
+
+		$params['ajaxquery'] = array(
+			'default' => '',
+			'type' => 'string'
 		);
 
 		// Messages:
-		// semanticmaps-par-staticlocations, semanticmaps-par-forceshow, semanticmaps-par-showtitle,
-		// semanticmaps-par-hidenamespace, semanticmaps-par-centre, semanticmaps-par-template,
-		// semanticmaps-par-geocodecontrol, semanticmaps-par-activeicon semanticmaps-par-markerlabel
+		// semanticmaps-par-staticlocations, semanticmaps-par-showtitle, semanticmaps-par-hidenamespace,
+		// semanticmaps-par-template, semanticmaps-par-userparam, semanticmaps-par-activeicon,
+		// semanticmaps-par-pagelabel, semanticmaps-par-ajaxcoordproperty semanticmaps-par-ajaxquery
 		foreach ( $params as $name => &$data ) {
 			if ( is_array( $data ) && !array_key_exists( 'message', $data ) ) {
 				$data['message'] = 'semanticmaps-par-' . $name;
@@ -129,6 +149,10 @@ class SMMapPrinter extends SMW\ResultPrinter {
 		 */
 		global $wgParser;
 
+		if ( $GLOBALS['egMapsEnableCategory'] && $wgParser->getOutput() !== null ) {
+			$wgParser->addTrackingCategory( 'maps-tracking-category' );
+		}
+
 		$params = $this->params;
 
 		$queryHandler = new SMQueryHandler( $res, $outputmode );
@@ -142,6 +166,8 @@ class SMMapPrinter extends SMW\ResultPrinter {
 
 		$this->handleMarkerData( $params, $queryHandler );
 		$locationAmount = count( $params['locations'] );
+
+		$params['ajaxquery'] = urlencode( $params['ajaxquery'] );
 
 		if ( $locationAmount > 0 ) {
 			// We can only take care of the zoom defaulting here,
@@ -184,18 +210,18 @@ class SMMapPrinter extends SMW\ResultPrinter {
 	 *
 	 * @return string
 	 */
-	protected function getMapHTML( array $params, Parser $parser, $mapName ) {
+	private function getMapHTML( array $params, Parser $parser, $mapName ) {
 		return Html::rawElement(
 			'div',
-			array(
+			[
 				'id' => $mapName,
 				'style' => "width: {$params['width']}; height: {$params['height']}; background-color: #cccccc; overflow: hidden;",
 				'class' => 'maps-map maps-' . $this->service->getName()
-			),
+			],
 			wfMessage( 'maps-loading-map' )->inContentLanguage()->escaped() .
 				Html::element(
 					'div',
-					array( 'style' => 'display:none', 'class' => 'mapdata' ),
+					[ 'style' => 'display:none', 'class' => 'mapdata' ],
 					FormatJson::encode( $this->getJSONObject( $params, $parser ) )
 				)
 		);
@@ -211,7 +237,7 @@ class SMMapPrinter extends SMW\ResultPrinter {
 	 *
 	 * @return mixed
 	 */
-	protected function getJSONObject( array $params, Parser $parser ) {
+	private function getJSONObject( array $params, Parser $parser ) {
 		return $params;
 	}
 	
@@ -224,7 +250,7 @@ class SMMapPrinter extends SMW\ResultPrinter {
 	 * @param array &$params
 	 * @param SMQueryHandler $queryHandler
 	 */
-	protected function handleMarkerData( array &$params, SMQueryHandler $queryHandler ) {
+	private function handleMarkerData( array &$params, SMQueryHandler $queryHandler ) {
 		if ( is_object( $params['centre'] ) ) {
 			$params['centre'] = $params['centre']->getJSONObject();
 		}
@@ -248,7 +274,7 @@ class SMMapPrinter extends SMW\ResultPrinter {
 		}
 	}
 
-	protected function getJsonForStaticLocations( array $staticLocations, array $params, $iconUrl, $visitedIconUrl ) {
+	private function getJsonForStaticLocations( array $staticLocations, array $params, $iconUrl, $visitedIconUrl ) {
 		/**
 		 * @var Parser $wgParser
 		 */
@@ -256,7 +282,7 @@ class SMMapPrinter extends SMW\ResultPrinter {
 
 		$parser = version_compare( $GLOBALS['wgVersion'], '1.18', '<' ) ? $wgParser : clone $wgParser;
 
-		$locationsJson = array();
+		$locationsJson = [];
 
 		foreach ( $staticLocations as $location ) {
 			$locationsJson[] = $this->getJsonForStaticLocation(
@@ -271,7 +297,7 @@ class SMMapPrinter extends SMW\ResultPrinter {
 		return $locationsJson;
 	}
 
-	protected function getJsonForStaticLocation( Location $location, array $params, $iconUrl, $visitedIconUrl, Parser $parser ) {
+	private function getJsonForStaticLocation( Location $location, array $params, $iconUrl, $visitedIconUrl, Parser $parser ) {
 		$jsonObj = $location->getJSONObject( $params['title'], $params['label'], $iconUrl, '', '', $visitedIconUrl );
 
 		$jsonObj['title'] = $parser->parse( $jsonObj['title'], $parser->getTitle(), new ParserOptions() )->getText();
@@ -294,7 +320,7 @@ class SMMapPrinter extends SMW\ResultPrinter {
 	 * @param string $iconUrl
 	 * @param string $visitedIconUrl
 	 */
-	protected function addShapeData( array $queryShapes, array &$params, $iconUrl, $visitedIconUrl ) {
+	private function addShapeData( array $queryShapes, array &$params, $iconUrl, $visitedIconUrl ) {
 		$params['locations'] = array_merge(
 			$params['locations'],
 			$this->getJsonForLocations(
@@ -317,8 +343,8 @@ class SMMapPrinter extends SMW\ResultPrinter {
 	 *
 	 * @return array
 	 */
-	protected function getJsonForLocations( array $locations, array $params, $iconUrl, $visitedIconUrl ) {
-		$locationsJson = array();
+	private function getJsonForLocations( array $locations, array $params, $iconUrl, $visitedIconUrl ) {
+		$locationsJson = [];
 
 		foreach ( $locations as $location ) {
 			$jsonObj = $location->getJSONObject( $params['title'], $params['label'], $iconUrl, '', '', $visitedIconUrl );
@@ -337,8 +363,8 @@ class SMMapPrinter extends SMW\ResultPrinter {
 	 *
 	 * @return array
 	 */
-	protected function getElementJsonArray( array $elements, array $params ) {
-		$elementsJson = array();
+	private function getElementJsonArray( array $elements, array $params ) {
+		$elementsJson = [];
 
 		foreach ( $elements as $element ) {
 			$jsonObj = $element->getJSONObject( $params['title'], $params['label'] );
