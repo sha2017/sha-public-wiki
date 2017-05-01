@@ -14,6 +14,7 @@ use SMW\Message;
 use SMWDataValue as DataValue;
 use SMW\DataValues\ValueFormatters\DataValueFormatter;
 use SMW\RequestOptions;
+use SMW\Utils\HtmlTable;
 
 /**
  * @license GNU GPL v2+
@@ -162,22 +163,26 @@ class ContentsBuilder {
 		global $wgContLang;
 
 		$leftside = !( $wgContLang->isRTL() );
-		$html = "\n";
+		$html = '';
+		$form = '';
 
 		$semanticData = new SemanticData( $this->subject->getDataItem() );
 		$this->articletext = $this->subject->getWikiValue();
 
 		$html .= $this->displayHead();
 		$html .= $this->displayData( $semanticData, $leftside, false, true );
-		$html .= $this->displayCenter( $this->subject->getLongWikiText() );
-		$html .= $this->displayData( $semanticData, $leftside, true, true );
 		$html .= $this->displayBottom( false );
 
 		if ( $this->getOption( 'printable' ) !== 'yes' && !$this->getOption( 'including' ) ) {
-			$html .= FormHelper::getQueryForm( $this->articletext );
+			$form = FormHelper::getQueryForm( $this->articletext );
 		}
 
-		return $html;
+		return Html::rawElement(
+			'div',
+			array(
+				'class' => 'smwb-content'
+			), $html
+		) . $form;
 	}
 
 	/**
@@ -188,7 +193,7 @@ class ContentsBuilder {
 	 */
 	private function doGenerateHtml() {
 		global $wgContLang;
-		$html = "\n";
+		$html = "<div class=\"smwb-datasheet\">";
 		$leftside = !( $wgContLang->isRTL() ); // For right to left languages, all is mirrored
 		$modules = array();
 
@@ -217,11 +222,12 @@ class ContentsBuilder {
 		}
 
 		$this->articletext = $this->subject->getWikiValue();
+		$html .= "</div>";
 
 		\Hooks::run( 'SMW::Browse::AfterDataLookupComplete', array( $this->store, $semanticData, &$html, &$this->extraModules ) );
 
 		if ( $this->getOption( 'printable' ) !== 'yes' && !$this->getOption( 'including' ) ) {
-			$html .= FormHelper::getQueryForm( $this->articletext );
+			$html .= FormHelper::getQueryForm( $this->articletext ) ;
 		}
 
 		$html .= Html::element(
@@ -247,9 +253,9 @@ class ContentsBuilder {
 	private function displayData( SemanticData $data, $left = true, $incoming = false, $isLoading = false ) {
 		// Some of the CSS classes are different for the left or the right side.
 		// In this case, there is an "i" after the "smwb-". This is set here.
-		$ccsPrefix = $left ? 'smwb-' : 'smwb-i';
+		$dirPrefix = $left ? 'smwb-' : 'smwb-i';
 
-		$html = "<table class=\"{$ccsPrefix}factbox\" cellpadding=\"0\" cellspacing=\"0\">\n";
+		$html = HtmlTable::open( array( 'class' => "{$dirPrefix}factbox smwb-bottom" ) );
 		$noresult = true;
 
 		$contextPage = $data->getSubject();
@@ -277,8 +283,8 @@ class ContentsBuilder {
 				continue;
 			}
 
-			$head  = '<th>' . $propertyLabel . "</th>\n";
-			$body  = "<td>\n";
+			$head = HtmlTable::cell( $propertyLabel, array( "class" => 'smwb-cell smwb-prophead' ) );
+			$propertyValue = '';
 
 			$values = $data->getPropertyValues( $diProperty );
 
@@ -294,7 +300,7 @@ class ContentsBuilder {
 				if ( $first ) {
 					$first = false;
 				} else {
-					$body .= ', ';
+					$propertyValue .= ', ';
 				}
 
 				if ( $incoming ) {
@@ -303,14 +309,14 @@ class ContentsBuilder {
 					$dv = DataValueFactory::getInstance()->newDataValueByItem( $di, $diProperty );
 				}
 
-				$body .= "<span class=\"{$ccsPrefix}value\">" .
+				$propertyValue .= "<span class=\"{$dirPrefix}value\">" .
 				         $this->displayValue( $dvProperty, $dv, $incoming ) . "</span>\n";
 			}
 
 			// Added in 2.3
 			// link to the remaining incoming pages
-			if ( $moreIncoming && \Hooks::run( 'SMW::Browse::BeforeIncomingPropertyValuesFurtherLinkCreate', array( $diProperty, $this->subject->getDataItem(), &$body ) ) ) {
-				$body .= \Html::element(
+			if ( $moreIncoming && \Hooks::run( 'SMW::Browse::BeforeIncomingPropertyValuesFurtherLinkCreate', array( $diProperty, $this->subject->getDataItem(), &$propertyValue ) ) ) {
+				$propertyValue .= \Html::element(
 					'a',
 					array(
 						'href' => \SpecialPage::getSafeTitleFor( 'SearchByProperty' )->getLocalURL( array(
@@ -323,22 +329,37 @@ class ContentsBuilder {
 
 			}
 
-			$body .= "</td>\n";
+			$body = HtmlTable::cell( $propertyValue, array( "class" => 'smwb-cell smwb-propval' ) );
 
 			// display row
-			$html .= "<tr class=\"{$ccsPrefix}propvalue\">\n" .
-					( $left ? ( $head . $body ):( $body . $head ) ) . "</tr>\n";
+			$html .= HtmlTable::row(
+				( $left ? ( $head . $body ):( $body . $head ) ),
+				array(
+					"class" => "{$dirPrefix}propvalue"
+				)
+			);
 			$noresult = false;
 		} // end foreach properties
 
 		if ( $noresult ) {
 			$noMsgKey = $incoming ? 'smw_browse_no_incoming':'smw_browse_no_outgoing';
+			$rColumn = HtmlTable::cell( '', array( "class" => 'smwb-cell smwb-prophead' ) );
+			$lColumn = HtmlTable::cell(
+				wfMessage( $isLoading ? 'smw-browse-from-backend' : $noMsgKey )->escaped(),
+				array(
+					"class" => 'smwb-cell smwb-propval'
+				)
+			);
 
-			$html .= "<tr class=\"smwb-propvalue\"><th> &#160; </th><td><em>" .
-				wfMessage( $isLoading ? 'smw-browse-from-backend' : $noMsgKey )->escaped() . "</em></td></tr>\n";
+			$html .= HtmlTable::row(
+				( $left ? ( $rColumn . $lColumn ):( $lColumn . $rColumn ) ),
+				array(
+					"class" => "{$dirPrefix}propvalue"
+				)
+			);
 		}
 
-		$html .= "</table>\n";
+		$html .= HtmlTable::close();
 
 		return $html;
 	}
@@ -370,12 +391,17 @@ class ContentsBuilder {
 
 		$label = ValueFormatter::getFormattedSubject( $this->subject );
 
-		$html = "<table class=\"smwb-factbox\" cellpadding=\"0\" cellspacing=\"0\">\n" .
-			"<tr class=\"smwb-title\"><td colspan=\"2\">\n" .
-			$label . "\n" .
-			"</td></tr>\n</table>\n";
-
-		return $html;
+		return HtmlTable::table(
+			HtmlTable::row(
+				$label,
+				array(
+					'class' => 'smwb-title'
+				)
+			),
+			array(
+				'class' => 'smwb-factbox'
+			)
+		);
 	}
 
 	/**
@@ -403,12 +429,19 @@ class ContentsBuilder {
 			$linkMsg = 'smw_browse_show_incoming';
 		}
 
-		$html = FormHelper::createLink( $linkMsg, $parameters );
+		$html = FormHelper::createLinkFromMessage( $linkMsg, $parameters );
 
-		return "<a name=\"smw_browse_incoming\"></a>\n" .
-		       "<table class=\"smwb-factbox\" cellpadding=\"0\" cellspacing=\"0\">\n" .
-		       "<tr class=\"smwb-center\"><td colspan=\"2\">\n" . $html .
-		       "&#160;\n" . "</td></tr>\n" . "</table>\n";
+		return "<a name=\"smw_browse_incoming\"></a>" . HtmlTable::table(
+			HtmlTable::row(
+				$html . "&#160;\n",
+				array(
+					'class' => 'smwb-center'
+				)
+			),
+			array(
+				'class' => 'smwb-factbox'
+			)
+		);
 	}
 
 	/**
@@ -421,14 +454,26 @@ class ContentsBuilder {
 
 		$article = $this->subject->getLongWikiText();
 
-		$open  = "<table class=\"smwb-factbox\" cellpadding=\"0\" cellspacing=\"0\">\n" .
-		         "<tr class=\"smwb-center\"><td colspan=\"2\">\n";
+		$open  = "<div class=\"smw-table smwb-factbox\">" .
+		         "<div class=\"smw-table-row smwb-center\"><div >";
 
-		$close = "&#160;\n" . "</td></tr>\n" . "</table>\n";
-		$html = '';
+		$open = HtmlTable::open(
+			array(
+				'class' => 'smwb-factbox'
+			)
+		);
+
+		$html = HtmlTable::row(
+			'&#160;',
+			array(
+				'class' => 'smwb-center'
+			)
+		);
+
+		$close = HtmlTable::close();
 
 		if ( $this->getOption( 'showAll' ) ) {
-			return $open . $close;
+			return $open . $html . $close;
 		}
 
 		if ( ( $this->offset > 0 ) || $more ) {
@@ -442,7 +487,7 @@ class ContentsBuilder {
 
 			$linkMsg = 'smw_result_prev';
 
-			$html .= ( $this->offset == 0 ) ? wfMessage( $linkMsg )->escaped() : FormHelper::createLink( $linkMsg, $parameters );
+			$html .= ( $this->offset == 0 ) ? wfMessage( $linkMsg )->escaped() : FormHelper::createLinkFromMessage( $linkMsg, $parameters );
 
 			$offset = $this->offset + $this->incomingPropertiesCount - 1;
 
@@ -454,10 +499,16 @@ class ContentsBuilder {
 
 			$linkMsg = 'smw_result_next';
 
-			// @todo FIXME: i18n patchwork.
 			$html .= " &#160;&#160;&#160;  <strong>" . wfMessage( 'smw_result_results' )->escaped() . " " . ( $this->offset + 1 ) .
 					 " – " . ( $offset ) . "</strong>  &#160;&#160;&#160; ";
-			$html .= $more ? FormHelper::createLink( $linkMsg, $parameters ) : wfMessage( $linkMsg )->escaped();
+			$html .= $more ? FormHelper::createLinkFromMessage( $linkMsg, $parameters ) : wfMessage( $linkMsg )->escaped();
+
+			$html = HtmlTable::row(
+				$html,
+				array(
+					'class' => 'smwb-center'
+				)
+			);
 		}
 
 		return $open . $html . $close;

@@ -673,15 +673,6 @@ return array(
 	##
 
 	###
-	# If the following is set to true, it is possible to initiate the repairing
-	# or updating of all wiki data using the interface on Special:SMWAdmin.
-	#
-	# @deprecated since 2.5, use $smwgAdminFeatures
-	##
-	'smwgAdminRefreshStore' => true,
-	##
-
-	###
 	# List of Special:SemanticMediaWiki (or Special:SMWAdmin) features
 	#
 	# - SMW_ADM_REFRESH: to initiate the repairing or updating of all wiki data
@@ -1026,7 +1017,7 @@ return array(
 	#
 	# @since 2.3 (experimental)
 	##
-	'smwgQueryDependencyPropertyExemptionlist' => array( '_MDAT', '_SOBJ', '_ASKDU' ),
+	'smwgQueryDependencyPropertyExemptionList' => array( '_MDAT', '_SOBJ', '_ASKDU' ),
 	##
 
 	###
@@ -1039,7 +1030,7 @@ return array(
 	#
 	# @since 2.4 (experimental)
 	##
-	'smwgQueryDependencyAffiliatePropertyDetectionlist' => array(),
+	'smwgQueryDependencyAffiliatePropertyDetectionList' => array(),
 	##
 
 	###
@@ -1277,7 +1268,8 @@ return array(
 	##
 	'smwgFulltextSearchPropertyExemptionList' => array(
 		'_ASKFO', '_ASKST', '_ASKPA','_IMPO', '_LCODE', '_UNIT', '_CONV',
-		'_TYPE', '_ERRT', '_INST', '_ASK', '_INST', '_SOBJ', '_PVAL', '_PVALI'
+		'_TYPE', '_ERRT', '_INST', '_ASK', '_INST', '_SOBJ', '_PVAL', '_PVALI',
+		'_REDI'
 	),
 	##
 

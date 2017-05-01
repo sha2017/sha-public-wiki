@@ -10,6 +10,7 @@ use SMWSemanticData;
 use Title;
 use SMW\QueryEngine;
 use SMW\Options;
+use SMW\Utils\Timer;
 
 /**
  * This group contains all parts of SMW that relate to storing and retrieving
@@ -202,6 +203,7 @@ abstract class Store implements QueryEngine {
 			return;
 		}
 
+		Timer::start( __METHOD__ );
 		$applicationFactory = ApplicationFactory::getInstance();
 
 		$subject = $semanticData->getSubject();
@@ -230,9 +232,16 @@ abstract class Store implements QueryEngine {
 
 		$pageUpdater->addPage( $subject->getTitle() );
 		$pageUpdater->waitOnTransactionIdle();
+		$pageUpdater->markAsPending();
+		$pageUpdater->setOrigin( __METHOD__ );
 
 		$pageUpdater->doPurgeParserCache();
 		$pageUpdater->doPurgeHtmlCache();
+		$pageUpdater->pushUpdate();
+
+		$applicationFactory->getMediaWikiLogger()->info(
+			__METHOD__ . ' (procTime in sec: '. Timer::getElapsedTime( __METHOD__, 5 ) . ')'
+		);
 	}
 
 	/**

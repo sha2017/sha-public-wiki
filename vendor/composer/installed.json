@@ -995,17 +995,17 @@
     },
     {
         "name": "composer/installers",
-        "version": "v1.2.0",
-        "version_normalized": "1.2.0.0",
+        "version": "v1.3.0",
+        "version_normalized": "1.3.0.0",
         "source": {
             "type": "git",
             "url": "https://github.com/composer/installers.git",
-            "reference": "d78064c68299743e0161004f2de3a0204e33b804"
+            "reference": "79ad876c7498c0bbfe7eed065b8651c93bfd6045"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/composer/installers/zipball/d78064c68299743e0161004f2de3a0204e33b804",
-            "reference": "d78064c68299743e0161004f2de3a0204e33b804",
+            "url": "https://api.github.com/repos/composer/installers/zipball/79ad876c7498c0bbfe7eed065b8651c93bfd6045",
+            "reference": "79ad876c7498c0bbfe7eed065b8651c93bfd6045",
             "shasum": ""
         },
         "require": {
@@ -1019,7 +1019,7 @@
             "composer/composer": "1.0.*@dev",
             "phpunit/phpunit": "4.1.*"
         },
-        "time": "2016-08-13T20:53:52+00:00",
+        "time": "2017-04-24T06:37:16+00:00",
         "type": "composer-plugin",
         "extra": {
             "class": "Composer\\Installers\\Plugin",
@@ -1049,12 +1049,16 @@
         "keywords": [
             "Craft",
             "Dolibarr",
+            "Eliasis",
             "Hurad",
             "ImageCMS",
+            "Kanboard",
             "MODX Evo",
             "Mautic",
+            "Maya",
             "OXID",
             "Plentymarkets",
+            "Porto",
             "RadPHP",
             "SMF",
             "Thelia",
@@ -1077,9 +1081,11 @@
             "fuelphp",
             "grav",
             "installer",
+            "itop",
             "joomla",
             "kohana",
             "laravel",
+            "lavalite",
             "lithium",
             "magento",
             "mako",
@@ -1094,6 +1100,7 @@
             "roundcube",
             "shopware",
             "silverstripe",
+            "sydes",
             "symfony",
             "typo3",
             "wordpress",
@@ -1346,6 +1353,327 @@
         ]
     },
     {
+        "name": "param-processor/param-processor",
+        "version": "1.3.2",
+        "version_normalized": "1.3.2.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/JeroenDeDauw/ParamProcessor.git",
+            "reference": "28965e968a4e6f246d60467a9eabe090031a2d95"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/JeroenDeDauw/ParamProcessor/zipball/28965e968a4e6f246d60467a9eabe090031a2d95",
+            "reference": "28965e968a4e6f246d60467a9eabe090031a2d95",
+            "shasum": ""
+        },
+        "require": {
+            "data-values/common": "~0.3.0|~0.2.2",
+            "data-values/data-values": "~1.0|~0.1.1",
+            "data-values/interfaces": "~0.2.0|~0.1.4",
+            "data-values/validators": "~0.1.1",
+            "php": ">=5.5.0"
+        },
+        "require-dev": {
+            "ockcyp/covers-validator": "~0.4",
+            "phpmd/phpmd": "~2.1",
+            "phpunit/phpunit": "~5.4|~4.8",
+            "squizlabs/php_codesniffer": "~2.1"
+        },
+        "time": "2017-03-26T00:20:55+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.3.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "ParamProcessor\\": "src"
+            },
+            "classmap": [
+                "tests/phpunit/Definitions/ParamDefinitionTest.php",
+                "tests/phpunit/Definitions/NumericParamTest.php"
+            ],
+            "files": [
+                "DefaultConfig.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            }
+        ],
+        "description": "Parameter processing library",
+        "homepage": "https://github.com/JeroenDeDauw/ParamProcessor",
+        "keywords": [
+            "ParamProcessor",
+            "SMW",
+            "Semantic MediaWiki",
+            "mediawiki",
+            "validator"
+        ]
+    },
+    {
+        "name": "mediawiki/validator",
+        "version": "2.2.1",
+        "version_normalized": "2.2.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/JeroenDeDauw/Validator.git",
+            "reference": "04ad7a2f6c982b291dcbaa166f2ce90505da6401"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/JeroenDeDauw/Validator/zipball/04ad7a2f6c982b291dcbaa166f2ce90505da6401",
+            "reference": "04ad7a2f6c982b291dcbaa166f2ce90505da6401",
+            "shasum": ""
+        },
+        "require": {
+            "param-processor/param-processor": "~1.1",
+            "php": ">=5.5.0"
+        },
+        "require-dev": {
+            "data-values/common": "~0.3.1"
+        },
+        "time": "2016-10-10T08:33:58+00:00",
+        "type": "mediawiki-extension",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.2.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "Validator.php"
+            ],
+            "psr-4": {
+                "ParamProcessor\\": "src/ParamProcessor/"
+            },
+            "classmap": [
+                "src/legacy/"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            }
+        ],
+        "description": "MediaWiki wrapper for the ParamProcessor library",
+        "homepage": "https://github.com/JeroenDeDauw/Validator",
+        "keywords": [
+            "ParamProcessor",
+            "SMW",
+            "Semantic MediaWiki",
+            "mediawiki",
+            "validator"
+        ]
+    },
+    {
+        "name": "onoi/shared-resources",
+        "version": "0.4.3",
+        "version_normalized": "0.4.3.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/onoi/shared-resources.git",
+            "reference": "322273a7462eb0c15305dde9207138f00a387080"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/onoi/shared-resources/zipball/322273a7462eb0c15305dde9207138f00a387080",
+            "reference": "322273a7462eb0c15305dde9207138f00a387080",
+            "shasum": ""
+        },
+        "require": {
+            "composer/installers": "1.*,>=1.0.1",
+            "php": ">=5.3.0"
+        },
+        "time": "2017-04-23T15:14:49+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "Resources.php"
+            ]
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "mwjames",
+                "role": "Developer"
+            }
+        ],
+        "description": "Shareable and common resource modules",
+        "homepage": "https://github.com/onoi/common-resources",
+        "keywords": [
+            "mediawiki"
+        ]
+    },
+    {
+        "name": "wikimedia/textcat",
+        "version": "1.2.0",
+        "version_normalized": "1.2.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/wikimedia/wikimedia-textcat.git",
+            "reference": "17818e14cf31c99f43a3c9bdd09a4d6e2914883f"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/wikimedia/wikimedia-textcat/zipball/17818e14cf31c99f43a3c9bdd09a4d6e2914883f",
+            "reference": "17818e14cf31c99f43a3c9bdd09a4d6e2914883f",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "jakub-onderka/php-parallel-lint": "0.9",
+            "mediawiki/mediawiki-codesniffer": "0.5.0",
+            "phpunit/phpunit": "4.6.*"
+        },
+        "time": "2017-01-23T16:52:10+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "TextCat": ""
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "LGPL-2.1"
+        ],
+        "authors": [
+            {
+                "name": "Stanislav Malyshev",
+                "email": "smalyshev@wikimedia.org"
+            },
+            {
+                "name": "Trey Jones",
+                "email": "tjones@wikimedia.org"
+            }
+        ],
+        "description": "PHP port of the TextCat language guesser utility, see http://odur.let.rug.nl/~vannoord/TextCat/."
+    },
+    {
+        "name": "onoi/tesa",
+        "version": "0.1.0",
+        "version_normalized": "0.1.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/onoi/tesa.git",
+            "reference": "c8a07ca8738cf6d644e83d10ba2cb1ef93dffa7d"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/onoi/tesa/zipball/c8a07ca8738cf6d644e83d10ba2cb1ef93dffa7d",
+            "reference": "c8a07ca8738cf6d644e83d10ba2cb1ef93dffa7d",
+            "shasum": ""
+        },
+        "require": {
+            "ext-mbstring": "*",
+            "php": ">=5.3.2",
+            "wikimedia/cdb": "~1.0",
+            "wikimedia/textcat": "~1.1"
+        },
+        "time": "2016-08-07T10:40:08+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Onoi\\Tesa\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "mwjames",
+                "homepage": "https://github.com/mwjames"
+            }
+        ],
+        "description": "A simple library to sanitize text elements",
+        "homepage": "https://github.com/onoi/tesa",
+        "keywords": [
+            "transliteration"
+        ]
+    },
+    {
+        "name": "onoi/callback-container",
+        "version": "2.0.0",
+        "version_normalized": "2.0.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/onoi/callback-container.git",
+            "reference": "cf2f4dda1b2479bc786985fdb5554af528d03e52"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/onoi/callback-container/zipball/cf2f4dda1b2479bc786985fdb5554af528d03e52",
+            "reference": "cf2f4dda1b2479bc786985fdb5554af528d03e52",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.5",
+            "psr/log": "~1.0"
+        },
+        "time": "2017-02-18T10:46:46+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Onoi\\CallbackContainer\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "mwjames",
+                "homepage": "https://github.com/mwjames"
+            }
+        ],
+        "description": "A very simple callback container/builder library",
+        "homepage": "https://github.com/onoi/callback-container",
+        "keywords": [
+            "container"
+        ]
+    },
+    {
         "name": "onoi/cache",
         "version": "1.2.0",
         "version_normalized": "1.2.0.0",
@@ -1390,6 +1718,58 @@
         "homepage": "https://github.com/onoi/cache",
         "keywords": [
             "cache"
+        ]
+    },
+    {
+        "name": "onoi/http-request",
+        "version": "1.3.1",
+        "version_normalized": "1.3.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/onoi/http-request.git",
+            "reference": "a7cf33bae82cffe570086fc06d6617e802c0cc74"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/onoi/http-request/zipball/a7cf33bae82cffe570086fc06d6617e802c0cc74",
+            "reference": "a7cf33bae82cffe570086fc06d6617e802c0cc74",
+            "shasum": ""
+        },
+        "require": {
+            "onoi/cache": "~1.2",
+            "php": ">=5.3.2"
+        },
+        "suggest": {
+            "lib-curl": "Allows making CURL requests"
+        },
+        "time": "2017-01-14T16:25:41+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Onoi\\HttpRequest\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "mwjames",
+                "homepage": "https://github.com/mwjames"
+            }
+        ],
+        "description": "A minimalistic http/curl request interface library",
+        "homepage": "https://github.com/onoi/http-request",
+        "keywords": [
+            "curl",
+            "http request"
         ]
     },
     {
@@ -1650,44 +2030,65 @@
         ]
     },
     {
-        "name": "mediawiki/validator",
-        "version": "2.2.1",
-        "version_normalized": "2.2.1.0",
+        "name": "mediawiki/semantic-media-wiki",
+        "version": "2.5.1",
+        "version_normalized": "2.5.1.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/JeroenDeDauw/Validator.git",
-            "reference": "04ad7a2f6c982b291dcbaa166f2ce90505da6401"
+            "url": "https://github.com/SemanticMediaWiki/SemanticMediaWiki.git",
+            "reference": "568d058ea68859d134654a959001ba0739c781e3"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/JeroenDeDauw/Validator/zipball/04ad7a2f6c982b291dcbaa166f2ce90505da6401",
-            "reference": "04ad7a2f6c982b291dcbaa166f2ce90505da6401",
+            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMediaWiki/zipball/568d058ea68859d134654a959001ba0739c781e3",
+            "reference": "568d058ea68859d134654a959001ba0739c781e3",
             "shasum": ""
         },
         "require": {
-            "param-processor/param-processor": "~1.1",
-            "php": ">=5.5.0"
+            "composer/installers": "1.*,>=1.0.1",
+            "ext-mbstring": "*",
+            "mediawiki/parser-hooks": "~1.4",
+            "onoi/blob-store": "~1.2",
+            "onoi/cache": "~1.2",
+            "onoi/callback-container": "~2.0",
+            "onoi/event-dispatcher": "~1.0",
+            "onoi/http-request": "~1.1",
+            "onoi/message-reporter": "~1.0",
+            "onoi/shared-resources": "~0.3",
+            "onoi/tesa": "~0.1",
+            "param-processor/param-processor": "~1.2",
+            "php": ">=5.5.0",
+            "psr/log": "~1.0",
+            "serialization/serialization": "~3.2"
+        },
+        "replace": {
+            "mediawiki/semantic-mediawiki": "*"
         },
         "require-dev": {
-            "data-values/common": "~0.3.1"
+            "phpmd/phpmd": "~2.1",
+            "squizlabs/php_codesniffer": "~2.1"
         },
-        "time": "2016-10-10T08:33:58+00:00",
+        "suggest": {
+            "mediawiki/semantic-result-formats": "Additional result formats for SMW queries"
+        },
+        "time": "2017-04-22T01:52:01+00:00",
         "type": "mediawiki-extension",
         "extra": {
             "branch-alias": {
-                "dev-master": "2.2.x-dev"
+                "dev-master": "2.5.x-dev"
             }
         },
         "installation-source": "dist",
         "autoload": {
-            "files": [
-                "Validator.php"
-            ],
             "psr-4": {
-                "ParamProcessor\\": "src/ParamProcessor/"
+                "SMW\\": "src/",
+                "SMW\\Maintenance\\": "maintenance/"
             },
+            "files": [
+                "SemanticMediaWiki.php"
+            ],
             "classmap": [
-                "src/legacy/"
+                "includes/"
             ]
         },
         "notification-url": "https://packagist.org/downloads/",
@@ -1696,20 +2097,29 @@
         ],
         "authors": [
             {
+                "name": "Markus Krötzsch",
+                "homepage": "http://korrekt.org",
+                "role": "Original author"
+            },
+            {
                 "name": "Jeroen De Dauw",
                 "email": "jeroendedauw@gmail.com",
                 "homepage": "http://jeroendedauw.com",
-                "role": "Developer"
+                "role": "Core developer"
+            },
+            {
+                "name": "James Hong Kong",
+                "homepage": "https://www.semantic-mediawiki.org/wiki/User:MWJames",
+                "role": "Core developer"
             }
         ],
-        "description": "MediaWiki wrapper for the ParamProcessor library",
-        "homepage": "https://github.com/JeroenDeDauw/Validator",
+        "description": "MediaWiki extension that lets you store and query structured data within wiki pages",
+        "homepage": "https://www.semantic-mediawiki.org/wiki/",
         "keywords": [
-            "ParamProcessor",
             "SMW",
             "Semantic MediaWiki",
             "mediawiki",
-            "validator"
+            "wiki"
         ]
     },
     {
@@ -1823,6 +2233,74 @@
             "file fetcher",
             "file_get_contents",
             "wget"
+        ]
+    },
+    {
+        "name": "data-values/geo",
+        "version": "1.2.2",
+        "version_normalized": "1.2.2.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/DataValues/Geo.git",
+            "reference": "b16af85da2dc879382d2913bb32aeae00a074c55"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/DataValues/Geo/zipball/b16af85da2dc879382d2913bb32aeae00a074c55",
+            "reference": "b16af85da2dc879382d2913bb32aeae00a074c55",
+            "shasum": ""
+        },
+        "require": {
+            "data-values/common": "~0.3.0|~0.2.0",
+            "data-values/data-values": "~1.0|~0.1",
+            "data-values/interfaces": "~0.2.0|~0.1.5",
+            "php": ">=5.3.0"
+        },
+        "require-dev": {
+            "mediawiki/mediawiki-codesniffer": "~0.5"
+        },
+        "time": "2017-03-14T17:59:19+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.2.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "Geo.php"
+            ],
+            "psr-4": {
+                "DataValues\\Geo\\": "src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "Jeroen De Dauw",
+                "email": "jeroendedauw@gmail.com",
+                "homepage": "http://jeroendedauw.com",
+                "role": "Developer"
+            },
+            {
+                "name": "The Wikidata team",
+                "role": "Developer"
+            }
+        ],
+        "description": "Geographical value objects, parsers and formatters",
+        "homepage": "https://github.com/DataValues/Geo",
+        "keywords": [
+            "datavalues",
+            "formatters",
+            "geo",
+            "geographical",
+            "latlong",
+            "parsers",
+            "wikidata"
         ]
     },
     {
@@ -1964,6 +2442,70 @@
         ]
     },
     {
+        "name": "mediawiki/semantic-extra-special-properties",
+        "version": "1.4.0",
+        "version_normalized": "1.4.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/SemanticMediaWiki/SemanticExtraSpecialProperties.git",
+            "reference": "a7ff0f91869ceacba58afc9dd75f0cfa9697355f"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticExtraSpecialProperties/zipball/a7ff0f91869ceacba58afc9dd75f0cfa9697355f",
+            "reference": "a7ff0f91869ceacba58afc9dd75f0cfa9697355f",
+            "shasum": ""
+        },
+        "require": {
+            "composer/installers": "1.*,>=1.0.1",
+            "mediawiki/semantic-media-wiki": "~2.3",
+            "php": ">=5.3.0"
+        },
+        "time": "2017-01-22T02:01:40+00:00",
+        "type": "mediawiki-extension",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "1.4.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "DefaultSettings.php",
+                "SemanticExtraSpecialProperties.php"
+            ],
+            "psr-4": {
+                "SESP\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "GPL-2.0+"
+        ],
+        "authors": [
+            {
+                "name": "James Hong Kong",
+                "homepage": "https://semantic-mediawiki.org/wiki/User:MWJames",
+                "role": "Developer"
+            },
+            {
+                "name": "Leo Wallentin",
+                "homepage": "https://github.com/rotsee",
+                "role": "Creator"
+            }
+        ],
+        "description": "Provides extra special properties for Semantic MediaWiki",
+        "homepage": "https://www.mediawiki.org/wiki/Extension:SemanticExtraSpecialProperties",
+        "keywords": [
+            "SMW",
+            "Semantic MediaWiki",
+            "mediawiki",
+            "properties",
+            "special properties",
+            "wiki"
+        ]
+    },
+    {
         "name": "mediawiki/page-forms",
         "version": "4.1",
         "version_normalized": "4.1.0.0",
@@ -2021,58 +2563,6 @@
             "Semantic Forms",
             "mediawiki",
             "wiki"
-        ]
-    },
-    {
-        "name": "onoi/http-request",
-        "version": "1.3.1",
-        "version_normalized": "1.3.1.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/onoi/http-request.git",
-            "reference": "a7cf33bae82cffe570086fc06d6617e802c0cc74"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/onoi/http-request/zipball/a7cf33bae82cffe570086fc06d6617e802c0cc74",
-            "reference": "a7cf33bae82cffe570086fc06d6617e802c0cc74",
-            "shasum": ""
-        },
-        "require": {
-            "onoi/cache": "~1.2",
-            "php": ">=5.3.2"
-        },
-        "suggest": {
-            "lib-curl": "Allows making CURL requests"
-        },
-        "time": "2017-01-14T16:25:41+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Onoi\\HttpRequest\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "mwjames",
-                "homepage": "https://github.com/mwjames"
-            }
-        ],
-        "description": "A minimalistic http/curl request interface library",
-        "homepage": "https://github.com/onoi/http-request",
-        "keywords": [
-            "curl",
-            "http request"
         ]
     },
     {
@@ -2154,489 +2644,6 @@
             "SRF",
             "Semantic MediaWiki",
             "Semantic Result Formats",
-            "mediawiki",
-            "wiki"
-        ]
-    },
-    {
-        "name": "mediawiki/semantic-extra-special-properties",
-        "version": "1.4.0",
-        "version_normalized": "1.4.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/SemanticMediaWiki/SemanticExtraSpecialProperties.git",
-            "reference": "a7ff0f91869ceacba58afc9dd75f0cfa9697355f"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticExtraSpecialProperties/zipball/a7ff0f91869ceacba58afc9dd75f0cfa9697355f",
-            "reference": "a7ff0f91869ceacba58afc9dd75f0cfa9697355f",
-            "shasum": ""
-        },
-        "require": {
-            "composer/installers": "1.*,>=1.0.1",
-            "mediawiki/semantic-media-wiki": "~2.3",
-            "php": ">=5.3.0"
-        },
-        "time": "2017-01-22T02:01:40+00:00",
-        "type": "mediawiki-extension",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.4.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "files": [
-                "DefaultSettings.php",
-                "SemanticExtraSpecialProperties.php"
-            ],
-            "psr-4": {
-                "SESP\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "James Hong Kong",
-                "homepage": "https://semantic-mediawiki.org/wiki/User:MWJames",
-                "role": "Developer"
-            },
-            {
-                "name": "Leo Wallentin",
-                "homepage": "https://github.com/rotsee",
-                "role": "Creator"
-            }
-        ],
-        "description": "Provides extra special properties for Semantic MediaWiki",
-        "homepage": "https://www.mediawiki.org/wiki/Extension:SemanticExtraSpecialProperties",
-        "keywords": [
-            "SMW",
-            "Semantic MediaWiki",
-            "mediawiki",
-            "properties",
-            "special properties",
-            "wiki"
-        ]
-    },
-    {
-        "name": "data-values/geo",
-        "version": "1.2.2",
-        "version_normalized": "1.2.2.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/DataValues/Geo.git",
-            "reference": "b16af85da2dc879382d2913bb32aeae00a074c55"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/DataValues/Geo/zipball/b16af85da2dc879382d2913bb32aeae00a074c55",
-            "reference": "b16af85da2dc879382d2913bb32aeae00a074c55",
-            "shasum": ""
-        },
-        "require": {
-            "data-values/common": "~0.3.0|~0.2.0",
-            "data-values/data-values": "~1.0|~0.1",
-            "data-values/interfaces": "~0.2.0|~0.1.5",
-            "php": ">=5.3.0"
-        },
-        "require-dev": {
-            "mediawiki/mediawiki-codesniffer": "~0.5"
-        },
-        "time": "2017-03-14T17:59:19+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.2.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "files": [
-                "Geo.php"
-            ],
-            "psr-4": {
-                "DataValues\\Geo\\": "src"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Developer"
-            },
-            {
-                "name": "The Wikidata team",
-                "role": "Developer"
-            }
-        ],
-        "description": "Geographical value objects, parsers and formatters",
-        "homepage": "https://github.com/DataValues/Geo",
-        "keywords": [
-            "datavalues",
-            "formatters",
-            "geo",
-            "geographical",
-            "latlong",
-            "parsers",
-            "wikidata"
-        ]
-    },
-    {
-        "name": "onoi/shared-resources",
-        "version": "0.3.0",
-        "version_normalized": "0.3.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/onoi/shared-resources.git",
-            "reference": "277d1220dd791d0768034926ebecf0fc09851db0"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/onoi/shared-resources/zipball/277d1220dd791d0768034926ebecf0fc09851db0",
-            "reference": "277d1220dd791d0768034926ebecf0fc09851db0",
-            "shasum": ""
-        },
-        "require": {
-            "composer/installers": "1.*,>=1.0.1",
-            "php": ">=5.3.0"
-        },
-        "time": "2016-12-17T15:24:08+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "files": [
-                "Resources.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "mwjames",
-                "role": "Developer"
-            }
-        ],
-        "description": "Shareable and common resource modules",
-        "homepage": "https://github.com/onoi/common-resources",
-        "keywords": [
-            "mediawiki"
-        ]
-    },
-    {
-        "name": "wikimedia/textcat",
-        "version": "1.2.0",
-        "version_normalized": "1.2.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/wikimedia/wikimedia-textcat.git",
-            "reference": "17818e14cf31c99f43a3c9bdd09a4d6e2914883f"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/wikimedia/wikimedia-textcat/zipball/17818e14cf31c99f43a3c9bdd09a4d6e2914883f",
-            "reference": "17818e14cf31c99f43a3c9bdd09a4d6e2914883f",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.3.0"
-        },
-        "require-dev": {
-            "jakub-onderka/php-parallel-lint": "0.9",
-            "mediawiki/mediawiki-codesniffer": "0.5.0",
-            "phpunit/phpunit": "4.6.*"
-        },
-        "time": "2017-01-23T16:52:10+00:00",
-        "type": "library",
-        "installation-source": "dist",
-        "autoload": {
-            "psr-0": {
-                "TextCat": ""
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "LGPL-2.1"
-        ],
-        "authors": [
-            {
-                "name": "Stanislav Malyshev",
-                "email": "smalyshev@wikimedia.org"
-            },
-            {
-                "name": "Trey Jones",
-                "email": "tjones@wikimedia.org"
-            }
-        ],
-        "description": "PHP port of the TextCat language guesser utility, see http://odur.let.rug.nl/~vannoord/TextCat/."
-    },
-    {
-        "name": "onoi/tesa",
-        "version": "0.1.0",
-        "version_normalized": "0.1.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/onoi/tesa.git",
-            "reference": "c8a07ca8738cf6d644e83d10ba2cb1ef93dffa7d"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/onoi/tesa/zipball/c8a07ca8738cf6d644e83d10ba2cb1ef93dffa7d",
-            "reference": "c8a07ca8738cf6d644e83d10ba2cb1ef93dffa7d",
-            "shasum": ""
-        },
-        "require": {
-            "ext-mbstring": "*",
-            "php": ">=5.3.2",
-            "wikimedia/cdb": "~1.0",
-            "wikimedia/textcat": "~1.1"
-        },
-        "time": "2016-08-07T10:40:08+00:00",
-        "type": "library",
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Onoi\\Tesa\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "mwjames",
-                "homepage": "https://github.com/mwjames"
-            }
-        ],
-        "description": "A simple library to sanitize text elements",
-        "homepage": "https://github.com/onoi/tesa",
-        "keywords": [
-            "transliteration"
-        ]
-    },
-    {
-        "name": "onoi/callback-container",
-        "version": "2.0.0",
-        "version_normalized": "2.0.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/onoi/callback-container.git",
-            "reference": "cf2f4dda1b2479bc786985fdb5554af528d03e52"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/onoi/callback-container/zipball/cf2f4dda1b2479bc786985fdb5554af528d03e52",
-            "reference": "cf2f4dda1b2479bc786985fdb5554af528d03e52",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.5",
-            "psr/log": "~1.0"
-        },
-        "time": "2017-02-18T10:46:46+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "2.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Onoi\\CallbackContainer\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "mwjames",
-                "homepage": "https://github.com/mwjames"
-            }
-        ],
-        "description": "A very simple callback container/builder library",
-        "homepage": "https://github.com/onoi/callback-container",
-        "keywords": [
-            "container"
-        ]
-    },
-    {
-        "name": "param-processor/param-processor",
-        "version": "1.3.2",
-        "version_normalized": "1.3.2.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/JeroenDeDauw/ParamProcessor.git",
-            "reference": "28965e968a4e6f246d60467a9eabe090031a2d95"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/JeroenDeDauw/ParamProcessor/zipball/28965e968a4e6f246d60467a9eabe090031a2d95",
-            "reference": "28965e968a4e6f246d60467a9eabe090031a2d95",
-            "shasum": ""
-        },
-        "require": {
-            "data-values/common": "~0.3.0|~0.2.2",
-            "data-values/data-values": "~1.0|~0.1.1",
-            "data-values/interfaces": "~0.2.0|~0.1.4",
-            "data-values/validators": "~0.1.1",
-            "php": ">=5.5.0"
-        },
-        "require-dev": {
-            "ockcyp/covers-validator": "~0.4",
-            "phpmd/phpmd": "~2.1",
-            "phpunit/phpunit": "~5.4|~4.8",
-            "squizlabs/php_codesniffer": "~2.1"
-        },
-        "time": "2017-03-26T00:20:55+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.3.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "ParamProcessor\\": "src"
-            },
-            "classmap": [
-                "tests/phpunit/Definitions/ParamDefinitionTest.php",
-                "tests/phpunit/Definitions/NumericParamTest.php"
-            ],
-            "files": [
-                "DefaultConfig.php"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Developer"
-            }
-        ],
-        "description": "Parameter processing library",
-        "homepage": "https://github.com/JeroenDeDauw/ParamProcessor",
-        "keywords": [
-            "ParamProcessor",
-            "SMW",
-            "Semantic MediaWiki",
-            "mediawiki",
-            "validator"
-        ]
-    },
-    {
-        "name": "mediawiki/semantic-media-wiki",
-        "version": "2.5.0",
-        "version_normalized": "2.5.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/SemanticMediaWiki/SemanticMediaWiki.git",
-            "reference": "dbbf3d1e465f95c912da2ef421db729ad90f993e"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/SemanticMediaWiki/SemanticMediaWiki/zipball/dbbf3d1e465f95c912da2ef421db729ad90f993e",
-            "reference": "dbbf3d1e465f95c912da2ef421db729ad90f993e",
-            "shasum": ""
-        },
-        "require": {
-            "composer/installers": "1.*,>=1.0.1",
-            "ext-mbstring": "*",
-            "mediawiki/parser-hooks": "~1.4",
-            "onoi/blob-store": "~1.2",
-            "onoi/cache": "~1.2",
-            "onoi/callback-container": "~2.0",
-            "onoi/event-dispatcher": "~1.0",
-            "onoi/http-request": "~1.1",
-            "onoi/message-reporter": "~1.0",
-            "onoi/shared-resources": "~0.3",
-            "onoi/tesa": "~0.1",
-            "param-processor/param-processor": "~1.2",
-            "php": ">=5.5.0",
-            "psr/log": "~1.0",
-            "serialization/serialization": "~3.2"
-        },
-        "replace": {
-            "mediawiki/semantic-mediawiki": "*"
-        },
-        "require-dev": {
-            "phpmd/phpmd": "~2.1",
-            "squizlabs/php_codesniffer": "~2.1"
-        },
-        "suggest": {
-            "mediawiki/semantic-result-formats": "Additional result formats for SMW queries"
-        },
-        "time": "2017-03-14T20:58:22+00:00",
-        "type": "mediawiki-extension",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "2.5.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "SMW\\": "src/",
-                "SMW\\Maintenance\\": "maintenance/"
-            },
-            "files": [
-                "SemanticMediaWiki.php"
-            ],
-            "classmap": [
-                "includes/"
-            ]
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "GPL-2.0+"
-        ],
-        "authors": [
-            {
-                "name": "Markus Krötzsch",
-                "homepage": "http://korrekt.org",
-                "role": "Original author"
-            },
-            {
-                "name": "Jeroen De Dauw",
-                "email": "jeroendedauw@gmail.com",
-                "homepage": "http://jeroendedauw.com",
-                "role": "Core developer"
-            },
-            {
-                "name": "James Hong Kong",
-                "homepage": "https://www.semantic-mediawiki.org/wiki/User:MWJames",
-                "role": "Core developer"
-            }
-        ],
-        "description": "MediaWiki extension that lets you store and query structured data within wiki pages",
-        "homepage": "https://www.semantic-mediawiki.org/wiki/",
-        "keywords": [
-            "SMW",
-            "Semantic MediaWiki",
             "mediawiki",
             "wiki"
         ]

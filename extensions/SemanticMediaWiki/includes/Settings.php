@@ -126,7 +126,6 @@ class Settings extends Options {
 			'smwgDeclarationProperties' => $GLOBALS['smwgDeclarationProperties'],
 			'smwgDataTypePropertyExemptionList' => $GLOBALS['smwgDataTypePropertyExemptionList'],
 			'smwgTranslate' => $GLOBALS['smwgTranslate'],
-			'smwgAdminRefreshStore' => $GLOBALS['smwgAdminRefreshStore'],
 			'smwgAutocompleteInSpecialAsk' => $GLOBALS['smwgAutocompleteInSpecialAsk'],
 			'smwgAutoRefreshSubject' => $GLOBALS['smwgAutoRefreshSubject'],
 			'smwgAdminFeatures' => $GLOBALS['smwgAdminFeatures'],
@@ -156,8 +155,8 @@ class Settings extends Options {
 			'smwgEnabledDeferredUpdate' => $GLOBALS['smwgEnabledDeferredUpdate'],
 			'smwgEnabledHttpDeferredJobRequest' => $GLOBALS['smwgEnabledHttpDeferredJobRequest'],
 			'smwgEnabledQueryDependencyLinksStore' => $GLOBALS['smwgEnabledQueryDependencyLinksStore'],
-			'smwgQueryDependencyPropertyExemptionlist' => $GLOBALS['smwgQueryDependencyPropertyExemptionlist'],
-			'smwgQueryDependencyAffiliatePropertyDetectionlist' => $GLOBALS['smwgQueryDependencyAffiliatePropertyDetectionlist'],
+			'smwgQueryDependencyPropertyExemptionList' => $GLOBALS['smwgQueryDependencyPropertyExemptionList'],
+			'smwgQueryDependencyAffiliatePropertyDetectionList' => $GLOBALS['smwgQueryDependencyAffiliatePropertyDetectionList'],
 			'smwgEnabledInTextAnnotationParserStrictMode' => $GLOBALS['smwgEnabledInTextAnnotationParserStrictMode'],
 			'smwgDVFeatures' => $GLOBALS['smwgDVFeatures'],
 			'smwgEnabledFulltextSearch' => $GLOBALS['smwgEnabledFulltextSearch'],
@@ -175,6 +174,8 @@ class Settings extends Options {
 			'smwgSimilarityLookupExemptionProperty' => $GLOBALS['smwgSimilarityLookupExemptionProperty'],
 			'smwgPropertyInvalidCharacterList' => $GLOBALS['smwgPropertyInvalidCharacterList'],
 		);
+
+		self::initLegacyMapping( $configuration );
 
 		\Hooks::run( 'SMW::Config::BeforeCompletion', array( &$configuration ) );
 
@@ -285,6 +286,39 @@ class Settings extends Options {
 		}
 
 		throw new SettingNotFoundException( "'{$key}' is not a valid settings key" );
+	}
+
+	private static function initLegacyMapping( &$configuration ) {
+
+		if ( isset( $GLOBALS['smwgAdminRefreshStore'] ) && $GLOBALS['smwgAdminRefreshStore'] === false ) {
+			$configuration['smwgAdminFeatures'] = $configuration['smwgAdminFeatures'] & ~SMW_ADM_REFRESH;
+		}
+
+		if ( isset( $GLOBALS['smwgQueryDependencyPropertyExemptionlist'] ) ) {
+			$configuration['smwgQueryDependencyPropertyExemptionList'] = $GLOBALS['smwgQueryDependencyPropertyExemptionlist'];
+		}
+
+		if ( isset( $GLOBALS['smwgQueryDependencyAffiliatePropertyDetectionlist'] ) ) {
+			$configuration['smwgQueryDependencyAffiliatePropertyDetectionList'] = $GLOBALS['smwgQueryDependencyAffiliatePropertyDetectionlist'];
+		}
+
+		// Deprecated mapping used in DeprecationNoticeTaskHandler to detect and
+		// output notices
+		$GLOBALS['smwgDeprecationNotices'] = array(
+			'notice' => array(
+				'smwgAdminRefreshStore' => '3.1.0',
+				'smwgQueryDependencyPropertyExemptionlist' => '3.1.0',
+				'smwgQueryDependencyAffiliatePropertyDetectionlist' => '3.1.0'
+			),
+			'replacement' => array(
+				'smwgAdminRefreshStore' => 'smwgAdminFeatures',
+				'smwgQueryDependencyPropertyExemptionlist' => 'smwgQueryDependencyPropertyExemptionList',
+				'smwgQueryDependencyAffiliatePropertyDetectionlist' => 'smwgQueryDependencyAffiliatePropertyDetectionList'
+			),
+			'removal' => array(
+				'smwgOnDeleteAction' => '2.4.0'
+			)
+		);
 	}
 
 }
