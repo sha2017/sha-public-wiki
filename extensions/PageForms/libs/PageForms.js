@@ -25,13 +25,19 @@ $.ui.autocomplete.prototype._renderItem = function( ul, item) {
 	} else {
 		term = this.term.split( delim ).pop();
 	}
-	var re = new RegExp("(?![^&;]+;)(?!<[^<>]*)(" + term.replace(/([\^\$\(\)\[\]\{\}\*\.\+\?\|\\])/gi, "\\$1") + ")(?![^<>]*>)(?![^&;]+;)", "gi");
-	var loc = item.label.search(re);
+	var re = new RegExp("(?![^&;]+;)(?!<[^<>]*)(" +
+		term.replace(/([\^\$\(\)\[\]\{\}\*\.\+\?\|\\])/gi, "\\$1") +
+		")(?![^<>]*>)(?![^&;]+;)", "gi");
+	// HTML-encode the value's label.
+	var itemLabel = $('<div/>').text(item.label).html();
+	var loc = itemLabel.search(re);
 	var t;
 	if (loc >= 0) {
-		t = item.label.substr(0, loc) + '<strong>' + item.label.substr(loc, term.length) + '</strong>' + item.label.substr(loc + term.length);
+		t = itemLabel.substr(0, loc) +
+			'<strong>' + itemLabel.substr(loc, term.length) + '</strong>' +
+			itemLabel.substr(loc + term.length);
 	} else {
-		t = item.label;
+		t = itemLabel;
 	}
 	return $( "<li></li>" )
 		.data( "item.autocomplete", item )
@@ -86,6 +92,16 @@ $.fn.attachAutocomplete = function() {
 					matcher = new RegExp($.ui.autocomplete.escapeRegex(term), "i" );
 				} else {
 					matcher = new RegExp("\\b" + $.ui.autocomplete.escapeRegex(term), "i" );
+				}
+				// This may be an associative array instead of a
+				// regular one - grep() requires a regular one.
+				// (Is this "if" check necessary, or useful?)
+				if ( typeof array === 'object' ) {
+					// Unfortunately, Object.values() is
+					// not supported on all browsers.
+					array = Object.keys(array).map(function(key) {
+						return array[key];
+					});
 				}
 				return $.grep( array, function(value) {
 					return matcher.test( value.label || value.value || value );
@@ -143,7 +159,9 @@ $.fn.attachAutocomplete = function() {
 			} else {
 				// Autocomplete for a single value
 				$(this).autocomplete({
-					source:values
+					// Unfortunately, Object.values() is
+					// not supported on all browsers.
+					source: ( typeof values === 'object' ) ? Object.keys(values).map(function(key) { return values[key]; }) : values
 				});
 			}
 		} else {
@@ -810,8 +828,12 @@ $.fn.validateMandatoryCheckboxes = function() {
 
 $.fn.validateURLField = function() {
 	var fieldVal = this.find("input").val();
-	// code borrowed from http://snippets.dzone.com/posts/show/452
-	var url_regexp = /(ftp|http|https|rtsp|news):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+	var url_protocol = mw.config.get( 'wgUrlProtocols' );
+	//removing backslash before colon from url_protocol string
+	url_protocol = url_protocol.replace( /\\:/, ':' );
+	//removing '//' from wgUrlProtocols as this causes to match any protocol in regexp
+	url_protocol = url_protocol.replace( /\|\\\/\\\//, '' );
+	var url_regexp = new RegExp( '(' + url_protocol + ')' + '(\\w+:{0,1}\\w*@)?(\\S+)(:[0-9]+)?(\/|\/([\\w#!:.?+=&%@!\\-\/]))?' );
 	if (fieldVal === "" || url_regexp.test(fieldVal)) {
 		return true;
 	} else {
@@ -972,6 +994,17 @@ window.validateAll = function () {
 	});
 	$("span.checkboxesSpan.mandatoryFieldSpan").not(".hiddenByPF").each( function() {
 		if (! $(this).validateMandatoryCheckboxes() ) {
+			num_errors += 1;
+		}
+	});
+	$("div.pfTreeInput.mandatory").not(".hiddenByPF").each( function() {
+		// @HACK - handle both the options for tree, checkboxes and
+		// radiobuttons, at the same time, regardless of which one is
+		// being used. This seems to work fine, though.
+		if (! $(this).validateMandatoryCheckboxes() ) {
+			num_errors += 1;
+		}
+		if (! $(this).validateMandatoryRadioButton() ) {
 			num_errors += 1;
 		}
 	});

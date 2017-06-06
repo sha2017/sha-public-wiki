@@ -1,4 +1,7 @@
 <?php
+
+use MediaWiki\MediaWikiServices;
+
 /**
  * Parser functions for Page Forms.
  *
@@ -296,18 +299,10 @@ class PFParserFunctions {
 		if ( empty( $inAutocompletionSource ) ) {
 			$formInputAttrs['class'] = 'formInput';
 		} else {
+			$parser->getOutput()->addModules( 'ext.pageforms.main' );
+
 			self::$num_autocompletion_inputs++;
 			$input_num = self::$num_autocompletion_inputs;
-			// Place the necessary Javascript on the page, and
-			// disable the cache (so the Javascript will show up) -
-			// if there's more than one autocompleted #forminput
-			// on the page, we only need to do this the first time.
-			if ( $input_num == 1 ) {
-				$parser->disableCache();
-				$output = $parser->getOutput();
-				$output->addModules( 'ext.pageforms.main' );
-			}
-
 			$inputID = 'input_' . $input_num;
 			$formInputAttrs['id'] = $inputID;
 			$formInputAttrs['class'] = 'autocompleteInput createboxInput formInput';
@@ -323,6 +318,10 @@ class PFParserFunctions {
 			}
 		}
 
+		// The value has already been HTML-encoded as a parameter,
+		// and it will get encoded again by Html::input() - prevent
+		// double-encoding.
+		$inValue = html_entity_decode( $inValue );
 		$formContents = Html::input( 'page_name', $inValue, 'text', $formInputAttrs );
 
 		// If the form start URL looks like "index.php?title=Special:FormStart"
@@ -466,7 +465,10 @@ class PFParserFunctions {
 
 
 	static function renderAutoEdit( &$parser ) {
+		global $wgContentNamespaces;
+
 		$parser->getOutput()->addModules( 'ext.pageforms.autoedit' );
+		$parser->getOutput()->preventClickjacking( true );
 
 		// Set defaults.
 		$formcontent = '';
@@ -531,6 +533,14 @@ class PFParserFunctions {
 					$targetTitle = Title::newFromText( $value );
 
 					if ( $targetTitle !== null ) {
+						// It seems unnecessary to let
+						// #autoedit be called for non-
+						// content namespaces like
+						// "Template" or "Talk".
+						if ( !in_array( $targetTitle->getNamespace(), $wgContentNamespaces ) ) {
+							return '<div class="error">Error: Invalid namespace "' .
+								$targetTitle->getNsText() . '"; only content namespaces are allowed for #autoedit.</div>';
+						}
 						$targetArticle = new Article( $targetTitle );
 						$targetArticle->clear();
 						$editTime = $targetArticle->getTimestamp();
@@ -605,7 +615,7 @@ class PFParserFunctions {
 		$inFormName = $inLinkStr = $inExistingPageLinkStr = $inLinkType =
 			$inTooltip = $inQueryStr = $inTargetName = '';
 		if ( $parserFunctionName == 'queryformlink' ) {
-			$inLinkStr = wfMessage( 'runquery' )->text();
+			$inLinkStr = wfMessage( 'runquery' )->parse();
 		}
 		$inCreatePage = false;
 		$classStr = '';
@@ -675,17 +685,25 @@ class PFParserFunctions {
 		// If "red link only" was specified, and a target page was
 		// specified, and it exists, just link to the page.
 		if ( $inTargetName != '' ) {
-			$targetTitle = Title::newFromText( $inTargetName );
+			// Call urldecode() on it, in case the target was
+			// set via {{PAGENAMEE}}, and the page name contains
+			// an apostrophe or other unusual character.
+			$targetTitle = Title::newFromText( urldecode( $inTargetName ) );
 			$targetPageExists = ( $targetTitle != '' && $targetTitle->exists() );
 		} else {
 			$targetPageExists = false;
 		}
 
 		if ( $parserFunctionName == 'formredlink' && $targetPageExists ) {
-			if ( $inExistingPageLinkStr == '' ) {
-				return Linker::link( $targetTitle );
+			if ( function_exists( 'MediaWiki\MediaWikiServices::getLinkRenderer' ) ) {
+				$linkRenderer = MediaWikiServices::getInstance()->getLinkRenderer();
 			} else {
-				return Linker::link( $targetTitle, $inExistingPageLinkStr );
+				$linkRenderer = null;
+			}
+			if ( $inExistingPageLinkStr == '' ) {
+				return PFUtils::makeLink( $linkRenderer, $targetTitle );
+			} else {
+				return PFUtils::makeLink( $linkRenderer, $targetTitle, $inExistingPageLinkStr );
 			}
 		}
 

@@ -146,11 +146,31 @@ class PFTextInput extends PFFormInput {
 	public static function uploadableHTML( $input_id, $delimiter = null, $default_filename = null, $cur_value = '', $other_args = array() ) {
 		global $wgPageFormsSimpleUpload, $wgPageFormsScriptPath;
 		if ( $wgPageFormsSimpleUpload ) {
-			$text = '
-<img class="loading" style="display:none;" src="' . $wgPageFormsScriptPath . '/skins/loading.gif"/>
-<input type="button" class="simpleupload_btn" data-id=' . $input_id . ' value="' . wfMessage( 'upload-dialog-button-upload' )->text() . '" />
-<input type="button" class="simpleupload_rmv_btn" data-id="' . $input_id . '" value="' . wfMessage( 'htmlform-cloner-delete' )->text() . '" style="display:none;" />
-<input type="file" class="simpleupload" data-id="' . $input_id . '" style="display:none;">';
+			$text = "\n" . '<img class="loading" style="display:none;" src="' . $wgPageFormsScriptPath . '/skins/loading.gif"/>' . "\n";
+			$text .= Html::input( '',
+				wfMessage( 'upload-dialog-button-upload' )->escaped(),
+				'button',
+				array(
+					'class' => 'simpleupload_btn',
+					'data-id' => $input_id
+				)
+			) . "\n";
+			$text .= Html::input( '',
+				wfMessage( 'htmlform-cloner-delete' )->escaped(),
+				'button',
+				array(
+					'class' => 'simpleupload_rmv_btn',
+					'style' => 'display: none;',
+					'data-id' => $input_id
+				)
+			) . "\n";
+			$text .= Html::input( '', '', 'file',
+				array(
+					'class' => 'simpleupload',
+					'style' => 'display: none;',
+					'data-id' => $input_id
+				)
+			) . "\n";
 
 			return $text;
 		}
@@ -163,7 +183,7 @@ class PFTextInput extends PFFormInput {
 			$query_string .= "&wpDestFile=$default_filename";
 		}
 		$upload_window_url = $upload_window_page->getTitle()->getFullURL( $query_string );
-		$upload_label = wfMessage( 'upload' )->text();
+		$upload_label = wfMessage( 'upload' )->parse();
 		// We need to set the size by default.
 		$style = "width:650 height:500";
 

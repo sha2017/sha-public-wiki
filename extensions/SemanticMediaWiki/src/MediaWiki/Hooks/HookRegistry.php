@@ -122,6 +122,12 @@ class HookRegistry {
 			$GLOBALS['wgDBtype'] === 'sqlite'
 		);
 
+		// When in commandLine mode avoid deferred execution and run a process
+		// within the same transaction
+		$deferredRequestDispatchManager->isCommandLineMode(
+			$GLOBALS['wgCommandLineMode']
+		);
+
 		$permissionPthValidator = new PermissionPthValidator(
 			$applicationFactory->singleton( 'EditProtectionValidator' )
 		);
@@ -137,12 +143,24 @@ class HookRegistry {
 		 */
 		$this->handlers['ParserAfterTidy'] = function ( &$parser, &$text ) {
 
+			// MediaWiki\Services\ServiceDisabledException from line 340 of
+			// ...\ServiceContainer.php: Service disabled: DBLoadBalancer
+			try {
+				$isReadOnly = wfReadOnly();
+			} catch( \MediaWiki\Services\ServiceDisabledException $e ) {
+				$isReadOnly = true;
+			}
+
 			$parserAfterTidy = new ParserAfterTidy(
 				$parser
 			);
 
 			$parserAfterTidy->isCommandLineMode(
 				$GLOBALS['wgCommandLineMode']
+			);
+
+			$parserAfterTidy->isReadOnly(
+				$isReadOnly
 			);
 
 			return $parserAfterTidy->process( $text );
@@ -544,12 +562,6 @@ class HookRegistry {
 		 * @see https://www.semantic-mediawiki.org/wiki/Hooks#SMW::SQLStore::AfterDataUpdateComplete
 		 */
 		$this->handlers['SMW::SQLStore::AfterDataUpdateComplete'] = function ( $store, $semanticData, $compositePropertyTableDiffIterator ) use ( $queryDependencyLinksStoreFactory, $queryDependencyLinksStore, $deferredRequestDispatchManager, $tempChangeOpStore ) {
-
-			// When in commandLine mode avoid deferred execution and run a process
-			// within the same transaction
-			$deferredRequestDispatchManager->isCommandLineMode(
-				$store->getOptions()->has( 'isCommandLineMode' ) ? $store->getOptions()->get( 'isCommandLineMode' ) : $GLOBALS['wgCommandLineMode']
-			);
 
 			$queryDependencyLinksStore->setStore( $store );
 			$subject = $semanticData->getSubject();

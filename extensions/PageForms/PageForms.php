@@ -69,7 +69,7 @@ if ( defined( 'PF_VERSION' ) ) {
 	return 1;
 }
 
-define( 'PF_VERSION', '4.1' );
+define( 'PF_VERSION', '4.1.1' );
 
 $GLOBALS['wgExtensionCredits']['specialpage'][] = array(
 	'path' => __FILE__,
@@ -110,6 +110,7 @@ if ( defined( 'SMW_VERSION' ) ) {
 	};
 } else {
 	$GLOBALS['wgPageFormsFormPrinter'] = new StubObject( 'wgPageFormsFormPrinter', 'PFFormPrinter' );
+
 }
 
 $GLOBALS['wgHooks']['LinkEnd'][] = 'PFFormLinker::setBrokenLink';
@@ -577,6 +578,10 @@ require_once 'includes/PF_DatePickerSettings.php';
 # Display displaytitle page property instead of page title for Page type fields
 # ##
 $GLOBALS['wgPageFormsUseDisplayTitle'] = false;
+
+// Other variables
+$GLOBALS['wgPageFormsSimpleUpload'] = false;
+$GLOBALS['wgPageFormsDisableOutsideServices'] = false;
 
 # ##
 # Global variables for Javascript
