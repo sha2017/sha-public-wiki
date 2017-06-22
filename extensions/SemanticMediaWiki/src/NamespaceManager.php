@@ -53,6 +53,7 @@ class NamespaceManager {
 		}
 
 		$this->addNamespaceSettings();
+		$this->addExtraNamespaceSettings();
 	}
 
 	/**
@@ -69,7 +70,20 @@ class NamespaceManager {
 	 * @since 2.5
 	 */
 	public static function initCanonicalNamespaces( array &$namespaces ) {
-		$namespaces += self::initCustomNamespace( $GLOBALS )->getCanonicalNames();
+
+		$canonicalNames = self::initCustomNamespace( $GLOBALS )->getCanonicalNames();
+		$namespacesByName = array_flip( $namespaces );
+
+		// https://phabricator.wikimedia.org/T160665
+		// Find any namespace that uses the same canonical name and remove it
+		foreach ( $canonicalNames as $id => $name ) {
+			if ( isset( $namespacesByName[$name] ) ) {
+				unset( $namespaces[$namespacesByName[$name]] );
+			}
+		}
+
+		$namespaces += $canonicalNames;
+
 		return true;
 	}
 
@@ -175,19 +189,6 @@ class NamespaceManager {
 
 	protected function addNamespaceSettings() {
 
-		// Support subpages only for talk pages by default
-		$this->globalVars['wgNamespacesWithSubpages'] = $this->globalVars['wgNamespacesWithSubpages'] + array(
-			SMW_NS_PROPERTY_TALK => true,
-			SMW_NS_TYPE_TALK => true,
-			SMW_NS_CONCEPT_TALK => true,
-		);
-
-		// not modified for Semantic MediaWiki
-		/* $this->globalVars['wgNamespacesToBeSearchedDefault'] = array(
-			NS_MAIN           => true,
-			);
-		*/
-
 		/**
 		 * Default settings for the SMW specific NS which can only
 		 * be defined after SMW_NS_PROPERTY is declared
@@ -213,6 +214,19 @@ class NamespaceManager {
 			$smwNamespacesSettings,
 			$this->globalVars['smwgNamespacesWithSemanticLinks']
 		);
+	}
+
+	private function addExtraNamespaceSettings() {
+
+		/**
+		 * Indicating which namespaces allow sub-pages
+		 *
+		 * @see https://www.mediawiki.org/wiki/Manual:$wgNamespacesWithSubpages
+		 */
+		$this->globalVars['wgNamespacesWithSubpages'] = $this->globalVars['wgNamespacesWithSubpages'] + array(
+			SMW_NS_PROPERTY_TALK => true,
+			SMW_NS_CONCEPT_TALK => true,
+		);
 
 		/**
 		 * Allow custom namespaces to be acknowledged as containing useful content
@@ -229,8 +243,10 @@ class NamespaceManager {
 		 *
 		 * @see https://www.mediawiki.org/wiki/Manual:$wgNamespacesToBeSearchedDefault
 		 */
-		$this->globalVars['wgNamespacesToBeSearchedDefault'][SMW_NS_PROPERTY] = true;
-		$this->globalVars['wgNamespacesToBeSearchedDefault'][SMW_NS_CONCEPT] = true;
+		$this->globalVars['wgNamespacesToBeSearchedDefault'] = $this->globalVars['wgNamespacesToBeSearchedDefault'] + array(
+			SMW_NS_PROPERTY => true,
+			SMW_NS_CONCEPT => true
+		);
 	}
 
 	protected function isDefinedConstant( $constant ) {

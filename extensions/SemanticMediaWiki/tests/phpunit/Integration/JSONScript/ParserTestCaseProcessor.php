@@ -4,6 +4,7 @@ namespace SMW\Tests\Integration\JSONScript;
 
 use SMW\DIWikiPage;
 use SMW\Tests\Utils\UtilityFactory;
+use SMW\MediaWiki\MediaWikiNsContentReader;
 
 /**
  * @group semantic-mediawiki
@@ -69,6 +70,7 @@ class ParserTestCaseProcessor extends \PHPUnit_Framework_TestCase {
 
 		$this->assertSemanticDataForCase( $case );
 		$this->assertParserOutputForCase( $case );
+		$this->assertParserMsgForCase( $case );
 	}
 
 	private function assertSemanticDataForCase( $case ) {
@@ -130,10 +132,25 @@ class ParserTestCaseProcessor extends \PHPUnit_Framework_TestCase {
 
 		$parserOutput = UtilityFactory::getInstance()->newPageReader()->getEditInfo( $subject->getTitle() )->output;
 
+		if ( isset( $case['assert-output']['withOutputPageContext'] ) && $case['assert-output']['withOutputPageContext'] ) {
+			$context = new \RequestContext();
+			$context->setTitle( $subject->getTitle() );
+			// Ensures the OutputPageBeforeHTML hook is run
+			$context->getOutput()->addParserOutput( $parserOutput );
+			$output = $context->getOutput()->getHtml();
+		} elseif ( isset( $case['assert-output']['onPageView'] ) && $case['assert-output']['onPageView'] ) {
+			$context = new \RequestContext();
+			$context->setTitle( $subject->getTitle() );
+			\Article::newFromTitle( $subject->getTitle(), $context )->view();
+			$output = $context->getOutput()->getHtml();
+		} else {
+			$output = $parserOutput->getText();
+		}
+
 		if ( isset( $case['assert-output']['to-contain'] ) ) {
 			$this->stringValidator->assertThatStringContains(
 				$case['assert-output']['to-contain'],
-				$parserOutput->getText(),
+				$output,
 				$case['about']
 			);
 		}
@@ -141,7 +158,36 @@ class ParserTestCaseProcessor extends \PHPUnit_Framework_TestCase {
 		if ( isset( $case['assert-output']['not-contain'] ) ) {
 			$this->stringValidator->assertThatStringNotContains(
 				$case['assert-output']['not-contain'],
-				$parserOutput->getText(),
+				$output,
+				$case['about']
+			);
+		}
+	}
+
+	private function assertParserMsgForCase( $case ) {
+
+		if ( !isset( $case['assert-msgoutput'] ) ) {
+			return;
+		}
+
+		$mediaWikiNsContentReader = new MediaWikiNsContentReader();
+		$mediaWikiNsContentReader->skipMessageCache();
+
+		$text = $mediaWikiNsContentReader->read( $case['subject'] );
+		$text = wfMessage( 'smw-parse', $text )->parse();
+
+		if ( isset( $case['assert-msgoutput']['to-contain'] ) ) {
+			$this->stringValidator->assertThatStringContains(
+				$case['assert-msgoutput']['to-contain'],
+				$text,
+				$case['about']
+			);
+		}
+
+		if ( isset( $case['assert-msgoutput']['not-contain'] ) ) {
+			$this->stringValidator->assertThatStringNotContains(
+				$case['assert-msgoutput']['not-contain'],
+				$text,
 				$case['about']
 			);
 		}

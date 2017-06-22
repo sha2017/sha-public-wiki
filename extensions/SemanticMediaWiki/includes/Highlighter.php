@@ -78,6 +78,22 @@ class Highlighter {
 	}
 
 	/**
+	 * @since 3.0
+	 *
+	 * @param string $text
+	 *
+	 * @return string
+	 */
+	public static function decode( $text ) {
+		// #2347, '[' is handled by the MediaWiki parser/sanitizer itself
+		return str_replace(
+			array( '&amp;', '&lt;', '&gt;', '&#160;', '<nowiki>', '</nowiki>' ),
+			array( '&', '<', '>', ' ', '', '' ),
+			$text
+		);
+	}
+
+	/**
 	 * Returns html output
 	 *
 	 * @since 1.9
@@ -168,6 +184,11 @@ class Highlighter {
 
 		$language = is_string( $this->language ) ? $this->language : Message::USER_LANGUAGE;
 
+		// #1875
+		// title attribute contains stripped content to allow for a display in
+		// no-js environments, the tooltip will remove the element once it is
+		// loaded
+
 		return Html::rawElement(
 			'span',
 			array(
@@ -176,7 +197,7 @@ class Highlighter {
 				'data-content' => isset( $this->options['data-content'] ) ? $this->options['data-content'] : null,
 				'data-state'   => $this->options['state'],
 				'data-title'   => Message::get( $this->options['title'], Message::TEXT, $language ),
-				'title'        => strip_tags( htmlspecialchars_decode( str_replace( "[", "&#91;", $this->options['content'] ) ) )
+				'title'        => $this->createStrippedContentFrom( $this->options['content'], $language )
 			), Html::rawElement(
 					'span',
 					array(
@@ -260,4 +281,16 @@ class Highlighter {
 
 		return $settings;
 	}
+
+	private function createStrippedContentFrom( $content, $language ) {
+
+		// Pre-process the content when used as title to avoid breaking elements
+		// (URLs etc.)
+		if ( strpos( $content, '[' ) !== false || strpos( $content, '//' ) !== false ) {
+			$content = Message::get( array( 'smw-parse', $content ), Message::PARSE, $language );
+		}
+
+		return strip_tags( htmlspecialchars_decode( str_replace( "[", "&#91;", $content ) ) );
+	}
+
 }

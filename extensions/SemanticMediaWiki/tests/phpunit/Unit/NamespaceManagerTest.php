@@ -63,7 +63,7 @@ class NamespaceManagerTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testExecutionWithIncompleteConfiguration() {
+	public function testInitOnIncompleteConfiguration() {
 
 		$test = $this->default + array(
 			'wgExtraNamespaces'  => '',
@@ -169,7 +169,7 @@ class NamespaceManagerTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testNamespacesInitToKeepPreInitSettings() {
+	public function testInitToKeepPreInitSettings() {
 
 		$this->testEnvironment->addConfiguration(
 			'smwgHistoricTypeNamespace',
@@ -198,6 +198,58 @@ class NamespaceManagerTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertTrue(
 			$test['smwgNamespacesWithSemanticLinks'][SMW_NS_TYPE]
+		);
+	}
+
+	public function testInitWithoutOverridingUserSettingsOnExtraNamespaceSettings() {
+
+		$test = array(
+			'wgNamespacesWithSubpages' => array(
+				SMW_NS_PROPERTY => false
+			),
+			'wgNamespacesToBeSearchedDefault' => array(
+				SMW_NS_PROPERTY => false
+			),
+			'wgContentNamespaces' => array(
+				SMW_NS_PROPERTY => false
+			)
+		) + $this->default;
+
+		$instance = new NamespaceManager( $test, $this->extraneousLanguage );
+		$instance->init();
+
+		$this->assertFalse(
+			$test['wgNamespacesWithSubpages'][SMW_NS_PROPERTY]
+		);
+
+		$this->assertFalse(
+			$test['wgNamespacesToBeSearchedDefault'][SMW_NS_PROPERTY]
+		);
+
+		$this->assertFalse(
+			$test['wgContentNamespaces'][SMW_NS_PROPERTY]
+		);
+	}
+
+	public function testInitCanonicalNamespacesWithForcedNsReset() {
+
+		$namespaces = array(
+			10001 => 'Property',
+			10002 => 'Property_talk'
+		);
+
+		$this->assertTrue(
+			NamespaceManager::initCanonicalNamespaces( $namespaces )
+		);
+
+		$this->assertEquals(
+			'Property',
+			$namespaces[SMW_NS_PROPERTY]
+		);
+
+		$this->assertEquals(
+			'Property_talk',
+			$namespaces[SMW_NS_PROPERTY_TALK]
 		);
 	}
 

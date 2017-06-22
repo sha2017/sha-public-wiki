@@ -5,6 +5,7 @@ use SMW\NamespaceManager;
 use SMW\IntlNumberFormatter;
 use SMW\SPARQLStore\SparqlDBConnectionProvider;
 use SMW\ProcessingErrorMsgHandler;
+use SMW\Highlighter;
 
 /**
  * Global functions specified and used by Semantic MediaWiki. In general, it is
@@ -124,17 +125,11 @@ function smwfEncodeMessages( array $messages, $type = 'warning', $seperator = ' 
 			$errorList = '<ul>' . implode( $seperator, $messages ) . '</ul>';
 		}
 
-		$errorList = str_replace(
-			array( '&amp;', '&lt;', '&gt;', '&#160;', '<nowiki>', '</nowiki>', '[',  ),
-			array( '&', '<', '>', ' ', '', '', '&#x005B;' ),
-			$errorList
-		);
-
 		// Type will be converted internally
-		$highlighter = SMW\Highlighter::factory( $type );
+		$highlighter = Highlighter::factory( $type );
 		$highlighter->setContent( array (
 			'caption'   => null,
-			'content'   => $errorList
+			'content'   => Highlighter::decode( $errorList )
 		) );
 
 		return $highlighter->getHtml();
@@ -151,6 +146,25 @@ function smwfEncodeMessages( array $messages, $type = 'warning', $seperator = ' 
 function &smwfGetStore() {
 	$store = \SMW\StoreFactory::getStore();
 	return $store;
+}
+
+/**
+ * @since 3.0
+ *
+ * @param string $namespace
+ * @param string $key
+ *
+ * @return string
+ */
+function smwfCacheKey( $namespace, $key ) {
+
+	$cachePrefix = $GLOBALS['wgCachePrefix'] === false ? wfWikiID() : $GLOBALS['wgCachePrefix'];
+
+	if ( $namespace{0} !== ':' ) {
+		$namespace = ':' . $namespace;
+	}
+
+	return $cachePrefix . $namespace . ':' . md5( $key );
 }
 
 /**

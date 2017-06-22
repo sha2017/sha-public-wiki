@@ -1,7 +1,7 @@
 {
 	"@Note": "When updating this file please also update PageForms.php with the same changes.",
 	"name": "Page Forms",
-	"version": "4.1",
+	"version": "4.1.1",
 	"author": [
 		"Yaron Koren",
 		"Stephan Gambke",
@@ -29,7 +29,7 @@
 	"ExtensionFunctions": [
 		"PFHooks::initialize"
 	],
-	"require": {
+	"requires": {
 		"MediaWiki": ">= 1.27.0"
 	},
 	"GroupPermissions": {
@@ -430,6 +430,7 @@
 	},
 	"config": {
 		"PageFormsUseDisplayTitle": false,
+		"PageFormsSimpleUpload": false,
 		"PageFormsMaxAutocompleteValues": 1000,
 		"PageFormsMaxLocalAutocompleteValues": 100,
 		"PageFormsAutocompleteOnAllChars": false,
@@ -441,6 +442,7 @@
 		"PageForms24HourTime": false,
 		"PageFormsCacheFormDefinitions": false,
 		"PageFormsFormCacheType": null,
+		"PageFormsDisableOutsideServices": false,
 		"PageFormsLinkAllRedLinksToForms": false,
 		"PageFormsShowTabsForAllHelperForms": true,
 		"PageFormsRunQueryFormAtTop": false,

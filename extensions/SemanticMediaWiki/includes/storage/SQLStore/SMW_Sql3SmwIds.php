@@ -525,13 +525,18 @@ class SMWSql3SmwIds {
 			$key = $property->getKey();
 
 			// Has a fixed ID?
-			if ( isset( self::$special_ids[$key] ) ) {
+			if ( isset( self::$special_ids[$key] ) && $subject->getSubobjectName() === '' ) {
 				return self::$special_ids[$key];
 			}
 
 			// Switch title for fixed properties without a fixed ID (e.g. _MIME is the smw_title)
 			if ( !$property->isUserDefined() ) {
-				$subject = new DIWikiPage( $key, SMW_NS_PROPERTY );
+				$subject = new DIWikiPage(
+					$key,
+					SMW_NS_PROPERTY,
+					$subject->getInterWiki(),
+					$subject->getSubobjectName()
+				);
 			}
 		}
 
@@ -557,17 +562,17 @@ class SMWSql3SmwIds {
 
 		if ( $row !== false ) {
 			$id = $row->smw_id;
-		}
 
-		// Legacy
-		$this->setCache(
-			$subject->getDBKey(),
-			$subject->getNamespace(),
-			$subject->getInterWiki(),
-			$subject->getSubobjectName(),
-			$id,
-			$subject->getSortKey()
-		);
+			// Legacy
+			$this->setCache(
+				$subject->getDBKey(),
+				$subject->getNamespace(),
+				$subject->getInterWiki(),
+				$subject->getSubobjectName(),
+				$id,
+				$subject->getSortKey()
+			);
+		}
 
 		return $id;
 	}
@@ -645,6 +650,11 @@ class SMWSql3SmwIds {
 		$oldsort = '';
 		$id = $this->getDatabaseIdAndSort( $title, $namespace, $iw, $subobjectName, $oldsort, $canonical, $fetchHashes );
 		$db = $this->store->getConnection( 'mw.db' );
+
+		// Safeguard to ensure that no duplicate IDs are created
+		if ( $id == 0 ) {
+			$id = $this->getIDFor( new DIWikiPage( $title, $namespace, $iw, $subobjectName ) );
+		}
 
 		$db->beginAtomicTransaction( __METHOD__ );
 

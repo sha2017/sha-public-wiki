@@ -1,6 +1,8 @@
 /LocalSettings.php
 /cache/*
 !/cache/.htaccess
+/design/*
+!/design/.htaccess
 /images/*
 !/images/.htaccess
 /simplesaml/*

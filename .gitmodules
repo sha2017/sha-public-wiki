@@ -25,3 +25,6 @@
 [submodule "extensions/SimpleSamlAuth"]
 	path = extensions/SimpleSamlAuth
 	url = https://github.com/sha2017/mwSimpleSamlAuth.git
+[submodule "extensions/RegexParserFunctions"]
+	path = extensions/RegexParserFunctions
+	url = https://github.com/mediawiki4intranet/RegexParserFunctions

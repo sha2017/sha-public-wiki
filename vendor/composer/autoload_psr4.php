@@ -19,7 +19,7 @@ return array(
     'SMW\\' => array($baseDir . '/extensions/SemanticMediaWiki/src'),
     'SESP\\' => array($baseDir . '/extensions/SemanticExtraSpecialProperties/src'),
     'ParserHooks\\' => array($vendorDir . '/mediawiki/parser-hooks/src'),
-    'ParamProcessor\\' => array($baseDir . '/extensions/Validator/src/ParamProcessor', $vendorDir . '/param-processor/param-processor/src'),
+    'ParamProcessor\\' => array($vendorDir . '/param-processor/param-processor/src', $baseDir . '/extensions/Validator/src/ParamProcessor'),
     'Onoi\\Tesa\\' => array($vendorDir . '/onoi/tesa/src'),
     'Onoi\\MessageReporter\\' => array($vendorDir . '/onoi/message-reporter/src'),
     'Onoi\\HttpRequest\\' => array($vendorDir . '/onoi/http-request/src'),

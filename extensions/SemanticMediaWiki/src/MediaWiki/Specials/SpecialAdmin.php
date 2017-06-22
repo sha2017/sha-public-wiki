@@ -52,6 +52,10 @@ class SpecialAdmin extends SpecialPage {
 		$output = $this->getOutput();
 		$output->setPageTitle( $this->getMessageAsString( 'smwadmin' ) );
 
+		$output->addModuleStyles( array(
+			'ext.smw.special.style'
+		) );
+
 		$output->addModules( array(
 			'ext.smw.admin'
 		) );
@@ -76,16 +80,14 @@ class SpecialAdmin extends SpecialPage {
 			$adminFeatures = $adminFeatures & ~SMW_ADM_FULLT;
 		}
 
-		// Ensure BC for a deprecated setting
-		if ( $applicationFactory->getSettings()->get( 'smwgAdminRefreshStore' ) === false ) {
-			$adminFeatures = $adminFeatures & ~SMW_ADM_REFRESH;
-		}
-
 		$taskHandlerFactory = new TaskHandlerFactory(
 			$store,
 			$htmlFormRenderer,
 			$outputFormatter
 		);
+
+		// DeprecationNoticeTaskHandler
+		$DeprecationNoticeTaskHandler = $taskHandlerFactory->newDeprecationNoticeTaskHandler();
 
 		// DataRefreshJobTaskHandler
 		$dataRefreshJobTaskHandler = $taskHandlerFactory->newDataRefreshJobTaskHandler();
@@ -174,6 +176,7 @@ class SpecialAdmin extends SpecialPage {
 
 		// General intro
 		$html = $this->getHtml(
+			$DeprecationNoticeTaskHandler,
 			$tableSchemaTaskHandler,
 			$dataRepairTaskList,
 			$supplementaryTaskList,
@@ -190,17 +193,24 @@ class SpecialAdmin extends SpecialPage {
 		return 'smw_group';
 	}
 
-	private function getHtml( $tableSchemaTaskHandler, $dataRepairTaskList, $supplementaryTaskList, $supportListTaskHandler ) {
+	private function getHtml( $DeprecationNoticeTaskHandler, $tableSchemaTaskHandler, $dataRepairTaskList, $supplementaryTaskList, $supportListTaskHandler ) {
 
-		$html = $this->getMessageAsString( 'smw-admin-docu' );
+		$html = Html::rawElement( 'p', array(), $this->getMessageAsString( 'smw-admin-docu' ) );
+		$html .= $DeprecationNoticeTaskHandler->getHtml();
 		$html .= $tableSchemaTaskHandler->getHtml();
 
 		$html .= Html::rawElement( 'h2', array(), $this->getMessageAsString( array( 'smw-smwadmin-refresh-title' ) ) );
 		$html .= Html::rawElement( 'p', array(), $this->getMessageAsString( array( 'smw-admin-job-scheduler-note' ) ) );
 
+		$list = '';
+
 		foreach ( $dataRepairTaskList as $dataRepairTask ) {
-			$html .= $dataRepairTask->getHtml();
+			$list .= $dataRepairTask->getHtml();
 		}
+
+		$html .= Html::rawElement( 'div', array( 'class' => 'smw-admin-data-repair-section' ),
+			$list
+		);
 
 		$html .= Html::rawElement( 'h2', array(), $this->getMessageAsString( array( 'smw-admin-supplementary-section-title' ) ) );
 		$html .= Html::rawElement( 'p', array(), $this->getMessageAsString( array( 'smw-admin-supplementary-section-intro' ) ) );
@@ -211,7 +221,7 @@ class SpecialAdmin extends SpecialPage {
 			$list .= $supplementaryTask->getHtml();
 		}
 
-		$html .= Html::rawElement( 'div', array( 'class' => 'smw-admin-supplementary-linksection' ),
+		$html .= Html::rawElement( 'div', array( 'class' => 'smw-admin-supplementary-section' ),
 			Html::rawElement( 'ul', array(),
 				$list
 			)

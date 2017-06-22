@@ -68,6 +68,22 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
+	public function testIsReadOnly() {
+
+		$parser = $this->getMockBuilder( 'Parser' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$parser->expects( $this->never() )
+			->method( 'getTitle' );
+
+		$instance = new ParserAfterTidy( $parser );
+		$instance->isReadOnly( true );
+
+		$text = '';
+		$instance->process( $text );
+	}
+
 	private function newMockCache( $id, $containsStatus, $fetchStatus ) {
 
 		$key = $this->applicationFactory->newCacheFactory()->getPurgeCacheKey( $id );
@@ -174,9 +190,10 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 		#0 Runs store update
 		$store = $this->getMockBuilder( 'SMW\Store' )
 			->disableOriginalConstructor()
+			->setMethods( array( 'updateData' ) )
 			->getMockForAbstractClass();
 
-		$store->expects( $this->atLeastOnce() )
+		$store->expects( $this->any() )
 			->method( 'updateData' );
 
 		$title = MockTitle::buildMock( __METHOD__ );
@@ -185,7 +202,7 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getNamespace' )
 			->will( $this->returnValue( NS_MAIN ) );
 
-		$title->expects( $this->atLeastOnce() )
+		$title->expects( $this->any() )
 			->method( 'inNamespace' )
 			->will( $this->returnValue( false ) );
 
@@ -206,6 +223,7 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 		#1 No cache entry, no store update
 		$store = $this->getMockBuilder( 'SMW\Store' )
 			->disableOriginalConstructor()
+			->setMethods( array( 'updateData' ) )
 			->getMockForAbstractClass();
 
 		$store->expects( $this->never() )
@@ -217,7 +235,7 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getNamespace' )
 			->will( $this->returnValue( NS_MAIN ) );
 
-		$title->expects( $this->atLeastOnce() )
+		$title->expects( $this->any() )
 			->method( 'inNamespace' )
 			->will( $this->returnValue( false ) );
 
@@ -234,6 +252,7 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 		#2 SpecialPage, no store update
 		$store = $this->getMockBuilder( 'SMW\Store' )
 			->disableOriginalConstructor()
+			->setMethods( array( 'updateData' ) )
 			->getMockForAbstractClass();
 
 		$store->expects( $this->never() )
@@ -258,6 +277,7 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 		#3 NS_FILE, no store update
 		$store = $this->getMockBuilder( 'SMW\Store' )
 			->disableOriginalConstructor()
+			->setMethods( array( 'updateData' ) )
 			->getMockForAbstractClass();
 
 		$store->expects( $this->never() )
@@ -265,7 +285,7 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 
 		$title = MockTitle::buildMock( __METHOD__ );
 
-		$title->expects( $this->atLeastOnce() )
+		$title->expects( $this->any() )
 			->method( 'inNamespace' )
 			->will( $this->returnValue( true ) );
 
@@ -286,6 +306,7 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 		#4, 1131, No store update when fetch return FALSE
 		$store = $this->getMockBuilder( 'SMW\Store' )
 			->disableOriginalConstructor()
+			->setMethods( array( 'updateData' ) )
 			->getMockForAbstractClass();
 
 		$store->expects( $this->never() )
@@ -297,7 +318,7 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getNamespace' )
 			->will( $this->returnValue( NS_MAIN ) );
 
-		$title->expects( $this->atLeastOnce() )
+		$title->expects( $this->any() )
 			->method( 'inNamespace' )
 			->will( $this->returnValue( false ) );
 
@@ -320,18 +341,11 @@ class ParserAfterTidyTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMockForAbstractClass();
 
-		$store->expects( $this->once() )
-			->method( 'updateData' );
-
 		$title = MockTitle::buildMock( __METHOD__ );
 
 		$title->expects( $this->atLeastOnce() )
 			->method( 'getNamespace' )
 			->will( $this->returnValue( NS_MAIN ) );
-
-		$title->expects( $this->atLeastOnce() )
-			->method( 'inNamespace' )
-			->will( $this->returnValue( false ) );
 
 		$title->expects( $this->atLeastOnce() )
 			->method( 'getArticleID' )

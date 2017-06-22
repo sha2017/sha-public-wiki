@@ -275,10 +275,7 @@ class QueryDependencyLinksStore implements LoggerAwareInterface {
 		$options = array(
 			'LIMIT'     => $requestOptions->getLimit(),
 			'OFFSET'    => $requestOptions->getOffset(),
-			'GROUP BY'  => 's_id',
-			'ORDER BY'  => 's_id',
-			'DISTINCT'  => true
-		);
+		) + array( 'DISTINCT' );
 
 		$conditions = array(
 			'o_id' => $idlist
@@ -306,16 +303,19 @@ class QueryDependencyLinksStore implements LoggerAwareInterface {
 			return array();
 		}
 
-		$requestOptions = new RequestOptions();
+		// Return the expected count of targets
+		$requestOptions->targetLinksCount = count( $targetLinksIdList );
 
-		$requestOptions->addExtraCondition(
+		$poolRequestOptions = new RequestOptions();
+
+		$poolRequestOptions->addExtraCondition(
 			'smw_iw !=' . $this->connection->addQuotes( SMW_SQL3_SMWREDIIW ) . ' AND '.
 			'smw_iw !=' . $this->connection->addQuotes( SMW_SQL3_SMWDELETEIW )
 		);
 
 		return $this->store->getObjectIds()->getDataItemPoolHashListFor(
 			$targetLinksIdList,
-			$requestOptions
+			$poolRequestOptions
 		);
 	}
 
@@ -403,7 +403,7 @@ class QueryDependencyLinksStore implements LoggerAwareInterface {
 
 		$query = $queryResult->getQuery();
 
-		return $query !== null && $query->getContextPage() !== null && $query->getLimit() > 0 && $query->getOption( Query::NO_DEP_TRACE ) !== true;
+		return $query !== null && $query->getContextPage() !== null && $query->getLimit() > 0 && $query->getOption( Query::NO_DEPENDENCY_TRACE ) !== true;
 	}
 
 	private function canSuppressUpdateOnSkewFactorFor( $sid, $subject ) {
