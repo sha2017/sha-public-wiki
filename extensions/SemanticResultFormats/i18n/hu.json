@@ -6,7 +6,8 @@
 			"Glanthor Reviol",
 			"TK-999",
 			"Csega",
-			"Misibacsi"
+			"Misibacsi",
+			"Tacsipacsi"
 		]
 	},
 	"srf-desc": "További formátumok a Szemantikus MediaWiki beépített lekérdezéseihez",
@@ -92,7 +93,7 @@
 	"srf_paramdesc_minsize": "A legkisebb címkék mérete százalékban",
 	"srf_paramdesc_maxsize": "A legnagyobb címkék mérete százalékban",
 	"srf_paramdesc_maxtags": "A felhőben lévő címkék maximális mennyisége",
-	"srf-paramdesc-excludetags": "Címkenevek kizárása (;)",
+	"srf-paramdesc-excludetags": "Címkenevek kizárása (elválasztójel: \";\")",
 	"srf_printername_array": "Tömb",
 	"srf_paramdesc_pagetitle": "Megjelenítse-e az oldalcímeket eredményekként, vagy hagyja ki őket?",
 	"srf_paramdesc_propsep": "A kért tulajdonságok közötti elválasztó",
@@ -115,6 +116,7 @@
 	"srf-ui-eventcalendar-label-week": "Hét",
 	"srf-ui-eventcalendar-label-day": "Nap",
 	"srf-ui-eventcalendar-label-allday": "Egész nap",
+	"srf-ui-eventcalendar-click-popup": "Szeretnél létrehozni egy eseményt?",
 	"srf-printername-dygraphs": "Diagram ábra",
 	"srf-printername-incoming": "Bejövő tulajdonságok"
 }

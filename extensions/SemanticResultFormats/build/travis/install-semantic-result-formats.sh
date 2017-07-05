@@ -20,14 +20,20 @@ function installToMediaWikiRoot {
 	cd $MW_INSTALL_PATH
 
 	installPHPUnitWithComposer
-	composer require mediawiki/semantic-result-formats "dev-master" --dev
+	composer require mediawiki/semantic-result-formats "dev-master"
+
+	# FIXME: Remove when "symfony/css-selector" has reached packagist
+	composer require "symfony/css-selector" "^3.3"
+
+	# Add optional packages
+	composer require "data-values/geo" "^1.1"
 
 	cd extensions
 	cd SemanticResultFormats
 
 	# Pull request number, "false" if it's not a pull request
-	# After the install via composer an additional get fetch is carried out to
-	# update th repository to make sure that the latests code changes are
+	# After the install via composer an additional git fetch is carried out to
+	# update the repository to make sure that the latest code changes are
 	# deployed for testing
 	if [ "$TRAVIS_PULL_REQUEST" != "false" ]
 	then
@@ -55,6 +61,7 @@ function updateConfiguration {
 	echo '$wgShowExceptionDetails = true;' >> LocalSettings.php
 	echo '$wgDevelopmentWarnings = true;' >> LocalSettings.php
 	echo "putenv( 'MW_INSTALL_PATH=$(pwd)' );" >> LocalSettings.php
+	echo '$GLOBALS["srfgFormats"][] = "filtered";' >> LocalSettings.php
 
 	php maintenance/update.php --skip-external-dependencies --quick
 }
