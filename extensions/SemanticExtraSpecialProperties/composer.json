@@ -20,7 +20,7 @@
 		},
 		{
 			"name": "James Hong Kong",
-			"homepage": "https://semantic-mediawiki.org/wiki/User:MWJames",
+			"homepage": "https://www.semantic-mediawiki.org/wiki/User:MWJames",
 			"role": "Developer"
 		}
 	],
@@ -39,7 +39,7 @@
 	},
 	"extra": {
 		"branch-alias": {
-			"dev-master": "1.4.x-dev"
+			"dev-master": "1.x-dev"
 		}
 	},
 	"autoload": {
